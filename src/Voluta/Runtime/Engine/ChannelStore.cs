@@ -32,25 +32,34 @@ internal sealed class ChannelStore
     public IReadOnlyDictionary<string, long> Versions => versions;
 
     /// <summary>
-    ///     Per-node versions_seen map.
+    ///     Deep-clones the per-node versions_seen map for checkpoint isolation.
+    ///     Call only at snapshot build — not on every property read.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, long>> VersionsSeen =>
-        versionsSeen.ToDictionary(
-            static pair => pair.Key,
-            static pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
-                pair.Value,
-                StringComparer.Ordinal),
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, long>> CloneVersionsSeen()
+    {
+        var clone = new Dictionary<string, IReadOnlyDictionary<string, long>>(
+            versionsSeen.Count,
             StringComparer.Ordinal);
+        foreach (var (nodeName, map) in versionsSeen)
+        {
+            clone[nodeName] = new Dictionary<string, long>(map, StringComparer.Ordinal);
+        }
+
+        return clone;
+    }
 
     /// <summary>
-    ///     Snapshots current channel values.
+    ///     Snapshots current channel values (one dictionary; channel Get clones as needed).
     /// </summary>
     public IReadOnlyDictionary<string, object?> SnapshotValues()
     {
-        return channels.ToDictionary(
-            static pair => pair.Key,
-            static pair => pair.Value.Get(),
-            StringComparer.Ordinal);
+        var snapshot = new Dictionary<string, object?>(channels.Count, StringComparer.Ordinal);
+        foreach (var (name, channel) in channels)
+        {
+            snapshot[name] = channel.Get();
+        }
+
+        return snapshot;
     }
 
     /// <summary>
@@ -94,25 +103,53 @@ internal sealed class ChannelStore
 
     /// <summary>
     ///     Applies node writes for a superstep in deterministic channel/task order.
+    ///     Sorts once by channel name then task id, groups in a single pass, then applies
+    ///     channels in key order (LastValue concurrent reject + Append merge order).
     /// </summary>
     public void ApplyWrites(IReadOnlyList<TaskChannelWrite> writes)
     {
-        var ordered = writes
-            .OrderBy(static item => item.Write.ChannelName, StringComparer.Ordinal)
-            .ThenBy(static item => item.TaskId, StringComparer.Ordinal)
-            .ToList();
+        if (writes.Count == 0)
+        {
+            return;
+        }
 
         var grouped = new Dictionary<string, List<object?>>(StringComparer.Ordinal);
+        if (writes.Count == 1)
+        {
+            var single = writes[0];
+            grouped[single.Write.ChannelName] = [single.Write.Value];
+            ApplyGrouped(grouped);
+            return;
+        }
+
+        // One sort: channel name, then task id (preserves Append order / concurrent detect).
+        var ordered = new TaskChannelWrite[writes.Count];
+        for (var index = 0; index < writes.Count; index++)
+        {
+            ordered[index] = writes[index];
+        }
+
+        Array.Sort(ordered, static (left, right) =>
+        {
+            var channelCompare = string.CompareOrdinal(left.Write.ChannelName, right.Write.ChannelName);
+            return channelCompare != 0
+                ? channelCompare
+                : string.CompareOrdinal(left.TaskId, right.TaskId);
+        });
+
+        string? currentChannel = null;
+        List<object?>? currentList = null;
         foreach (var item in ordered)
         {
-            var write = item.Write;
-            if (!grouped.TryGetValue(write.ChannelName, out var list))
+            var channelName = item.Write.ChannelName;
+            if (currentList is null || !string.Equals(currentChannel, channelName, StringComparison.Ordinal))
             {
-                list = [];
-                grouped[write.ChannelName] = list;
+                currentChannel = channelName;
+                currentList = new List<object?>();
+                grouped[channelName] = currentList;
             }
 
-            list.Add(write.Value);
+            currentList.Add(item.Write.Value);
         }
 
         ApplyGrouped(grouped);
@@ -137,8 +174,25 @@ internal sealed class ChannelStore
 
     private void ApplyGrouped(IReadOnlyDictionary<string, List<object?>> grouped)
     {
-        foreach (var (channelName, values) in grouped.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+        if (grouped.Count == 0)
         {
+            return;
+        }
+
+        // Channel apply order: sorted keys (ApplyWrites groups in that order for multi-write;
+        // input seeding may not — sort once here).
+        var channelNames = new string[grouped.Count];
+        var index = 0;
+        foreach (var channelName in grouped.Keys)
+        {
+            channelNames[index++] = channelName;
+        }
+
+        Array.Sort(channelNames, StringComparer.Ordinal);
+
+        foreach (var channelName in channelNames)
+        {
+            var values = grouped[channelName];
             if (!channels.TryGetValue(channelName, out var channel))
             {
                 throw new GraphRunFailedException(
@@ -155,7 +209,9 @@ internal sealed class ChannelStore
                     $"Channel '{channelName}': {exception.Message}");
             }
 
-            versions[channelName] = versions.GetValueOrDefault(channelName) + 1;
+            versions[channelName] = versions.TryGetValue(channelName, out var version)
+                ? version + 1
+                : 1;
         }
     }
 }
