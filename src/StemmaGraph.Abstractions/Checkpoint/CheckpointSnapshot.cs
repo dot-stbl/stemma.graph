@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Runtime;
+using StemmaGraph.Abstractions.Runtime;
 
-namespace StemmaGraph.Checkpoint;
+namespace StemmaGraph.Abstractions.Checkpoint;
 
 /// <summary>
 ///     Full C-shape checkpoint: channel values, versions, versions_seen, pending writes,

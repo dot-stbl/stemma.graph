@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Channels;
+namespace StemmaGraph.Abstractions.Channels;
 
 /// <summary>
 ///     A partial channel update emitted by a node (or resume command).

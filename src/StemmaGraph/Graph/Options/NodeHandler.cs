@@ -2,9 +2,9 @@
 // Copyright (c) Stemma contributors
 
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
+using StemmaGraph.Abstractions.Results;
 
-namespace StemmaGraph;
+namespace StemmaGraph.Graph.Options;
 
 /// <summary>
 ///     Async node body: reads a frozen superstep view and returns continue or interrupt.

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Graph.Options;
+using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
-using StemmaGraph.Runtime.Exceptions;
+using StemmaGraph.Exceptions;
 
-namespace StemmaGraph.Graph;
+namespace StemmaGraph.Graph.Builder;
 
 /// <summary>
 ///     Fluent builder for named channels, nodes, and edges. Compile produces an immutable runnable graph.

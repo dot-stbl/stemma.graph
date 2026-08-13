@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Streaming;
 
 namespace StemmaGraph.Testing.Streaming;
 

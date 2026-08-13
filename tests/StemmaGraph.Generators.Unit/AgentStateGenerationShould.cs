@@ -3,15 +3,16 @@
 
 using Shouldly;
 using StemmaGraph;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Generators.Unit.Fixtures;
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
-using StemmaGraph.Runtime;
-using StemmaGraph.State;
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.State;
+using StemmaGraph.Abstractions.Streaming;
 using Xunit;
+using StemmaGraph.Graph.Builder;
 
 namespace StemmaGraph.Generators.Unit;
 

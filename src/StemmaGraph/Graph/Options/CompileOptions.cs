@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph;
+namespace StemmaGraph.Graph.Options;
 
 /// <summary>
-///     Options applied when compiling a <see cref="Graph.StateGraph" /> into a runnable graph.
+///     Options applied when compiling a <see cref="Builder.StateGraph" /> into a runnable graph.
 /// </summary>
 public sealed class CompileOptions
 {

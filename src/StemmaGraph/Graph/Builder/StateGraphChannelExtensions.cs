@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.State;
+using StemmaGraph.Abstractions.State;
 
-namespace StemmaGraph.Graph;
+namespace StemmaGraph.Graph.Builder;
 
 /// <summary>
 ///     Applies generated or hand-built channel schemas to a <see cref="StateGraph" />.

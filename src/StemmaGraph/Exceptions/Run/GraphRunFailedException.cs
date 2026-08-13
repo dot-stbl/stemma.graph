@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime.Exceptions;
+namespace StemmaGraph.Exceptions.Run;
 
 /// <summary>
 ///     Uncaught node exception or other superstep fault that failed the run.

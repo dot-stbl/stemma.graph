@@ -2,7 +2,8 @@
 // Copyright (c) Stemma contributors
 
 using System.Collections.Concurrent;
-namespace StemmaGraph.Checkpoint;
+using StemmaGraph.Abstractions.Checkpoint;
+namespace StemmaGraph.Testing.Checkpoint;
 
 /// <summary>
 ///     <see cref="ICheckpointer" /> decorator that records Put/Get/List calls for assertions.

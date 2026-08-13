@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.Streaming;
 using StemmaGraph.Checkpoint;
+using StemmaGraph.Exceptions;
+using StemmaGraph.Exceptions.Run;
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
-using StemmaGraph.Runtime.Exceptions;
-using StemmaGraph.Streaming;
+using StemmaGraph.Graph.Options;
 
 // GraphConstants lives in root StemmaGraph namespace.
 
-namespace StemmaGraph.Runtime;
+namespace StemmaGraph.Runtime.Engine;
 
 /// <summary>
 ///     Pregel superstep loop for a single stream/invoke/resume session.
@@ -138,7 +142,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
     private async IAsyncEnumerable<StreamEvent> RunLoopAsync(
         RunOptions options,
         ChannelStore store,
-        List<string> nextNodes,
+        IReadOnlyList<string> nextNodes,
         long step,
         string? lastNode,
         object? resumePayload,
@@ -364,7 +368,7 @@ internal sealed class NodeExecution(string nodeName, NodeResult result)
 /// </summary>
 file static class RunEngineRouting
 {
-    public static List<string> ResolveNextNodes(
+    public static IReadOnlyList<string> ResolveNextNodes(
         GraphTopology topology,
         string source,
         IReadOnlyDictionary<string, object?> channelValues,
@@ -381,7 +385,7 @@ file static class RunEngineRouting
             : [];
     }
 
-    public static List<string> FilterRunnableNodes(GraphTopology topology, IReadOnlyList<string> candidates)
+    public static IReadOnlyList<string> FilterRunnableNodes(GraphTopology topology, IReadOnlyList<string> candidates)
     {
         return
         [
@@ -404,7 +408,7 @@ internal sealed class ReadyExecutionOutcome
 
     public GraphException? Failure { get; init; }
 
-    public List<NodeExecution>? Executions { get; init; }
+    public IReadOnlyList<NodeExecution>? Executions { get; init; }
 }
 
 /// <summary>
@@ -476,7 +480,7 @@ file static class RunEngineExecution
 
     public static GraphConcurrentUpdateException? TryApplyWrites(
         ChannelStore store,
-        IReadOnlyList<(string TaskId, ChannelWrite Write)> writes)
+        IReadOnlyList<TaskChannelWrite> writes)
     {
         try
         {
@@ -489,9 +493,9 @@ file static class RunEngineExecution
         }
     }
 
-    public static List<(string TaskId, ChannelWrite Write)> CollectWrites(IReadOnlyList<NodeExecution> executions)
+    public static IReadOnlyList<TaskChannelWrite> CollectWrites(IReadOnlyList<NodeExecution> executions)
     {
-        var writes = new List<(string TaskId, ChannelWrite Write)>();
+        var writes = new List<TaskChannelWrite>();
         foreach (var execution in executions.OrderBy(static item => item.NodeName, StringComparer.Ordinal))
         {
             if (execution.Result is not ContinueNodeResult continueResult)
@@ -501,7 +505,7 @@ file static class RunEngineExecution
 
             foreach (var write in continueResult.Writes)
             {
-                writes.Add((execution.NodeName, write));
+                writes.Add(new TaskChannelWrite(execution.NodeName, write));
             }
         }
 
@@ -548,7 +552,7 @@ file static class RunEngineStreaming
         StreamMode mode,
         long step,
         IReadOnlyList<string> nodeNames,
-        IReadOnlyList<(string TaskId, ChannelWrite Write)> writes,
+        IReadOnlyList<TaskChannelWrite> writes,
         ChannelStore store)
     {
         if (mode == StreamMode.Updates)

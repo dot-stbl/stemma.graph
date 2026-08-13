@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.State;
+namespace StemmaGraph.Abstractions.State;
 
 /// <summary>
 ///     Marks a partial state class for source generation of channel schema, Update, and ToWrites.

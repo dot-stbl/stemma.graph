@@ -13,12 +13,13 @@
 // interrupt, then ResumeAsync(Command { Kind = "approve" }) continues the run.
 
 using StemmaGraph;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
-using StemmaGraph.Runtime;
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Graph.Builder;
 
 const string ThreadId = "hitl-sample-1";
 

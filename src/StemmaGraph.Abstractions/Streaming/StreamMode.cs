@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Streaming;
+namespace StemmaGraph.Abstractions.Streaming;
 
 /// <summary>
 ///     Observation modes for multi-mode graph streaming.

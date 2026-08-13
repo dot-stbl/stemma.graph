@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Streaming;
+namespace StemmaGraph.Abstractions.Streaming;
 
 /// <summary>
 ///     Discriminator for lifecycle and observation stream items.

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
-using StemmaGraph.State;
+using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Abstractions.State;
 
 namespace StemmaGraph.Generators.Unit.Fixtures;
 

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Graph.Options;
+using StemmaGraph.Abstractions.Channels;
 
 namespace StemmaGraph.Graph;
 
 /// <summary>
-///     Immutable topology produced by <see cref="StateGraph.Compile" />.
+///     Immutable topology produced by <see cref="Builder.StateGraph.Compile" />.
 /// </summary>
 /// <remarks>
 ///     Initializes topology maps.

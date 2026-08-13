@@ -2,7 +2,7 @@
 // Copyright (c) Stemma contributors
 
 using Shouldly;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using Xunit;
 
 namespace StemmaGraph.Abstractions.Unit.Channels;

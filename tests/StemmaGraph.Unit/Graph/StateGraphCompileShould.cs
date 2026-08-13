@@ -3,12 +3,13 @@
 
 using Shouldly;
 using StemmaGraph;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
-using StemmaGraph.Runtime.Exceptions;
+using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Exceptions;
 using Xunit;
+using StemmaGraph.Graph.Builder;
 
 namespace StemmaGraph.Unit.Graph;
 

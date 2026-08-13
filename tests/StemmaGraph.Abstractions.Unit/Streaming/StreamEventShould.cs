@@ -2,8 +2,8 @@
 // Copyright (c) Stemma contributors
 
 using Shouldly;
-using StemmaGraph.Channels;
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Abstractions.Streaming;
 using Xunit;
 
 namespace StemmaGraph.Abstractions.Unit.Streaming;

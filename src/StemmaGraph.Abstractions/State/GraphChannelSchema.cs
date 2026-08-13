@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.State;
+namespace StemmaGraph.Abstractions.State;
 
 /// <summary>
 ///     Immutable channel map that can be applied to a graph builder (generated or hand-built).

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime.Exceptions;
+namespace StemmaGraph.Exceptions;
 
 /// <summary>
-///     Topology validation failure raised during <see cref="Graph.StateGraph.Compile" />.
+///     Topology validation failure raised during <see cref="Graph.Builder.StateGraph.Compile" />.
 /// </summary>
 /// <remarks>
 ///     Initializes a compile-time graph exception.

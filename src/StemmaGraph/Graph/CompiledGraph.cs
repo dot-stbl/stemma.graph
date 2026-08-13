@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Runtime.Engine;
+using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
-using StemmaGraph.Runtime;
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.Streaming;
 
 namespace StemmaGraph.Graph;
 

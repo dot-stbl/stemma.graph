@@ -2,8 +2,8 @@
 // Copyright (c) Stemma contributors
 
 using Shouldly;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Runtime;
+using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Runtime;
 using Xunit;
 
 namespace StemmaGraph.Abstractions.Unit.Checkpoint;

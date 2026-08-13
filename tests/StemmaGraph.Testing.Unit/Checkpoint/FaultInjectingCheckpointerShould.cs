@@ -3,8 +3,10 @@
 
 using Shouldly;
 using StemmaGraph.Checkpoint;
-using StemmaGraph.Runtime;
+using StemmaGraph.Abstractions.Runtime;
 using Xunit;
+using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Testing.Checkpoint;
 
 namespace StemmaGraph.Testing.Unit.Checkpoint;
 

@@ -2,11 +2,12 @@
 // Copyright (c) Stemma contributors
 
 using Shouldly;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Graph;
-using StemmaGraph.Runtime.Exceptions;
-using StemmaGraph.State;
+using StemmaGraph.Exceptions;
+using StemmaGraph.Abstractions.State;
 using Xunit;
+using StemmaGraph.Graph.Builder;
 
 namespace StemmaGraph.Unit.State;
 

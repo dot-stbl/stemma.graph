@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.Streaming;
+namespace StemmaGraph.Abstractions.Streaming;
 
 /// <summary>
 ///     Single item in a multi-mode graph stream (values, updates, or lifecycle events).

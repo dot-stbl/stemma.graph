@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.Results;
+namespace StemmaGraph.Abstractions.Results;
 
 /// <summary>
 ///     Outcome of a node task: continue with partial writes, or interrupt for HITL.

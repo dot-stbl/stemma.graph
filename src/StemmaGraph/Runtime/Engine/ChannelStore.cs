@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Channels;
-using StemmaGraph.Runtime.Channels;
-using StemmaGraph.Runtime.Exceptions;
+using StemmaGraph.Exceptions;
+using StemmaGraph.Exceptions.Run;
 
-namespace StemmaGraph.Runtime;
+namespace StemmaGraph.Runtime.Engine;
 
 /// <summary>
 ///     Mutable channel map + versions for one run thread.
@@ -97,7 +98,7 @@ internal sealed class ChannelStore
     /// <summary>
     ///     Applies node writes for a superstep in deterministic channel/task order.
     /// </summary>
-    public void ApplyWrites(IReadOnlyList<(string TaskId, ChannelWrite Write)> writes)
+    public void ApplyWrites(IReadOnlyList<TaskChannelWrite> writes)
     {
         var ordered = writes
             .OrderBy(static item => item.Write.ChannelName, StringComparer.Ordinal)
@@ -105,8 +106,9 @@ internal sealed class ChannelStore
             .ToList();
 
         var grouped = new Dictionary<string, List<object?>>(StringComparer.Ordinal);
-        foreach (var (_, write) in ordered)
+        foreach (var item in ordered)
         {
+            var write = item.Write;
             if (!grouped.TryGetValue(write.ChannelName, out var list))
             {
                 list = [];
