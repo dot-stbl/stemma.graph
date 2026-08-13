@@ -4,17 +4,17 @@
 //   dotnet run --project samples/04-ReviewBot -- --offline --root .
 //
 // Optional chat:
-//   STEMMA_CHAT_ENDPOINT / STEMMA_CHAT_API_KEY / STEMMA_CHAT_MODEL
+//   VOLUTA_CHAT_ENDPOINT / VOLUTA_CHAT_API_KEY / VOLUTA_CHAT_MODEL
 
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph.Builder;
-using StemmaGraph.Graph.Options;
-using StemmaGraph.Samples.Shared;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
+using Voluta.Samples.Shared;
 
 var offline = HarnessCli.HasFlag(args, "--offline");
 var root = HarnessCli.GetOption(args, "--root") ?? ".";
@@ -22,7 +22,7 @@ var query = HarnessCli.GetOption(args, "--query") ?? "StateGraph";
 var threadId = HarnessCli.GetOption(args, "--thread") ?? $"review-{Guid.NewGuid():N}";
 var hitl = HarnessCli.HasFlag(args, "--hitl");
 
-Console.WriteLine("StemmaGraph sample 04 — ReviewBot");
+Console.WriteLine("Voluta sample 04 — ReviewBot");
 Console.WriteLine($"Thread: {threadId}");
 Console.WriteLine($"Root:   {Path.GetFullPath(root)}");
 Console.WriteLine($"Query:  {query}");

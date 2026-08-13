@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Ops console for Voluta: run inspector, HITL queue, topology (MD3 static UI + MapVolutaUI).
+    </Description>
+    <PackageTags>$(PackageTags);ui;inspector;hitl</PackageTags>
+    <RootNamespace>Voluta.UI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot\index.html" LogicalName="Voluta.UI.wwwroot.index.html" />
+    <EmbeddedResource Include="wwwroot\styles.css" LogicalName="Voluta.UI.wwwroot.styles.css" />
+  </ItemGroup>
+
+</Project>

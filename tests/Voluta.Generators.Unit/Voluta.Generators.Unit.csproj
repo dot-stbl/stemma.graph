@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Voluta.Generators.Unit</RootNamespace>
+    <Description>Unit tests for [GraphState] source generation (compile-time consumer).</Description>
+    <!-- Emit generated sources to obj for debugging; generation still runs in-process. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+    <!-- Analyzer-only reference: runs the generator at compile time of this test project. -->
+    <ProjectReference
+      Include="..\..\src\Voluta.Generators\Voluta.Generators.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.*" />
+    <PackageReference Include="Shouldly" Version="4.3.*" />
+  </ItemGroup>
+
+</Project>

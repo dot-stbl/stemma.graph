@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Package metadata (shared metadata lives in Directory.Build.props) -->
+    <Description>
+      Interfaces only, zero transitive dependencies — contracts every other
+      Voluta package depends on. No runtime code lives here.
+    </Description>
+    <PackageTags>$(PackageTags);abstractions;interfaces</PackageTags>
+
+    <!-- Abstractions must have ZERO transitive deps (per CLAUDE.md convention).
+         Any PackageReference declared here would leak into every consumer. -->
+  </PropertyGroup>
+
+  <!-- Intentionally empty: no <PackageReference>, no <ProjectReference>.
+       This package depends on the BCL only. -->
+
+</Project>

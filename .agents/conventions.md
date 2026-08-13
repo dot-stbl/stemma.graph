@@ -12,7 +12,7 @@
 | **Package version policy (CPM off)** | [`Directory.Packages.props`](../Directory.Packages.props) | абсолютный |
 | **Global rules (C#, process, observability)** | `~/.agents/rules/` (user-global) | ниже repo-local; repo-local overrides |
 | **AI-agent workflow** | [`AGENTS.md`](../AGENTS.md), [`CLAUDE.md`](../CLAUDE.md) | handbook для AI |
-| **Commit format** | `~/.agents/rules/process/commit-format.md` | абсолютный — `[stemma](feat/<area>): <subject>` |
+| **Commit format** | `~/.agents/rules/process/commit-format.md` | абсолютный — `[voluta](feat/<area>): <subject>` |
 | **Git hooks** | [`.githooks/`](../.githooks/) | абсолютный (commit-msg стрипает AI-атрибуцию) |
 | **Line endings** | [`.gitattributes`](../.gitattributes) | абсолютный (LF enforced) |
 
@@ -30,7 +30,7 @@ Directory.Build.props  (TreatWarningsAsErrors=true,
 0 warnings / 0 errors  (build gate)
 ```
 
-**Следствие:** если `dotnet build stemma.graph.slnx` зелёный — все
+**Следствие:** если `dotnet build voluta.slnx` зелёный — все
 IDE/CA-правила выполнены. Точка. Никаких «CI поймает» — CI гоняет ту же
 команду.
 

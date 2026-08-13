@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DebugRoslynSourceGenerator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\tests\\Voluta.Generators.Unit\\Voluta.Generators.Unit.csproj"
+    }
+  }
+}

@@ -9,9 +9,9 @@ CLI harness: **plan → tools (sandbox search) → review**, optional HITL inter
 dotnet run --project samples/04-ReviewBot -- --offline --root .
 
 # live OpenAI-compatible chat
-export STEMMA_CHAT_ENDPOINT=https://api.openai.com/v1
-export STEMMA_CHAT_API_KEY=...
-export STEMMA_CHAT_MODEL=gpt-4o-mini
+export VOLUTA_CHAT_ENDPOINT=https://api.openai.com/v1
+export VOLUTA_CHAT_API_KEY=...
+export VOLUTA_CHAT_MODEL=gpt-4o-mini
 dotnet run --project samples/04-ReviewBot -- --root . --query StateGraph
 
 # HITL approve gate before review LLM call

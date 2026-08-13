@@ -1,6 +1,6 @@
 ## Context
 
-See `proposal.md` for why. Repo is scaffolding only (`StemmaGraph` + `StemmaGraph.Abstractions` markers). Conceptual source: LangGraph (MIT) Pregel loop, channels, C-shape checkpoints — researched from clone under temp `langgraph-src` / `langgraph-explained.md`. Constraints: .NET 10, backend-first, no CLI/Studio fluff, house rules (no control-flow exceptions, primary ctors, etc.). **This change is architecture/planning only; no runtime code.**
+See `proposal.md` for why. Repo is scaffolding only (`Voluta` + `Voluta.Abstractions` markers). Conceptual source: LangGraph (MIT) Pregel loop, channels, C-shape checkpoints — researched from clone under temp `langgraph-src` / `langgraph-explained.md`. Constraints: .NET 10, backend-first, no CLI/Studio fluff, house rules (no control-flow exceptions, primary ctors, etc.). **This change is architecture/planning only; no runtime code.**
 
 ## Goals / Non-Goals
 
@@ -77,7 +77,7 @@ See `proposal.md` for why. Repo is scaffolding only (`StemmaGraph` + `StemmaGrap
 
 **Update (implemented):** `Send` + `ContinueWithSends`, engine PUSH ready tasks, `PendingSends` on checkpoint; `Subgraph.AsNode`; `CompiledGraph.Describe` for UI.
 
-### D9 — StemmaGraph.Testing as real package
+### D9 — Voluta.Testing as real package
 
 **Choice:** Separate project/package: recording + fault-injecting checkpointer, stream capture, fixtures, conformance suite entrypoints.
 
@@ -104,15 +104,15 @@ See `proposal.md` for why. Repo is scaffolding only (`StemmaGraph` + `StemmaGrap
 ## Package map (target)
 
 ```
-StemmaGraph.Abstractions     ICheckpointer, CheckpointSnapshot, ChannelWrite, NodeResult, Send, …
-StemmaGraph                 runtime, builder, InMemory checkpointer, Subgraph helper
-StemmaGraph.DependencyInjection  AddStemmaGraph
-StemmaGraph.Testing         recording/fault/stream capture/fixtures/conformance
-StemmaGraph.Checkpoints.File                  (shipped)
-StemmaGraph.MicrosoftAi                       (shipped, thin IChatClient helpers)
-StemmaGraph.UI                                (shipped, MapStemmaUI first cut)
-StemmaGraph.Checkpoints.EntityFrameworkCore   (later)
-StemmaGraph.Checkpoints.S3                    (later)
+Voluta.Abstractions     ICheckpointer, CheckpointSnapshot, ChannelWrite, NodeResult, Send, …
+Voluta                 runtime, builder, InMemory checkpointer, Subgraph helper
+Voluta.DependencyInjection  AddVoluta
+Voluta.Testing         recording/fault/stream capture/fixtures/conformance
+Voluta.Checkpoints.File                  (shipped)
+Voluta.MicrosoftAi                       (shipped, thin IChatClient helpers)
+Voluta.UI                                (shipped, MapVolutaUI first cut)
+Voluta.Checkpoints.EntityFrameworkCore   (later)
+Voluta.Checkpoints.S3                    (later)
 ```
 
 ## Runtime loop (reference)

@@ -1,18 +1,18 @@
 <p align="center">
-  <a href="https://github.com/dot-stbl/stemma.graph">
-    <img src="https://raw.githubusercontent.com/dot-stbl/stemma.graph/main/assets/banner.png"
-         alt="StemmaGraph — stateful, cyclic, durable agent graphs for .NET">
+  <a href="https://github.com/dot-stbl/voluta">
+    <img src="https://raw.githubusercontent.com/dot-stbl/voluta/main/assets/banner-voluta.png"
+         alt="Voluta — stateful, cyclic, durable agent graphs for .NET">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/dot-stbl/stemma.graph/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dot-stbl/stemma.graph/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/dot-stbl/voluta/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dot-stbl/voluta/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img alt=".NET 10" src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white" /></a>
-  <a href="https://github.com/dot-stbl/stemma.graph/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
-  <a href="https://github.com/dot-stbl/stemma.graph/issues/1"><img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-orange?style=flat-square" /></a>
+  <a href="https://github.com/dot-stbl/voluta/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
+  <a href="https://github.com/dot-stbl/voluta/issues/1"><img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-orange?style=flat-square" /></a>
 </p>
 
-Agents that **loop until they're done** — and survive the process that ran them. StemmaGraph is a
+Agents that **loop until they're done** — and survive the process that ran them. Voluta is a
 low-level orchestration runtime for .NET: you describe a graph of nodes and edges, some of them
 cyclic, and it executes the graph in Pregel-style supersteps with typed state, durable
 checkpoints, streaming, and human-in-the-loop interrupts.
@@ -29,9 +29,9 @@ Our design bets:
 
 > [!IMPORTANT]
 > **Pre-release.** On `main`: Pregel engine, InMemory + File checkpointers, Send / subgraph helpers,
-> source generator, Testing, MicrosoftAi helpers, `MapStemmaUI`, five samples, BenchmarkDotNet.
+> source generator, Testing, MicrosoftAi helpers, `MapVolutaUI`, five samples, BenchmarkDotNet.
 > **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
-> ([epic #1](https://github.com/dot-stbl/stemma.graph/issues/1)). Until then, reference projects
+> ([epic #1](https://github.com/dot-stbl/voluta/issues/1)). Until then, reference projects
 > from source — see [Quick Start](#quick-start).
 
 ## See it in action
@@ -40,7 +40,7 @@ A ReAct agent that calls tools, loops back to think again, and stops on its own.
 output of `dotnet run --project samples/01-HelloWorld` (middle rounds trimmed):
 
 ```text
-StemmaGraph sample 01 — simulated ReAct (agent ⇄ tools)
+Voluta sample 01 — simulated ReAct (agent ⇄ tools)
 Thread: react-sample-1
 
 [agent] round 0: requesting tools
@@ -177,7 +177,7 @@ no `[Channel]` properties, and tells you which.
 <details>
 <summary><strong>Testing a graph without fighting it</strong></summary>
 
-`StemmaGraph.Testing` ships the doubles you'd otherwise write by hand:
+`Voluta.Testing` ships the doubles you'd otherwise write by hand:
 
 - `RecordingCheckpointer` — records every `Put` / `Get` / `List` on any inner checkpointer.
 - `FaultInjectingCheckpointer` — fails the *n*-th write, so you can assert the run survives it.
@@ -187,7 +187,7 @@ no `[Channel]` properties, and tells you which.
 
 </details>
 
-## Why StemmaGraph
+## Why Voluta
 
 - **Cycles are the point** — an agent that reconsiders is a loop, not a pipeline. Conditional edges
   plus a `RecursionLimit` give you loops that terminate on purpose instead of by accident.
@@ -205,9 +205,9 @@ no `[Channel]` properties, and tells you which.
 Nothing is published yet, so start from source:
 
 ```bash
-git clone https://github.com/dot-stbl/stemma.graph.git
-cd stemma.graph
-dotnet build stemma.graph.slnx
+git clone https://github.com/dot-stbl/voluta.git
+cd voluta
+dotnet build voluta.slnx
 ```
 
 Run a sample to see a live graph:
@@ -217,20 +217,20 @@ dotnet run --project samples/01-HelloWorld
 ```
 
 Then point your own project at the runtime with
-`dotnet add reference path/to/stemma.graph/src/StemmaGraph/StemmaGraph.csproj`.
+`dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj`.
 
 Here is a complete graph — a writer and a critic that loop until the score clears the bar. It
 prints `End after 4 supersteps`:
 
 ```csharp
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
-using StemmaGraph.Graph.Builder;
-using StemmaGraph.Graph.Options;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Checkpoint;
+using Voluta.Graph;
+using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
 
 var graph = new StateGraph()
     .AddChannel("draft", ChannelKind.LastValue)   // writes replace
@@ -272,7 +272,7 @@ static Task<NodeResult> CritiqueAsync(GraphContext context, CancellationToken ca
 
 Swap `InvokeAsync` for `StreamAsync` to observe the run as it happens
 (`StreamMode.Values` / `Updates` / `Events`), and pass a real `ICheckpointer` when you want the
-thread to outlive the process. Under a host, `services.AddStemmaGraph(provider => …)` compiles the
+thread to outlive the process. Under a host, `services.AddVoluta(provider => …)` compiles the
 graph once and registers it as a singleton.
 
 ## How a superstep works
@@ -287,24 +287,24 @@ then evaluate edges to decide who runs next. Two consequences worth internalizin
   race with the writes they depend on.
 
 Behavior contracts live in
-[`openspec/specs/`](https://github.com/dot-stbl/stemma.graph/tree/main/openspec/specs)
+[`openspec/specs/`](https://github.com/dot-stbl/voluta/tree/main/openspec/specs)
 (12 capabilities). Planning history:
-[`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](https://github.com/dot-stbl/stemma.graph/tree/main/openspec/changes/archive/2026-08-14-architecture-runtime-core).
+[`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](https://github.com/dot-stbl/voluta/tree/main/openspec/changes/archive/2026-08-14-architecture-runtime-core).
 
 ## How it compares
 
 **vs. [LangGraph](https://github.com/langchain-ai/langgraph)** (Python, MIT) — The origin of this
-execution model and still the richest ecosystem around it. StemmaGraph borrows the ideas
+execution model and still the richest ecosystem around it. Voluta borrows the ideas
 (supersteps, channels, checkpoint-first persistence) and rebuilds the surface on .NET generics,
 typed reducers, and `IAsyncEnumerable` — no `TypedDict` reflection. Not a port; a peer.
 
 **vs. Microsoft Agent Framework** — MAF is the better answer for multi-agent conversations and
 function calling, and it has Microsoft behind it. It doesn't give you cyclic graphs with durable
-per-thread state. These compose: run MAF agents *inside* StemmaGraph nodes.
+per-thread state. These compose: run MAF agents *inside* Voluta nodes.
 
 **vs. Durable Functions / Durable Task** — Battle-tested durability with far more storage
 providers, and the right tool for business workflows. Its programming model is orchestrator code
-with replay semantics; StemmaGraph's is a graph with explicit state channels, which fits an
+with replay semantics; Voluta's is a graph with explicit state channels, which fits an
 agent's think-act-observe loop more directly and keeps the loop bound visible.
 
 **vs. rolling your own `while` loop** — Works until you need to answer "what was the state at
@@ -315,17 +315,17 @@ what?". Those three questions are the entire library.
 
 | Package | Role | Status |
 |---|---|---|
-| `StemmaGraph.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | on `main` |
-| `StemmaGraph` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | on `main` |
-| `StemmaGraph.DependencyInjection` | `AddStemmaGraph` for `IServiceCollection` | on `main` |
-| `StemmaGraph.Generators` | `[GraphState]` source generator | on `main` |
-| `StemmaGraph.Testing` | Test doubles + checkpointer conformance suite | on `main` |
-| `StemmaGraph.Checkpoints.File` | JSON file-system checkpointer | on `main` |
-| `StemmaGraph.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
-| `StemmaGraph.UI` | Ops console: `MapStemmaUI` (inspector / HITL / topology) | on `main` |
-| `StemmaGraph.Checkpoints.EF` / S3 | Extra durable providers | planned |
+| `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | on `main` |
+| `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | on `main` |
+| `Voluta.DependencyInjection` | `AddVoluta` for `IServiceCollection` | on `main` |
+| `Voluta.Generators` | `[GraphState]` source generator | on `main` |
+| `Voluta.Testing` | Test doubles + checkpointer conformance suite | on `main` |
+| `Voluta.Checkpoints.File` | JSON file-system checkpointer | on `main` |
+| `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
+| `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | on `main` |
+| `Voluta.Checkpoints.EF` / S3 | Extra durable providers | planned |
 
-**Native AOT** applies to the core tier only — `StemmaGraph`, `Abstractions`, and
+**Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/03-AotSmoke`.
 File checkpoints, UI, and MicrosoftAi are regular-CLR packages and do not claim AOT.
 
@@ -333,11 +333,11 @@ File checkpoints, UI, and MicrosoftAi are regular-CLR packages and do not claim 
 
 | Sample | What it shows |
 |---|---|
-| [`01-HelloWorld`](https://github.com/dot-stbl/stemma.graph/tree/main/samples/01-HelloWorld) | Simulated ReAct loop (agent ⇄ tools), streaming updates |
-| [`02-InterruptResume`](https://github.com/dot-stbl/stemma.graph/tree/main/samples/02-InterruptResume) | HITL interrupt and `Command` resume |
-| [`03-AotSmoke`](https://github.com/dot-stbl/stemma.graph/tree/main/samples/03-AotSmoke) | Native AOT publish smoke test |
-| [`04-ReviewBot`](https://github.com/dot-stbl/stemma.graph/tree/main/samples/04-ReviewBot) | CLI review harness: plan → sandboxed tools → review |
-| [`05-DocQ`](https://github.com/dot-stbl/stemma.graph/tree/main/samples/05-DocQ) | Docs Q&A over a sandboxed folder |
+| [`01-HelloWorld`](https://github.com/dot-stbl/voluta/tree/main/samples/01-HelloWorld) | Simulated ReAct loop (agent ⇄ tools), streaming updates |
+| [`02-InterruptResume`](https://github.com/dot-stbl/voluta/tree/main/samples/02-InterruptResume) | HITL interrupt and `Command` resume |
+| [`03-AotSmoke`](https://github.com/dot-stbl/voluta/tree/main/samples/03-AotSmoke) | Native AOT publish smoke test |
+| [`04-ReviewBot`](https://github.com/dot-stbl/voluta/tree/main/samples/04-ReviewBot) | CLI review harness: plan → sandboxed tools → review |
+| [`05-DocQ`](https://github.com/dot-stbl/voluta/tree/main/samples/05-DocQ) | Docs Q&A over a sandboxed folder |
 
 ## What isn't here yet
 
@@ -345,23 +345,23 @@ Stated plainly so you can judge the fit:
 
 - **No published packages.** Source references only until the 0.1 tag.
 - **No EF / S3 checkpointers.** File + InMemory ship on `main`; EF/S3 still planned.
-- **UI is a first cut.** `MapStemmaUI` covers checkpoint inspect, HITL resume, topology —
+- **UI is a first cut.** `MapVolutaUI` covers checkpoint inspect, HITL resume, topology —
   not live SSE stream or multi-host thread discovery.
 - **PublicAPI ship gate open.** Surface can still move before `v0.1.0`.
 
 ## Development
 
 ```bash
-dotnet build stemma.graph.slnx                      # 0 warnings, 0 errors — the gate
-dotnet test stemma.graph.slnx                       # xUnit + Shouldly + NSubstitute
-dotnet format stemma.graph.slnx --severity hidden   # style drift check
-dotnet run -c Release --project benchmarks/StemmaGraph.Benchmarks
+dotnet build voluta.slnx                      # 0 warnings, 0 errors — the gate
+dotnet test voluta.slnx                       # xUnit + Shouldly + NSubstitute
+dotnet format voluta.slnx --severity hidden   # style drift check
+dotnet run -c Release --project benchmarks/Voluta.Benchmarks
 ```
 
 `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are on for every project, so a clean build
 *is* the style review. Benchmarks (`LinearInvoke`, `CycleFiveTicks`, `ParallelAppend`,
 `CheckpointPutGet`) are not gated on PR CI — see
-[#10](https://github.com/dot-stbl/stemma.graph/issues/10).
+[#10](https://github.com/dot-stbl/voluta/issues/10).
 
 ## Contributing
 
@@ -373,17 +373,17 @@ git config core.hooksPath .githooks   # once per clone
 ```
 
 The `commit-msg` hook strips AI attribution trailers, so don't hand-add them; commits follow
-`[stemma](feat/scope): subject`. AI-generated code is welcome when it's tested and you understand
+`[voluta](feat/scope): subject`. AI-generated code is welcome when it's tested and you understand
 it. Full setup, conventions, and the PR checklist:
-[CONTRIBUTING.md](https://github.com/dot-stbl/stemma.graph/blob/main/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/dot-stbl/voluta/blob/main/CONTRIBUTING.md).
 
 ## Inspiration
 
 The execution model comes from [LangGraph](https://github.com/langchain-ai/langgraph) (MIT) —
 Pregel-style supersteps, channel/reducer state, checkpoint-first persistence. The API diverges
-substantially, and any place where StemmaGraph is wrong about this design space is our own fault,
+substantially, and any place where Voluta is wrong about this design space is our own fault,
 not theirs.
 
 ## License
 
-MIT — see [LICENSE](https://github.com/dot-stbl/stemma.graph/blob/main/LICENSE).
+MIT — see [LICENSE](https://github.com/dot-stbl/voluta/blob/main/LICENSE).

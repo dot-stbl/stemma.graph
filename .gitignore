@@ -1,5 +1,5 @@
 # =====================================================================
-# .gitignore — StemmaGraph (pure .NET library, no frontend)
+# .gitignore — Voluta (pure .NET library, no frontend)
 # =====================================================================
 # Base from anlytra/plexor/tessera convention. Adapted: dropped FE bits,
 # dropped Docker/deploy bits, kept all .NET + tooling + secrets coverage.
@@ -81,5 +81,5 @@ Thumbs.db
 
 # ── Generated / vendored (we don't ship these yet) ────────────────────
 **/[Mm]igrations/
-# (StemmaGraph itself has no migrations; rule kept for future Postgres checkpointer
+# (Voluta itself has no migrations; rule kept for future Postgres checkpointer
 #  should it ever use EF. Migrations belong to EF tooling.)

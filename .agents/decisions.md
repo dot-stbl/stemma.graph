@@ -1,4 +1,4 @@
-# Decisions — принятые решения по StemmaGraph
+# Decisions — принятые решения по Voluta
 
 > Хронологический лог решений. Каждое решение фиксируется здесь **до** того,
 > как превращается в код. Канон требований: main OpenSpec
@@ -8,21 +8,27 @@
 
 ## Решения
 
-### D-001 — Имя бренда: **Stemma** (лат. «гирлянда, родословная»)
+### D-001 — Имя бренда: **Stemma** (лат. «гирлянда, родословная») — ОТМЕНЕНО
 
 **Решение:** `Stemma`. Метафора линии состояний через чекпойнты.
+**Статус:** отменено [D-024](#d-024--переименование-в-voluta). Текст сохранён как история —
+имя действительно значило «гирлянда, родословная», и переписывать это задним числом нельзя.
 
-### D-002 — Имя первого продукта: **StemmaGraph**
+### D-002 — Имя первого продукта: **StemmaGraph** — ОТМЕНЕНО
 
 **Решение:** `StemmaGraph` (конкатенация, зеркало LangGraph).
+**Статус:** отменено [D-024](#d-024--переименование-в-voluta) — именно мотив «зеркало LangGraph»
+и оказался проблемой, а не преимуществом.
 
-### D-003 — GitHub-репо: `dot-stbl/stemma.graph`
+### D-003 — GitHub-репо: `dot-stbl/stemma.graph` — ПЕРЕИМЕНОВАНО
 
 **Решение:** `dot-stbl/stemma.graph`; бренд Stemma независим.
+**Статус:** репо переименовано в `dot-stbl/voluta` по [D-024](#d-024--переименование-в-voluta);
+GitHub держит редирект со старого пути.
 
-### D-004 — NuGet package ids: `StemmaGraph.*`
+### D-004 — NuGet package ids: `Voluta.*`
 
-**Решение:** `StemmaGraph`, `StemmaGraph.Abstractions`, … (не `Stemma.Graph.*`).
+**Решение:** `Voluta`, `Voluta.Abstractions`, … (не `Voluta.Graph.*`).
 
 ### D-005 — Подход: **не порт LangGraph**, .NET-native переосмысление
 
@@ -36,7 +42,7 @@ API — generics, `IAsyncEnumerable`, без TypedDict-рефлексии hot pa
 **Решение (2026-08-13, architecture pass):** MVP 0.1 = full Pregel superstep
 (all ready nodes, barrier, versions) + channels (LastValue, Append) +
 **C-shape checkpoint** + **InMemory provider in core** + HITL (`NodeResult`) +
-multi-mode stream + source-gen skeleton + `StemmaGraph.Testing`.
+multi-mode stream + source-gen skeleton + `Voluta.Testing`.
 
 **Не в 0.1:** Send execution, subgraphs, EF/S3/File packages, UI, MicrosoftAi.
 
@@ -47,7 +53,7 @@ multi-mode stream + source-gen skeleton + `StemmaGraph.Testing`.
 ### D-007 — MAF / Microsoft.Extensions.AI: через `IChatClient`
 
 **Решение:** не свой LLM SDK. Пакет интеграции — **отдельный**
-`StemmaGraph.MicrosoftAi` (post-0.1), не в core.
+`Voluta.MicrosoftAi` (post-0.1), не в core.
 
 ### D-008 — Технологический стек
 
@@ -69,22 +75,22 @@ openspec validate, expanded path filters. Release: tag `v*.*.*` → pack → nug
 
 ```
 # AOT core tier
-StemmaGraph.Abstractions
-StemmaGraph                         # runtime + InMemory (no ME.DI reference)
-StemmaGraph.DependencyInjection     # AddStemmaGraph for IServiceCollection
+Voluta.Abstractions
+Voluta                         # runtime + InMemory (no ME.DI reference)
+Voluta.DependencyInjection     # AddVoluta for IServiceCollection
 
 # Full .NET / ASP.NET tier (not AOT-claimed)
-StemmaGraph.Testing                 # doubles + conformance (pack carefully)
-StemmaGraph.Checkpoints.EntityFrameworkCore   # later
-StemmaGraph.Checkpoints.S3                    # later
-StemmaGraph.Checkpoints.File                  # later
-StemmaGraph.MicrosoftAi                       # later
-StemmaGraph.UI.*                              # later (#13)
+Voluta.Testing                 # doubles + conformance (pack carefully)
+Voluta.Checkpoints.EntityFrameworkCore   # later
+Voluta.Checkpoints.S3                    # later
+Voluta.Checkpoints.File                  # later
+Voluta.MicrosoftAi                       # later
+Voluta.UI.*                              # later (#13)
 ```
 
-Scaffold ships only Abstractions + StemmaGraph markers until apply.
+Scaffold ships only Abstractions + Voluta markers until apply.
 
-### D-011 — Docs site: `dot-stbl/stemma-docs`
+### D-011 — Docs site: `dot-stbl/voluta-docs`
 
 Отдельный репо; движок/домен — после MVP.
 
@@ -115,15 +121,15 @@ disk only”.
 
 ### D-017 — Hosting: **Both**
 
-Standalone `CompiledGraph` (core) + DI via **`StemmaGraph.DependencyInjection`**
-(`AddStemmaGraph`). Core has **zero** `Microsoft.Extensions.DependencyInjection`
+Standalone `CompiledGraph` (core) + DI via **`Voluta.DependencyInjection`**
+(`AddVoluta`). Core has **zero** `Microsoft.Extensions.DependencyInjection`
 package reference.
 
 ### D-018 — Send / subgraphs: designed, not MVP-shipped
 
 Specs reserve PUSH/Send and subgraph composition; implement post-0.1.
 
-### D-019 — Testing: **`StemmaGraph.Testing`** + conformance
+### D-019 — Testing: **`Voluta.Testing`** + conformance
 
 Recording/fault-injecting checkpointer, stream capture, fixtures, InMemory
 conformance suite in CI. Quality-engineering: unit scenario matrix, BenchmarkDotNet
@@ -131,8 +137,8 @@ conformance suite in CI. Quality-engineering: unit scenario matrix, BenchmarkDot
 
 ### D-020 — UI: separate package, post-0.1
 
-`StemmaGraph.UI` — run inspector, HITL queue, topology (MD3). Core must not
-reference UI. Epic: github.com/dot-stbl/stemma.graph/issues/13. Mockups:
+`Voluta.UI` — run inspector, HITL queue, topology (MD3). Core must not
+reference UI. Epic: github.com/dot-stbl/voluta/issues/13. Mockups:
 local artifacts store (not required in repo for 0.1).
 
 ### D-021 — Architecture source of truth: OpenSpec **main specs**
@@ -148,8 +154,8 @@ Validate: `openspec validate --specs --strict`.
 
 | Tier | Packages | Target |
 |------|----------|--------|
-| **AOT core** | `StemmaGraph`, `StemmaGraph.Abstractions`, `StemmaGraph.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/03-AotSmoke` (`PublishAot`) |
-| **Full runtime** | `StemmaGraph.Checkpoints.File`, `StemmaGraph.UI`, `StemmaGraph.MicrosoftAi`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
+| **AOT core** | `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/03-AotSmoke` (`PublishAot`) |
+| **Full runtime** | `Voluta.Checkpoints.File`, `Voluta.UI`, `Voluta.MicrosoftAi`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
 
 **AOT path (supported):** fluent `StateGraph` + InMemory (+ optional thin DI).  
 **Full path (product hosts):** ASP.NET, file/EF checkpointers, UI console, LLM adapters — depend on core, run on complete CLR.
@@ -166,13 +172,39 @@ the NuGet tag:
 | Send fan-out | `Send`, `NodeResult.ContinueWithSends`, `PendingSends`, engine PUSH tasks |
 | Subgraph helper | `Subgraph.AsNode` |
 | Topology export | `CompiledGraph.Describe()` → `GraphDescription` |
-| File checkpointer | `StemmaGraph.Checkpoints.File` |
-| MicrosoftAi | `StemmaGraph.MicrosoftAi` (`ChatClientNode`) |
-| UI | `StemmaGraph.UI` (`AddStemmaUI` / `MapStemmaUI`) |
-| Harness samples | `04-ReviewBot`, `05-DocQ` + `StemmaGraph.Samples.Shared` |
-| Benchmarks | `benchmarks/StemmaGraph.Benchmarks` |
+| File checkpointer | `Voluta.Checkpoints.File` |
+| MicrosoftAi | `Voluta.MicrosoftAi` (`ChatClientNode`) |
+| UI | `Voluta.UI` (`AddVolutaUI` / `MapVolutaUI`) |
+| Harness samples | `04-ReviewBot`, `05-DocQ` + `Voluta.Samples.Shared` |
+| Benchmarks | `benchmarks/Voluta.Benchmarks` |
 
 Still deferred: EF/S3 checkpointers, PublicAPI ship gate, NuGet `v0.1.0`, arch tests.
+
+### D-024 — Переименование в **Voluta**
+
+**Решение (2026-08-14):** бренд и продукт — `Voluta`. Отменяет D-001 и D-002, переименовывает
+репо из D-003. Схема пакетов остаётся плоской по D-004: `Voluta`, `Voluta.Abstractions`, …
+
+**Почему:**
+
+1. **Паттерн «одно брендовое слово» вместо «имя + категория».** `StemmaGraph` зеркалил
+   `LangGraph` (мотив D-002) и тем самым навсегда ставил проект в его тень, подрезая собственную
+   позицию «не порт, мы вровень».
+2. **У `Stemma` два живых омонима в dev-выдаче:** Stemma — data-каталог (деньги Sequoia, куплен
+   Teradata) и Adafruit **STEMMA / STEMMA QT** — стандарт разъёма. На NuGet имя `Stemma` было
+   свободно: коллизии нашлись только поиском, реестр их не показывал.
+3. **`voluta` ← лат. `volvere` «вращать»** — цикл назван в самом имени. Для рантайма из цикличных
+   супершагов это точнее, чем метафора родословной. В выдаче — только архитектурный завиток и род
+   морских улиток, ни одного продукта. Свободно на NuGet, npm, crates.
+
+**Окно:** 0.1 не затегирован и в NuGet ничего не опубликовано, поэтому цена переименования —
+find/replace (793 вхождения в 166 файлах), а не deprecation старых пакетов + redirect-пакет.
+
+**Что изменилось:** неймспейсы и package ids `StemmaGraph.*` → `Voluta.*`; солюшен
+`stemma.graph.slnx` → `voluta.slnx`; коммит-префикс `[stemma]` → `[voluta]`; баннер —
+`assets/banner-voluta.png` (старый `banner.png` оставлен как история). Условия в
+`Directory.Build.props`, завязанные на литеральные имена проектов (AOT-ярус и выбор иконки),
+обновлены вместе с именами — иначе они молча перестали бы срабатывать.
 
 ## Open questions (remaining)
 

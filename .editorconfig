@@ -109,7 +109,7 @@ dotnet_diagnostic.CA1002.severity = warning
 dotnet_diagnostic.CA1051.severity = warning
 dotnet_diagnostic.CA1852.severity = error   # sealed на concrete classes — default
 dotnet_diagnostic.CA1720.severity = warning
-dotnet_diagnostic.CA1716.severity = none    # conflict с брендом (STEMMA в именах)
+dotnet_diagnostic.CA1716.severity = none    # conflict с брендом (VOLUTA в именах)
 dotnet_diagnostic.CA1303.severity = none
 dotnet_diagnostic.CA2000.severity = none
 

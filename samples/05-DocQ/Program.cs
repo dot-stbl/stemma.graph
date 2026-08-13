@@ -1,26 +1,26 @@
 // 05-DocQ — search sandbox markdown/docs → answer with citations.
 //
 // Run:
-//   dotnet run --project samples/05-DocQ -- --offline --root . --question "What is StemmaGraph?"
+//   dotnet run --project samples/05-DocQ -- --offline --root . --question "What is Voluta?"
 
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph.Builder;
-using StemmaGraph.Graph.Options;
-using StemmaGraph.Samples.Shared;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
+using Voluta.Samples.Shared;
 
 var offline = HarnessCli.HasFlag(args, "--offline");
 var root = HarnessCli.GetOption(args, "--root") ?? ".";
 var question = HarnessCli.GetOption(args, "--question")
                ?? HarnessCli.GetOption(args, "-q")
-               ?? "What is StemmaGraph?";
+               ?? "What is Voluta?";
 var threadId = HarnessCli.GetOption(args, "--thread") ?? $"docq-{Guid.NewGuid():N}";
 
-Console.WriteLine("StemmaGraph sample 05 — DocQ");
+Console.WriteLine("Voluta sample 05 — DocQ");
 Console.WriteLine($"Thread:   {threadId}");
 Console.WriteLine($"Root:     {Path.GetFullPath(root)}");
 Console.WriteLine($"Question: {question}");

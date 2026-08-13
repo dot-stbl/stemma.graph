@@ -1,0 +1,44 @@
+<Solution>
+  <Folder Name="/repo/">
+    <File Path=".gitignore" />
+    <File Path=".gitattributes" />
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="CLAUDE.md" />
+    <File Path="AGENTS.md" />
+    <File Path="CONTRIBUTING.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Voluta.Abstractions/Voluta.Abstractions.csproj" />
+    <Project Path="src/Voluta/Voluta.csproj" />
+    <Project Path="src/Voluta.DependencyInjection/Voluta.DependencyInjection.csproj" />
+    <Project Path="src/Voluta.Testing/Voluta.Testing.csproj" />
+    <Project Path="src/Voluta.Generators/Voluta.Generators.csproj" />
+    <Project Path="src/Voluta.Checkpoints.File/Voluta.Checkpoints.File.csproj" />
+    <Project Path="src/Voluta.MicrosoftAi/Voluta.MicrosoftAi.csproj" />
+    <Project Path="src/Voluta.UI/Voluta.UI.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
+    <Project Path="samples/02-InterruptResume/02-InterruptResume.csproj" />
+    <Project Path="samples/03-AotSmoke/03-AotSmoke.csproj" />
+    <Project Path="samples/Voluta.Samples.Shared/Voluta.Samples.Shared.csproj" />
+    <Project Path="samples/04-ReviewBot/04-ReviewBot.csproj" />
+    <Project Path="samples/05-DocQ/05-DocQ.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Voluta.Benchmarks/Voluta.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Voluta.Unit/Voluta.Unit.csproj" />
+    <Project Path="tests/Voluta.Abstractions.Unit/Voluta.Abstractions.Unit.csproj" />
+    <Project Path="tests/Voluta.DependencyInjection.Unit/Voluta.DependencyInjection.Unit.csproj" />
+    <Project Path="tests/Voluta.Testing.Unit/Voluta.Testing.Unit.csproj" />
+    <Project Path="tests/Voluta.Generators.Unit/Voluta.Generators.Unit.csproj" />
+    <Project Path="tests/Voluta.Integration/Voluta.Integration.csproj" />
+    <Project Path="tests/Voluta.Checkpoints.File.Unit/Voluta.Checkpoints.File.Unit.csproj" />
+  </Folder>
+</Solution>

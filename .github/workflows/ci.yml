@@ -1,10 +1,10 @@
 # .github/workflows/ci.yml
 #
-# PR gate for StemmaGraph: restore + build (analyzers + format) + test + pack smoke.
+# PR gate for Voluta: restore + build (analyzers + format) + test + pack smoke.
 #
 #   pr-dotnet — build whole solution + run unit tests + pack library projects
 #
-# Runner: ubuntu-latest (StemmaGraph is a pure .NET library, no native deps,
+# Runner: ubuntu-latest (Voluta is a pure .NET library, no native deps,
 # no self-hosted runner needed — unlike anlytra's k8s-deploy setup).
 #
 # Release flow lives in publish.yml — OIDC trusted publishing to nuget.org
@@ -25,7 +25,7 @@ on:
       - "**/*.csproj"
       - "**/*.props"
       - "**/*.targets"
-      - "stemma.graph.slnx"
+      - "voluta.slnx"
       - ".github/workflows/**"
       - ".editorconfig"
       - ".gitignore"
@@ -42,7 +42,7 @@ on:
       - "**/*.csproj"
       - "**/*.props"
       - "**/*.targets"
-      - "stemma.graph.slnx"
+      - "voluta.slnx"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-v1-${{ hashFiles('stemma.graph.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
+          key: nuget-v1-${{ hashFiles('voluta.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
           restore-keys: |
             nuget-v1-
 
@@ -82,18 +82,18 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: restore
-        run: dotnet restore stemma.graph.slnx --nologo
+        run: dotnet restore voluta.slnx --nologo
 
       - name: build
         # TreatWarningsAsErrors + EnforceCodeStyleInBuild in Directory.Build.props
         # — format drift and analyzer warnings fail the build.
-        run: dotnet build stemma.graph.slnx -c Debug --nologo
+        run: dotnet build voluta.slnx -c Debug --nologo
 
       - name: unit tests
         run: |
           # Skip integration tests that need Docker on CI (no Postgres testcontainer).
           # Local devs run them with: dotnet test --filter "FullyQualifiedName~Integration"
-          dotnet test stemma.graph.slnx \
+          dotnet test voluta.slnx \
             --filter "FullyQualifiedName!~Integration" \
             --no-build \
             --nologo \

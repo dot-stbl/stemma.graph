@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      File-system C-shape checkpointer for Voluta (JSON per thread under a root directory).
+    </Description>
+    <PackageTags>$(PackageTags);checkpoint;file;persistence</PackageTags>
+    <RootNamespace>Voluta.Checkpoints.File</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

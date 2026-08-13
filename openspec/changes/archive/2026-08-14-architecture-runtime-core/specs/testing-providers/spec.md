@@ -1,14 +1,14 @@
 ## Purpose
 
-Defines the StemmaGraph.Testing package and conformance expectations so checkpointer providers and runtime behavior can be validated uniformly without production-only tooling.
+Defines the Voluta.Testing package and conformance expectations so checkpointer providers and runtime behavior can be validated uniformly without production-only tooling.
 
 ## ADDED Requirements
 
 ### Requirement: Testing package
-The solution MUST include a `StemmaGraph.Testing` package (or project published as such) that provides test doubles and helpers without requiring external databases.
+The solution MUST include a `Voluta.Testing` package (or project published as such) that provides test doubles and helpers without requiring external databases.
 
 #### Scenario: Unit test project reference
-- **WHEN** a unit test project references `StemmaGraph.Testing` and core runtime
+- **WHEN** a unit test project references `Voluta.Testing` and core runtime
 - **THEN** it can construct recording checkpointers and graph fixtures without EF/S3 packages
 
 ### Requirement: Recording checkpointer

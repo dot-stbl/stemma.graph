@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>StemmaGraph.Samples.InterruptResume</RootNamespace>
+    <RootNamespace>Voluta.Samples.InterruptResume</RootNamespace>
     <IsPackable>false</IsPackable>
     <Description>
       02-InterruptResume: HITL interrupt once, then ResumeAsync with Command approve.
@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
   </ItemGroup>
 
 </Project>

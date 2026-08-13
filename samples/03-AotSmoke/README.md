@@ -1,7 +1,7 @@
 # 03-AotSmoke
 
 Minimal linear graph used to validate **Native AOT** publish of the core runtime
-(`StemmaGraph` + `InMemoryCheckpointer`, no reflection-based checkpoint serde).
+(`Voluta` + `InMemoryCheckpointer`, no reflection-based checkpoint serde).
 
 ## Run (JIT)
 
@@ -23,7 +23,7 @@ The project sets `PublishAot=true` by default for this sample only.
 
 | AOT core (this sample) | Full .NET runtime packages |
 |------------------------|----------------------------|
-| `StemmaGraph` + Abstractions | `StemmaGraph.Checkpoints.*` (EF/S3/File) |
-| InMemory checkpointer | `StemmaGraph.UI.*`, MicrosoftAi |
+| `Voluta` + Abstractions | `Voluta.Checkpoints.*` (EF/S3/File) |
+| InMemory checkpointer | `Voluta.UI.*`, MicrosoftAi |
 | Optional: DependencyInjection | ASP.NET hosts, reflection-heavy adapters |
 | Fluent graph only | Dynamic plugin load |

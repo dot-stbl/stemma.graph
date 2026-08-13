@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines how StemmaGraph is verified and released: unit scenario coverage for the runtime core, checkpoint conformance binding, a benchmarks project, and CI gates including pack smoke and OpenSpec validation.
+Defines how Voluta is verified and released: unit scenario coverage for the runtime core, checkpoint conformance binding, a benchmarks project, and CI gates including pack smoke and OpenSpec validation.
 
 ## Requirements
 
@@ -56,14 +56,14 @@ When OpenSpec change or main spec files are present in the PR, CI MUST run `open
 - **THEN** the OpenSpec validation job fails
 
 ### Requirement: Testing package packability policy
-`StemmaGraph.Testing` MUST either be non-packable until intentionally published, or be excluded from the default release pack set, so accidental nuget.org publish of test helpers does not occur.
+`Voluta.Testing` MUST either be non-packable until intentionally published, or be excluded from the default release pack set, so accidental nuget.org publish of test helpers does not occur.
 
 #### Scenario: Release pack set
 - **WHEN** the release workflow packs shippable packages for a version tag
 - **THEN** Testing is not pushed unless the release explicitly includes it
 
 ### Requirement: Architecture dependency tests when layers exist
-Once multiple library projects exist, the repo MUST include architecture tests that `StemmaGraph.Abstractions` has no forbidden dependencies and that core does not reference EF/S3 provider packages.
+Once multiple library projects exist, the repo MUST include architecture tests that `Voluta.Abstractions` has no forbidden dependencies and that core does not reference EF/S3 provider packages.
 
 #### Scenario: Core must not reference EF package
 - **WHEN** architecture tests run

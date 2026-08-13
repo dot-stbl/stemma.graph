@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
-    <RootNamespace>StemmaGraph.Samples.AotSmoke</RootNamespace>
+    <RootNamespace>Voluta.Samples.AotSmoke</RootNamespace>
     <Description>
       03-AotSmoke: minimal linear graph published with Native AOT (PublishAot).
     </Description>
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
   </ItemGroup>
 
 </Project>

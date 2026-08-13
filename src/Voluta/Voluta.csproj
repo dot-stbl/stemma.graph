@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      The Voluta runtime: Pregel-style superstep execution over a
+      user-defined graph of nodes and edges, with channels, reducers,
+      conditional edges, interrupts, and streaming output.
+    </Description>
+    <PackageTags>$(PackageTags);runtime;pregel;stateful</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Runtime depends on abstractions only — DI lives in Voluta.DependencyInjection. -->
+    <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,16 +1,16 @@
 # .github/workflows/publish.yml
 #
-# Publish StemmaGraph NuGet packages on a v*.*.* tag.
+# Publish Voluta NuGet packages on a v*.*.* tag.
 #
 # Trust flow: GitHub Actions OIDC → nuget.org trusted publishing.
 # No long-lived API key is stored anywhere — the workflow's identity
 # (configured once at nuget.org) is what authorizes the push.
 #
 # To set up (one-time, repo owner):
-#   1. nuget.org → Stemma → Trusted Publishing → Add a trusted publisher
+#   1. nuget.org → Voluta → Trusted Publishing → Add a trusted publisher
 #      - Account: dot-stbl
 #      - Repository owner: dot-stbl
-#      - Repository: stemma.graph
+#      - Repository: voluta
 #      - Workflow filename: publish.yml
 #      - Environment: (blank — uses default env)
 #   2. Create a NuGet API key with `nuget.org` scope (write/read),
@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-v1-${{ hashFiles('stemma.graph.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
+          key: nuget-v1-${{ hashFiles('voluta.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
           restore-keys: |
             nuget-v1-
 
@@ -71,15 +71,15 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: restore
-        run: dotnet restore stemma.graph.slnx --nologo
+        run: dotnet restore voluta.slnx --nologo
 
       - name: build (Release)
-        run: dotnet build stemma.graph.slnx -c Release --nologo
+        run: dotnet build voluta.slnx -c Release --nologo
 
       - name: pack
         # Pack each project individually so we get a clean .nupkg per package.
         # Only src/ libraries are packable (samples/tests set IsPackable=false).
-        # When StemmaGraph.Testing is added under src/, set IsPackable=false on
+        # When Voluta.Testing is added under src/, set IsPackable=false on
         # that csproj (or exclude it here) so test helpers never ship to nuget.org.
         run: |
           set -euo pipefail

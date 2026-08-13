@@ -1,5 +1,5 @@
 /**
- * .regentrc.ts — stemma.graph
+ * .regentrc.ts — voluta
  * Global C# house rules load from ~/.agents/rules/csharp/regent-rules/
  * via regent's globalRulesPath fallback.
  */

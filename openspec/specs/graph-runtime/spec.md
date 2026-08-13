@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines Pregel-style superstep execution for StemmaGraph: ready-set selection, parallel node execution with barrier, write application, and termination rules for stateful agent graphs.
+Defines Pregel-style superstep execution for Voluta: ready-set selection, parallel node execution with barrier, write application, and termination rules for stateful agent graphs.
 
 ## Requirements
 

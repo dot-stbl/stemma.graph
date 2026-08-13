@@ -3,15 +3,15 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
-    <RootNamespace>StemmaGraph.Samples.ReviewBot</RootNamespace>
+    <RootNamespace>Voluta.Samples.ReviewBot</RootNamespace>
     <Description>
       04-ReviewBot: CLI code-review harness (plan → tools → review) with sandbox FS + optional chat.
     </Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
-    <ProjectReference Include="..\StemmaGraph.Samples.Shared\StemmaGraph.Samples.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\Voluta.Samples.Shared\Voluta.Samples.Shared.csproj" />
   </ItemGroup>
 
 </Project>

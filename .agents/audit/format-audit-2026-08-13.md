@@ -16,16 +16,16 @@ Files scanned: 72
 
 ## Largest source files
 
-- **537 lines** · `src\StemmaGraph\Runtime\Engine\RunEngine.cs` (18.8 KB)
-- **259 lines** · `src\StemmaGraph.Generators\GraphStateGenerator.cs` (10.7 KB)
-- **238 lines** · `src\StemmaGraph.Testing\Conformance\CheckpointerConformance.cs` (10.3 KB)
-- **195 lines** · `src\StemmaGraph\Graph\Builder\StateGraph.cs` (8.1 KB)
-- **161 lines** · `src\StemmaGraph\Runtime\Engine\ChannelStore.cs` (5.6 KB)
-- **129 lines** · `src\StemmaGraph\Graph\CompiledGraph.cs` (5.1 KB)
-- **101 lines** · `src\StemmaGraph.Testing\Fixtures\GraphFixtures.cs` (4.4 KB)
-- **85 lines** · `src\StemmaGraph\Checkpoint\InMemoryCheckpointer.cs` (3.2 KB)
-- **59 lines** · `src\StemmaGraph.Testing\Checkpoint\RecordingCheckpointer.cs` (2.6 KB)
-- **62 lines** · `src\StemmaGraph.Testing\Checkpoint\FaultInjectingCheckpointer.cs` (2.4 KB)
+- **537 lines** · `src\Voluta\Runtime\Engine\RunEngine.cs` (18.8 KB)
+- **259 lines** · `src\Voluta.Generators\GraphStateGenerator.cs` (10.7 KB)
+- **238 lines** · `src\Voluta.Testing\Conformance\CheckpointerConformance.cs` (10.3 KB)
+- **195 lines** · `src\Voluta\Graph\Builder\StateGraph.cs` (8.1 KB)
+- **161 lines** · `src\Voluta\Runtime\Engine\ChannelStore.cs` (5.6 KB)
+- **129 lines** · `src\Voluta\Graph\CompiledGraph.cs` (5.1 KB)
+- **101 lines** · `src\Voluta.Testing\Fixtures\GraphFixtures.cs` (4.4 KB)
+- **85 lines** · `src\Voluta\Checkpoint\InMemoryCheckpointer.cs` (3.2 KB)
+- **59 lines** · `src\Voluta.Testing\Checkpoint\RecordingCheckpointer.cs` (2.6 KB)
+- **62 lines** · `src\Voluta.Testing\Checkpoint\FaultInjectingCheckpointer.cs` (2.4 KB)
 
 ## Private method hits (sample)
 ```

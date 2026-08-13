@@ -9,15 +9,15 @@
 //
 // The agent is pure simulation: after two tool rounds it finishes.
 
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
-using StemmaGraph.Graph.Builder;
-using StemmaGraph.Graph.Options;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph;
+using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
 
 const string ThreadId = "react-sample-1";
 
@@ -35,7 +35,7 @@ var graph = new StateGraph()
     .AddEdge("tools", "agent")
     .Compile(checkpointer, new CompileOptions { RecursionLimit = 32 });
 
-Console.WriteLine("StemmaGraph sample 01 — simulated ReAct (agent ⇄ tools)");
+Console.WriteLine("Voluta sample 01 — simulated ReAct (agent ⇄ tools)");
 Console.WriteLine($"Thread: {ThreadId}");
 Console.WriteLine();
 

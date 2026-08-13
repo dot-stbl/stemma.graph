@@ -11,11 +11,11 @@
 | Architecture specs | ✅ archived → `openspec/specs/*` (12 capabilities) |
 | MVP runtime | ✅ Pregel + InMemory + HITL + stream + DI + Testing + Generators |
 | Samples | ✅ 01 ReAct · 02 HITL · 03 AOT · 04 ReviewBot · 05 DocQ |
-| Benchmarks | ✅ `benchmarks/StemmaGraph.Benchmarks` (#10 closed) |
+| Benchmarks | ✅ `benchmarks/Voluta.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
-| File checkpointer | ✅ `StemmaGraph.Checkpoints.File` |
+| File checkpointer | ✅ `Voluta.Checkpoints.File` |
 | MicrosoftAi | ✅ thin `IChatClient` helpers |
-| UI | ✅ `StemmaGraph.UI` + `MapStemmaUI` (inspector / HITL / topology) |
+| UI | ✅ `Voluta.UI` + `MapVolutaUI` (inspector / HITL / topology) |
 | EF / S3 checkpointers | ❌ later |
 | NuGet 0.1 tag | ❌ PublicAPI review + publish |
 | Arch tests (package isolation) | ❌ later |
@@ -24,14 +24,14 @@
 
 | Package | Role | Tier |
 |---------|------|------|
-| `StemmaGraph.Abstractions` | contracts | AOT |
-| `StemmaGraph` | runtime + InMemory + Subgraph | AOT |
-| `StemmaGraph.DependencyInjection` | `AddStemmaGraph` | AOT |
-| `StemmaGraph.Testing` | doubles + conformance | full |
-| `StemmaGraph.Generators` | `[GraphState]` | full (analyzer) |
-| `StemmaGraph.Checkpoints.File` | JSON file store | full |
-| `StemmaGraph.MicrosoftAi` | MEAI helpers | full |
-| `StemmaGraph.UI` | ops console | full (ASP.NET) |
+| `Voluta.Abstractions` | contracts | AOT |
+| `Voluta` | runtime + InMemory + Subgraph | AOT |
+| `Voluta.DependencyInjection` | `AddVoluta` | AOT |
+| `Voluta.Testing` | doubles + conformance | full |
+| `Voluta.Generators` | `[GraphState]` | full (analyzer) |
+| `Voluta.Checkpoints.File` | JSON file store | full |
+| `Voluta.MicrosoftAi` | MEAI helpers | full |
+| `Voluta.UI` | ops console | full (ASP.NET) |
 
 ## Ближайшие шаги
 

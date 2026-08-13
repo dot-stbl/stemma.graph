@@ -1,10 +1,10 @@
-# CLAUDE.md — StemmaGraph agent & developer handbook
+# CLAUDE.md — Voluta agent & developer handbook
 
 > **AGENTS.md** — это короткий указатель на этот файл. Полные правила,
 > архитектура и процедуры — здесь. AGENTS.md содержит только legacy-тезисы
 > для совместимости с tooling, который ожидает именно его.
 
-## Что такое StemmaGraph
+## Что такое Voluta
 
 Low-level orchestration framework для stateful-агентов в .NET. Концептуальный
 источник — [LangGraph](https://github.com/langchain-ai/langgraph) (MIT), но
@@ -12,13 +12,13 @@ API .NET-native: generic state, типизированные редьюсеры,
 `Microsoft.Extensions.AI`.
 
 **Не порт, не замена MAF.** Циклы + (опционально) checkpointing — то, что у MAF
-нет и что StemmaGraph может дать.
+нет и что Voluta может дать.
 
 ## Текущий статус
 
 **Shipped on `main`:** Pregel runtime, InMemory + File checkpointers, Send fan-out,
 `Subgraph.AsNode`, topology export, Testing, Generators, MicrosoftAi helpers,
-`MapStemmaUI`, samples 01–05, BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
+`MapVolutaUI`, samples 01–05, BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
 
 **Specs (source of truth):** main OpenSpec under
 [`openspec/specs/`](openspec/specs/) (12 capabilities). Planning change archived:
@@ -27,7 +27,7 @@ Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-023).
 Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
-- **AOT core:** `StemmaGraph` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/03-AotSmoke`
+- **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/03-AotSmoke`
 - **Full .NET / ASP.NET:** Checkpoints.File, UI, MicrosoftAi, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
@@ -37,43 +37,43 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 | Runtime | .NET 10 |
 | Тесты | xUnit + Shouldly + NSubstitute + Bogus |
 | Streaming | `IAsyncEnumerable<T>` (values / updates / events) |
-| AI helpers | `Microsoft.Extensions.AI` (`IChatClient`) via `StemmaGraph.MicrosoftAi` |
+| AI helpers | `Microsoft.Extensions.AI` (`IChatClient`) via `Voluta.MicrosoftAi` |
 | Benches | BenchmarkDotNet (`benchmarks/`) |
 | Публикация | NuGet через GitHub Actions OIDC trusted publishing |
 
 ## Layout (текущий)
 
 ```
-stemma.graph/
+voluta/
 ├── src/
-│   ├── StemmaGraph.Abstractions/            ← contracts (zero package deps)
-│   ├── StemmaGraph/                         ← runtime + InMemory + Subgraph
-│   ├── StemmaGraph.DependencyInjection/     ← AddStemmaGraph
-│   ├── StemmaGraph.Testing/                 ← doubles + conformance
-│   ├── StemmaGraph.Generators/              ← [GraphState] source-gen
-│   ├── StemmaGraph.Checkpoints.File/        ← JSON file checkpointer
-│   ├── StemmaGraph.MicrosoftAi/             ← IChatClient helpers
-│   └── StemmaGraph.UI/                      ← MapStemmaUI ops console
+│   ├── Voluta.Abstractions/            ← contracts (zero package deps)
+│   ├── Voluta/                         ← runtime + InMemory + Subgraph
+│   ├── Voluta.DependencyInjection/     ← AddVoluta
+│   ├── Voluta.Testing/                 ← doubles + conformance
+│   ├── Voluta.Generators/              ← [GraphState] source-gen
+│   ├── Voluta.Checkpoints.File/        ← JSON file checkpointer
+│   ├── Voluta.MicrosoftAi/             ← IChatClient helpers
+│   └── Voluta.UI/                      ← MapVolutaUI ops console
 ├── samples/     ← 01 HelloWorld · 02 HITL · 03 AotSmoke · 04 ReviewBot · 05 DocQ
-├── benchmarks/  ← StemmaGraph.Benchmarks
+├── benchmarks/  ← Voluta.Benchmarks
 ├── tests/
 ├── openspec/
 │   ├── specs/   ← main capability specs (canonical)
 │   └── changes/archive/…
-└── stemma.graph.slnx
+└── voluta.slnx
 ```
 
 ## Сборка и команды
 
 ```bash
 # Build всего solution (warnings-as-errors)
-dotnet build stemma.graph.slnx
+dotnet build voluta.slnx
 
 # Tests
-dotnet test stemma.graph.slnx
+dotnet test voluta.slnx
 
 # Format gate (drift-check, --severity hidden для auto-fix)
-dotnet format stemma.graph.slnx --severity hidden
+dotnet format voluta.slnx --severity hidden
 ```
 
 **Build gate:** 0 warnings, 0 errors. `TreatWarningsAsErrors=true` +
@@ -127,11 +127,11 @@ API-ключей.** Workflow: `.github/workflows/publish.yml` — триггер
 - assets/ — графика:
   - `banner.png` (2400×600) — README header; не ресайзить.
   - NuGet icons (wired in `Directory.Build.props`):
-    - `icon-i1.png` — **StemmaGraph** (core runtime)
-    - `icon-i4.png` — **StemmaGraph.Checkpoints.*** (providers)
+    - `icon-i1.png` — **Voluta** (core runtime)
+    - `icon-i4.png` — **Voluta.Checkpoints.*** (providers)
     - `icon-i5.png` — Abstractions / Testing / Generators / everything else
 - .github/workflows/ — CI + publish.
-- stemma.graph.slnx — solution.
+- voluta.slnx — solution.
 
 **`.agents/`** — внутренние документы (не публикуются на NuGet, не
 рендерятся в README):
@@ -149,6 +149,6 @@ API-ключей.** Workflow: `.github/workflows/publish.yml` — триггер
 - [`.agents/conventions.md`](.agents/conventions.md) — где живут конвенции.
 - [`.agents/research/`](.agents/research/) — внешние исследования.
 - LangGraph research notes (background agent, ещё в процессе):
-  `C:/Users/bradw/AppData/Local/Temp/opencode/stemma-research.md`.
+  `C:/Users/bradw/AppData/Local/Temp/opencode/voluta-research.md`.
 - `~/.agents/rules/` в user-global — общие C#/process правила (приоритет ниже
   repo-local).

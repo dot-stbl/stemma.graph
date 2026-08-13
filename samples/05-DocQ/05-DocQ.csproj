@@ -3,15 +3,15 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
-    <RootNamespace>StemmaGraph.Samples.DocQ</RootNamespace>
+    <RootNamespace>Voluta.Samples.DocQ</RootNamespace>
     <Description>
       05-DocQ: documentation Q&amp;A over a sandbox folder (search → answer).
     </Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
-    <ProjectReference Include="..\StemmaGraph.Samples.Shared\StemmaGraph.Samples.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\Voluta.Samples.Shared\Voluta.Samples.Shared.csproj" />
   </ItemGroup>
 
 </Project>

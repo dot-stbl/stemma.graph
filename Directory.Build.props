@@ -1,6 +1,6 @@
 <Project>
 
-    <!-- Shared MSBuild defaults for all StemmaGraph packages.
+    <!-- Shared MSBuild defaults for all Voluta packages.
          The nearest Directory.Build.props for every project under src/. -->
 
     <PropertyGroup>
@@ -19,21 +19,21 @@
 
         <!-- OSS metadata — applied to every produced package. -->
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Authors>Stemma contributors</Authors>
-        <PackageProjectUrl>https://github.com/dot-stbl/stemma.graph</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/dot-stbl/stemma.graph</RepositoryUrl>
+        <Authors>Voluta contributors</Authors>
+        <PackageProjectUrl>https://github.com/dot-stbl/voluta</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/dot-stbl/voluta</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>agents;stateful-graphs;workflows;checkpointing;dotnet</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Copyright>Copyright (c) Stemma contributors</Copyright>
+        <Copyright>Copyright (c) Voluta contributors</Copyright>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
 
         <!-- Package icons: i1 = core runtime, i4 = checkpoint providers, i5 = everything else. -->
-        <StemmaGraphPackageIconPath>$(MSBuildThisFileDirectory)assets\icon-i5.png</StemmaGraphPackageIconPath>
-        <StemmaGraphPackageIconPath Condition="'$(MSBuildProjectName)' == 'StemmaGraph'">$(MSBuildThisFileDirectory)assets\icon-i1.png</StemmaGraphPackageIconPath>
-        <StemmaGraphPackageIconPath Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Checkpoints'))">$(MSBuildThisFileDirectory)assets\icon-i4.png</StemmaGraphPackageIconPath>
-        <PackageIcon>$([System.IO.Path]::GetFileName('$(StemmaGraphPackageIconPath)'))</PackageIcon>
+        <VolutaPackageIconPath>$(MSBuildThisFileDirectory)assets\icon-i5.png</VolutaPackageIconPath>
+        <VolutaPackageIconPath Condition="'$(MSBuildProjectName)' == 'Voluta'">$(MSBuildThisFileDirectory)assets\icon-i1.png</VolutaPackageIconPath>
+        <VolutaPackageIconPath Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Checkpoints'))">$(MSBuildThisFileDirectory)assets\icon-i4.png</VolutaPackageIconPath>
+        <PackageIcon>$([System.IO.Path]::GetFileName('$(VolutaPackageIconPath)'))</PackageIcon>
 
         <!-- Globally suppressed warnings (with documented reason) -->
         <!-- NU1903 — Testcontainers.PostgreSql pulls SSH.NET 2024.1.0 which has
@@ -46,9 +46,9 @@
          Full-framework packages (Checkpoints.*, UI, MicrosoftAi, Testing) stay
          on the regular .NET runtime — do not opt them into IsAotCompatible. -->
     <PropertyGroup
-        Condition="'$(MSBuildProjectName)' == 'StemmaGraph'
-                   or '$(MSBuildProjectName)' == 'StemmaGraph.Abstractions'
-                   or '$(MSBuildProjectName)' == 'StemmaGraph.DependencyInjection'">
+        Condition="'$(MSBuildProjectName)' == 'Voluta'
+                   or '$(MSBuildProjectName)' == 'Voluta.Abstractions'
+                   or '$(MSBuildProjectName)' == 'Voluta.DependencyInjection'">
         <IsAotCompatible>true</IsAotCompatible>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     </PropertyGroup>
@@ -67,11 +67,11 @@
 
     <!-- NuGet package assets (icon + readme) for all packable library projects. -->
     <ItemGroup Condition="'$(IsPackable)' != 'false'">
-        <None Include="$(StemmaGraphPackageIconPath)"
+        <None Include="$(VolutaPackageIconPath)"
               Pack="true"
               PackagePath="$(PackageIcon)"
               Visible="false"
-              Condition="Exists('$(StemmaGraphPackageIconPath)')" />
+              Condition="Exists('$(VolutaPackageIconPath)')" />
         <None Include="$(MSBuildThisFileDirectory)README.md"
               Pack="true"
               PackagePath="README.md"

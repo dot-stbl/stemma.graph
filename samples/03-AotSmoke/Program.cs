@@ -9,13 +9,13 @@
 //
 // AOT path: fluent StateGraph + InMemory checkpointer only (no reflection serde).
 
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph.Builder;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph.Builder;
 
 var graph = new StateGraph()
     .AddChannel("value", ChannelKind.LastValue)
@@ -47,5 +47,5 @@ if (value is not "aot-ok")
     return 2;
 }
 
-Console.WriteLine("StemmaGraph AOT smoke: ok");
+Console.WriteLine("Voluta AOT smoke: ok");
 return 0;

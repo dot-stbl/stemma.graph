@@ -1,7 +1,7 @@
-# Contributing to StemmaGraph
+# Contributing to Voluta
 
-> **TL;DR:** clone → `dotnet build stemma.graph.slnx` → правь код →
-> `dotnet build` + `dotnet test` → commit (`[stemma](feat/...): ...`) →
+> **TL;DR:** clone → `dotnet build voluta.slnx` → правь код →
+> `dotnet build` + `dotnet test` → commit (`[voluta](feat/...): ...`) →
 > push → PR.
 
 ---
@@ -23,21 +23,21 @@ with C# Dev Kit.
 ## 2. Initial Setup
 
 ```bash
-git clone https://github.com/dot-stbl/stemma.graph.git
-cd stemma.graph
+git clone https://github.com/dot-stbl/voluta.git
+cd voluta
 
 # Git hooks (commit-msg strips AI attribution, pre-commit is no-op for now)
 git config core.hooksPath .githooks
 
 # Restore
-dotnet restore stemma.graph.slnx
+dotnet restore voluta.slnx
 ```
 
 ### Verify setup
 
 ```bash
-dotnet build stemma.graph.slnx    # 0 warnings / 0 errors
-dotnet test  stemma.graph.slnx    # all tests pass
+dotnet build voluta.slnx    # 0 warnings / 0 errors
+dotnet test  voluta.slnx    # all tests pass
 ```
 
 ## 3. Daily Workflow
@@ -58,10 +58,10 @@ Examples: `feature/state-graph-builder`, `fix/naming-violation`,
 ### 3.2 Code → Test → Lint → Commit
 
 ```bash
-dotnet build stemma.graph.slnx    # 0/0 — обязательно
-dotnet test  stemma.graph.slnx    # все тесты зелёные
+dotnet build voluta.slnx    # 0/0 — обязательно
+dotnet test  voluta.slnx    # все тесты зелёные
 git add <files>
-git commit -m "[stemma](feat/<area>): <subject>"
+git commit -m "[voluta](feat/<area>): <subject>"
 ```
 
 The `commit-msg` hook auto-strips AI co-author trailers (Claude, GPT, etc.)
@@ -77,8 +77,8 @@ git push -u origin feature/<name>
 ## 4. Building
 
 ```bash
-dotnet build stemma.graph.slnx                       # Debug
-dotnet build stemma.graph.slnx -c Release --nologo   # Release
+dotnet build voluta.slnx                       # Debug
+dotnet build voluta.slnx -c Release --nologo   # Release
 ```
 
 **Requirement: 0 warnings / 0 errors.** `TreatWarningsAsErrors=true` +
@@ -88,7 +88,7 @@ clean build means the rules pass. The rules themselves live in `.editorconfig`.
 ## 5. Testing
 
 ```bash
-dotnet test stemma.graph.slnx                              # everything
+dotnet test voluta.slnx                              # everything
 dotnet test --filter "FullyQualifiedName~StateGraph"       # focused
 ```
 
@@ -97,7 +97,7 @@ exists but has no real scenarios yet (those land alongside the runtime).
 
 ## 6. Commit Message Convention
 
-Format: `[stemma](feat/<area>): <subject>`
+Format: `[voluta](feat/<area>): <subject>`
 
 | Prefix | When |
 |--------|------|
@@ -109,9 +109,9 @@ Format: `[stemma](feat/<area>): <subject>`
 | `chore` | Build / tooling / deps |
 
 ```
-[stemma](feat/core): add StateGraph builder with fluent API
-[stemma](fix/checkpoint): resolve SQLite WAL mode on Windows
-[stemma](refactor): extract IReducer<T> from internal channel logic
+[voluta](feat/core): add StateGraph builder with fluent API
+[voluta](fix/checkpoint): resolve SQLite WAL mode on Windows
+[voluta](refactor): extract IReducer<T> from internal channel logic
 ```
 
 **Forbidden** in commit messages (and stripped by `commit-msg` hook):
@@ -133,7 +133,7 @@ and module layout.
 ## 9. Troubleshooting
 
 ### 9.1 `dotnet build` fails immediately
-NuGet restore not run: `dotnet restore stemma.graph.slnx`.
+NuGet restore not run: `dotnet restore voluta.slnx`.
 
 ### 9.2 Hooks not firing
 Check `git config core.hooksPath` → should be `.githooks`. On Windows, hooks

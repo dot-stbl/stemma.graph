@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Voluta.Samples.Shared</RootNamespace>
+    <Description>Shared CLI helpers for ReviewBot / DocQ harness samples (sandbox FS, chat client).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+  </ItemGroup>
+
+</Project>

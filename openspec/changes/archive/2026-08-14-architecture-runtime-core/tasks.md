@@ -14,7 +14,7 @@
 
 ## 3. Abstractions skeleton (first code change — later apply)
 
-- [x] 3.1 Define public contracts in `StemmaGraph.Abstractions`: channels, writes, NodeResult, CheckpointSnapshot (C-shape), ICheckpointer, stream events, Command, Send, PendingSend, GraphDescription
+- [x] 3.1 Define public contracts in `Voluta.Abstractions`: channels, writes, NodeResult, CheckpointSnapshot (C-shape), ICheckpointer, stream events, Command, Send, PendingSend, GraphDescription
 - [ ] 3.2 Add PublicAPI Unshipped tracking once types exist
 - [x] 3.3 Unit tests for pure types/helpers only (no full runtime yet)
 
@@ -26,7 +26,7 @@
 - [x] 4.4 InMemory checkpointer (full C-shape fields used by MVP paths; get miss + optional list)
 - [x] 4.5 Interrupt/resume path via NodeResult + ResumeAsync
 - [x] 4.6 Stream modes values/updates/events + InvokeAsync convenience
-- [x] 4.7 DI registration helpers (Both) + sample without DI (`StemmaGraph.DependencyInjection`)
+- [x] 4.7 DI registration helpers (Both) + sample without DI (`Voluta.DependencyInjection`)
 - [x] 4.8 Failure + cancellation paths per error-cancellation (throw → failed; cancel ≠ interrupt)
 - [x] 4.9 Unit scenario matrix from quality-engineering (all listed cases green)
 
@@ -36,9 +36,9 @@
 - [ ] 5.2 Sample using generated state for ReAct-style loop (HelloWorld still hand-channels)
 - [x] 5.3 Document fluent escape hatch without generator
 
-## 6. StemmaGraph.Testing package
+## 6. Voluta.Testing package
 
-- [x] 6.1 Create `StemmaGraph.Testing` project + slnx registration
+- [x] 6.1 Create `Voluta.Testing` project + slnx registration
 - [x] 6.2 RecordingCheckpointer + FaultInjectingCheckpointer
 - [x] 6.3 Stream capture helper + graph fixtures (linear, cycle, interrupt, multi-ready)
 - [x] 6.4 Checkpoint conformance suite running on InMemory in CI
@@ -52,7 +52,7 @@
 
 ## 8. Benchmarks and CI hardening
 
-- [x] 8.1 Add `benchmarks/StemmaGraph.Benchmarks` (BenchmarkDotNet): superstep overhead, cycle, parallel+Append, InMemory put/get
+- [x] 8.1 Add `benchmarks/Voluta.Benchmarks` (BenchmarkDotNet): superstep overhead, cycle, parallel+Append, InMemory put/get
 - [ ] 8.2 CI: expand path filters (`tests/**`, `openspec/**`, `benchmarks/**`); pack smoke; openspec validate when openspec changes
 - [x] 8.3 Ensure Testing / samples are not accidentally published (`IsPackable` / allowlist)
 - [ ] 8.4 Optional non-gating bench job (workflow_dispatch or schedule)
@@ -64,7 +64,7 @@ Originally listed as deferred for MVP cut; **shipped on main** after 0.1 runtime
 
 - [x] 9.1 Send fan-out execution (`Send`, `ContinueWithSends`, PUSH ready tasks, `PendingSends` on checkpoint)
 - [x] 9.2 Subgraph compose helper (`Subgraph.AsNode`) + topology export (`CompiledGraph.Describe`)
-- [x] 9.3 File checkpointer package (`StemmaGraph.Checkpoints.File` + conformance)
+- [x] 9.3 File checkpointer package (`Voluta.Checkpoints.File` + conformance)
 - [ ] 9.3b EF Core / S3 checkpointer packages (still deferred)
-- [x] 9.4 Microsoft.Extensions.AI integration package (`StemmaGraph.MicrosoftAi` thin helpers)
-- [x] 9.5 UI package first cut (`StemmaGraph.UI` + `MapStemmaUI`: inspector / HITL / topology)
+- [x] 9.4 Microsoft.Extensions.AI integration package (`Voluta.MicrosoftAi` thin helpers)
+- [x] 9.5 UI package first cut (`Voluta.UI` + `MapVolutaUI`: inspector / HITL / topology)

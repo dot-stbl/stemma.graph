@@ -9,14 +9,14 @@
 // First visit to `gate` interrupts with a payload. The host prints the
 // interrupt, then ResumeAsync(Command { Kind = "approve" }) continues the run.
 
-using StemmaGraph;
-using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Abstractions.Results;
-using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
-using StemmaGraph.Graph.Builder;
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph;
+using Voluta.Graph.Builder;
 
 const string ThreadId = "hitl-sample-1";
 
@@ -28,7 +28,7 @@ var graph = new StateGraph()
     .AddEdge("gate", GraphConstants.End)
     .Compile(checkpointer);
 
-Console.WriteLine("StemmaGraph sample 02 — interrupt / resume (HITL)");
+Console.WriteLine("Voluta sample 02 — interrupt / resume (HITL)");
 Console.WriteLine($"Thread: {ThreadId}");
 Console.WriteLine();
 

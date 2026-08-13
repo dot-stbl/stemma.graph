@@ -8,8 +8,8 @@ This file provides guidance to agents when working with code in this repository.
 ## Build & test
 
 ```bash
-dotnet build stemma.graph.slnx   # 0 warnings / 0 errors (warnings-as-errors)
-dotnet test  stemma.graph.slnx   # xUnit + Shouldly + NSubstitute + Bogus
+dotnet build voluta.slnx   # 0 warnings / 0 errors (warnings-as-errors)
+dotnet test  voluta.slnx   # xUnit + Shouldly + NSubstitute + Bogus
 ```
 
 ## Current status

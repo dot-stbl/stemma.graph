@@ -1,6 +1,6 @@
 ## Why
 
-.NET has no first-class equivalent of LangGraph for long-running, stateful agent graphs. Product harnesses need cycles, shared state with multi-writer merge, durable checkpoint/resume, HITL, and streaming — without Python and without CLI/Studio fluff. This change locks the architecture for StemmaGraph so implementation can follow a single, agreed design.
+.NET has no first-class equivalent of LangGraph for long-running, stateful agent graphs. Product harnesses need cycles, shared state with multi-writer merge, durable checkpoint/resume, HITL, and streaming — without Python and without CLI/Studio fluff. This change locks the architecture for Voluta so implementation can follow a single, agreed design.
 
 ## What Changes
 
@@ -11,7 +11,7 @@
 - Define **multi-mode streaming** (`values` / `updates` / `events`) as primary API; `InvokeAsync` as convenience.
 - Define **hosting Both**: standalone `CompiledGraph<T>` and DI registration.
 - Design **Send fan-out and subgraphs** (not shipped in MVP 0.1; contracts in specs).
-- Introduce **`StemmaGraph.Testing`** package: recording/fault-injecting checkpointers, stream capture, graph fixtures, checkpoint conformance suite.
+- Introduce **`Voluta.Testing`** package: recording/fault-injecting checkpointers, stream capture, graph fixtures, checkpoint conformance suite.
 - Define **graph topology** (nodes, edges, conditional edges, compile-time validation).
 - Define **error and cancellation** semantics for failed nodes, failed supersteps, and cooperative cancel.
 - Define **quality engineering**: unit scenario matrix, benchmarks project, CI gates (build/test/pack/openspec).
@@ -30,7 +30,7 @@
 - `public-api-hosting`: StateGraph builder, CompiledGraph, fluent + DI Both, compile-once lifetime.
 - `source-gen-state`: `[GraphState]` → TState / Update / Schema / ToWrites; escape hatches without gen.
 - `send-subgraphs`: Send fan-out and subgraph composition (design + requirements; out of MVP ship).
-- `testing-providers`: StemmaGraph.Testing helpers + checkpoint conformance suite.
+- `testing-providers`: Voluta.Testing helpers + checkpoint conformance suite.
 - `graph-topology`: AddNode/AddEdge/conditional edges, START/END wiring, compile validation.
 - `error-cancellation`: node/superstep failure, run status failed, cancellation behavior.
 - `quality-engineering`: unit scenario map, BenchmarkDotNet project, CI pack/openspec gates.
@@ -41,7 +41,7 @@
 
 ## Impact
 
-- **Packages (target layout):** `StemmaGraph.Abstractions`, `StemmaGraph` (runtime + InMemory), `StemmaGraph.Testing`, later `StemmaGraph.Checkpoints.*`, optional UI/AI packages.
+- **Packages (target layout):** `Voluta.Abstractions`, `Voluta` (runtime + InMemory), `Voluta.Testing`, later `Voluta.Checkpoints.*`, optional UI/AI packages.
 - **Repo docs:** decisions/roadmap align with this change; public README stays high-level until first ship.
 - **Dependencies:** none new until apply; design assumes .NET 10, `Microsoft.Extensions.AI` at integration boundary (not core).
 - **Non-goals:** LangSmith/CLI/Studio clones; own LLM SDK; replacing MAF.

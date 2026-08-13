@@ -3,7 +3,7 @@
   <!--
     Central Package Management: pin versions once, reference everywhere.
     CPM is OFF by default for this repo (each csproj declares its versions
-    explicitly, like the stemma convention).
+    explicitly, like the voluta convention).
 
     When we turn CPM on later, fill in the version lines below and remove
     the explicit Version= attributes from every csproj.

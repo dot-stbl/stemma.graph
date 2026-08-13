@@ -5,7 +5,7 @@ Documentation Q&A: **search sandbox** → **answer** (scripted or live chat).
 ## Run
 
 ```bash
-dotnet run --project samples/05-DocQ -- --offline --root . --question "What is StemmaGraph?"
+dotnet run --project samples/05-DocQ -- --offline --root . --question "What is Voluta?"
 ```
 
 ## Flags
