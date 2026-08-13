@@ -49,7 +49,8 @@ Not a 1:1 LangGraph port — .NET-native API.
 | Package | Role |
 |---------|------|
 | `StemmaGraph.Abstractions` | contracts (channels, checkpoint, NodeResult, …) |
-| `StemmaGraph` | runtime + InMemory checkpointer |
+| `StemmaGraph` | runtime + InMemory checkpointer (no DI package ref) |
+| `StemmaGraph.DependencyInjection` | `AddStemmaGraph` for `IServiceCollection` |
 | `StemmaGraph.Testing` | test doubles + conformance *(0.1)* |
 | `StemmaGraph.Checkpoints.*` | EF / S3 / File *(later)* |
 | `StemmaGraph.MicrosoftAi` / `StemmaGraph.UI.*` | *(later)* |

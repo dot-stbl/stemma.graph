@@ -4,10 +4,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using StemmaGraph.Graph;
 
-namespace StemmaGraph.Hosting;
+namespace StemmaGraph.DependencyInjection;
 
 /// <summary>
-///     Thin DI helpers for registering a compiled graph as a singleton.
+///     DI registration helpers for a compiled StemmaGraph.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddStemmaGraph(this IServiceCollection services, CompiledGraph graph)
     {
-        _ = services.AddSingleton(graph);
+        services.AddSingleton(graph);
         return services;
     }
 
@@ -33,7 +33,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Func<IServiceProvider, CompiledGraph> factory)
     {
-        _ = services.AddSingleton(factory);
+        services.AddSingleton(factory);
         return services;
     }
 }

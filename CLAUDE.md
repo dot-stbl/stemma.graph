@@ -44,12 +44,15 @@ LangGraph research notes (optional): temp `langgraph-explained.md` / clone.
 ```
 stemma.graph/
 ├── src/
-│   ├── StemmaGraph/                  ← main runtime + builder (TBD)
-│   └── StemmaGraph.Abstractions/     ← interfaces only, zero deps
-├── samples/                          ← 01-HelloWorld (placeholder)
-├── tests/                            ← smoke tests
-├── .githooks/                        ← commit-msg strips AI attribution
-├── .github/workflows/                ← ci.yml + publish.yml
+│   ├── StemmaGraph.Abstractions/           ← contracts, zero deps
+│   ├── StemmaGraph/                        ← runtime + InMemory (no DI ref)
+│   ├── StemmaGraph.DependencyInjection/    ← AddStemmaGraph
+│   ├── StemmaGraph.Testing/
+│   └── StemmaGraph.Generators/
+├── samples/                          ← 01-HelloWorld, 02-InterruptResume
+├── tests/
+├── assets/                           ← banner + NuGet icons
+├── openspec/
 └── stemma.graph.slnx
 ```
 

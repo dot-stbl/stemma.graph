@@ -68,7 +68,8 @@ openspec validate, expanded path filters. Release: tag `v*.*.*` → pack → nug
 
 ```
 StemmaGraph.Abstractions
-StemmaGraph                         # runtime + InMemory checkpointer
+StemmaGraph                         # runtime + InMemory (no ME.DI reference)
+StemmaGraph.DependencyInjection     # AddStemmaGraph for IServiceCollection
 StemmaGraph.Testing                 # doubles + conformance (pack carefully)
 StemmaGraph.Checkpoints.EntityFrameworkCore   # later
 StemmaGraph.Checkpoints.S3                    # later
@@ -110,7 +111,9 @@ disk only”.
 
 ### D-017 — Hosting: **Both**
 
-Standalone `CompiledGraph<T>` + DI registration of the same instance / runner.
+Standalone `CompiledGraph` (core) + DI via **`StemmaGraph.DependencyInjection`**
+(`AddStemmaGraph`). Core has **zero** `Microsoft.Extensions.DependencyInjection`
+package reference.
 
 ### D-018 — Send / subgraphs: designed, not MVP-shipped
 

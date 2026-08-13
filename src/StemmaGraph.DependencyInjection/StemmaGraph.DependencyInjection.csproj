@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Microsoft.Extensions.DependencyInjection registration helpers for
+      StemmaGraph (AddStemmaGraph). Core runtime has no DI package reference.
+    </Description>
+    <PackageTags>$(PackageTags);di;dependency-injection;hosting</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StemmaGraph\StemmaGraph.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
+  </ItemGroup>
+
+</Project>
