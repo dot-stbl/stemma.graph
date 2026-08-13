@@ -41,9 +41,12 @@
       } else if (cy) {
         setTimeout(() => {
           cy.resize();
-          cy.fit(undefined, 40);
-        }, 50);
+          cy.fit(undefined, 48);
+        }, 40);
       }
+    }
+    if (name === "hitl") {
+      document.getElementById("refreshHitl").click();
     }
   }
 
@@ -70,10 +73,15 @@
       .replaceAll('"', "&quot;");
   }
 
+  function clock() {
+    const d = new Date();
+    return d.toLocaleTimeString(undefined, { hour12: false });
+  }
+
   function renderCheckpointMeta(data) {
     const channels = Object.entries(data.channelValues || {})
       .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
-      .join("") || `<dt>—</dt><dd class="muted">no channels</dd>`;
+      .join("") || `<dt>—</dt><dd class="dim">empty</dd>`;
     const versions = Object.entries(data.channelVersions || {})
       .map(([k, v]) => `${escapeHtml(k)}@${escapeHtml(v)}`)
       .join(", ") || "—";
@@ -84,13 +92,13 @@
         <span class="meta-step">step ${escapeHtml(data.step)}</span>
       </div>
       <dl class="kv">
-        <dt>Thread</dt><dd>${escapeHtml(data.threadId)}</dd>
-        <dt>Last node</dt><dd>${escapeHtml(data.lastNode ?? "—")}</dd>
-        <dt>Next</dt><dd>${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
-        <dt>Interrupt</dt><dd>${escapeHtml(data.interruptPayload ?? "—")}</dd>
-        <dt>Versions</dt><dd>${versions}</dd>
+        <dt>thread</dt><dd>${escapeHtml(data.threadId)}</dd>
+        <dt>last</dt><dd>${escapeHtml(data.lastNode ?? "—")}</dd>
+        <dt>next</dt><dd>${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
+        <dt>interrupt</dt><dd>${escapeHtml(data.interruptPayload ?? "—")}</dd>
+        <dt>versions</dt><dd>${versions}</dd>
       </dl>
-      <div class="subheader">Channels</div>
+      <div class="subheader">channels</div>
       <dl class="kv">${channels}</dl>
     `;
   }
@@ -99,7 +107,9 @@
     const log = document.getElementById("streamLog");
     const line = document.createElement("div");
     line.className = "line" + (kind ? " kind-" + kind : "");
-    line.textContent = text;
+    line.innerHTML =
+      `<span class="ts">${escapeHtml(clock())}</span>` +
+      `<span class="msg">${escapeHtml(text)}</span>`;
     log.appendChild(line);
     log.scrollTop = log.scrollHeight;
   }
@@ -127,7 +137,7 @@
         const kind = (data.kind || "").toString().toLowerCase();
         const lineKind = kind.includes("interrupt") ? "interrupt" : "";
         appendStreamLine(
-          `step=${data.step} kind=${data.kind} nodes=[${(data.nodeNames || []).join(",")}] payload=${data.payload ?? ""}`,
+          `step=${data.step}  ${data.kind}  [${(data.nodeNames || []).join(",")}]  ${data.payload ?? ""}`,
           lineKind
         );
       } catch {
@@ -135,7 +145,7 @@
       }
     });
     eventSource.addEventListener("done", () => {
-      appendStreamLine("— done —", "done");
+      appendStreamLine("done", "done");
       stopStream();
       if (onDone) {
         onDone();
@@ -143,9 +153,9 @@
     });
     eventSource.addEventListener("error", (ev) => {
       if (ev.data) {
-        appendStreamLine("error: " + ev.data);
+        appendStreamLine("error: " + ev.data, "meta");
       } else {
-        appendStreamLine("connection closed / error", "meta");
+        appendStreamLine("connection closed", "meta");
       }
       stopStream();
     });
@@ -162,7 +172,7 @@
     if (!res.ok) {
       out.textContent = await res.text();
       document.getElementById("inspectorMeta").innerHTML =
-        `<p class="muted">Not found or error (${res.status}).</p>`;
+        `<div class="placeholder"><p>Not found (${res.status}).</p></div>`;
       return;
     }
     const data = await res.json();
@@ -173,7 +183,7 @@
   document.getElementById("startStream").onclick = () => {
     const id = document.getElementById("threadId").value.trim();
     if (!id) {
-      appendStreamLine("Enter a thread id first.", "meta");
+      appendStreamLine("thread id required", "meta");
       return;
     }
     bindStream(api("/api/threads/" + encodeURIComponent(id) + "/stream?mode=checkpoint"));
@@ -181,64 +191,83 @@
 
   document.getElementById("stopStream").onclick = stopStream;
 
+  function setHitlCount(n) {
+    const el = document.getElementById("hitlCount");
+    if (n > 0) {
+      el.hidden = false;
+      el.textContent = String(n);
+    } else {
+      el.hidden = true;
+    }
+  }
+
   document.getElementById("refreshHitl").onclick = async () => {
     const res = await fetch(api("/api/hitl"));
     const list = document.getElementById("hitlList");
     list.innerHTML = "";
     if (!res.ok) {
       list.innerHTML = `<div class="alert alert-danger">${escapeHtml(await res.text())}</div>`;
+      setHitlCount(0);
       return;
     }
     const items = await res.json();
+    setHitlCount(items.length);
     if (!items.length) {
       list.innerHTML = `
         <div class="empty">
-          <p class="empty-title">No interrupted threads</p>
-          <p class="empty-sub">
-            Sample seeds <code>ui-host-hitl-1</code> on startup. Resume clears the queue.
-          </p>
+          <p class="empty-title">No interrupts</p>
+          <p class="empty-sub">Sample seeds <code>ui-host-hitl-1</code> on startup.</p>
         </div>`;
       return;
     }
+
+    const table = document.createElement("table");
+    table.className = "hitl-table";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Thread</th>
+          <th>Status</th>
+          <th>Step</th>
+          <th>Node</th>
+          <th>Payload</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>`;
+    const tbody = table.querySelector("tbody");
+
     for (const item of items) {
-      const card = document.createElement("article");
-      card.className = "card hitl-card";
-      card.innerHTML = `
-        <div class="hitl-card-head">
-          <strong>${escapeHtml(item.threadId)}</strong>
-          ${statusBadge("Interrupted")}
-        </div>
-        <div class="hitl-meta">
-          step ${escapeHtml(item.step)} · node ${escapeHtml(item.lastNode ?? "-")}
-        </div>
-        <div class="hitl-payload">${escapeHtml(item.interruptPayload ?? "")}</div>
-        <div class="btn-row">
-          <button type="button" class="btn btn-success btn-sm" data-action="approve">Approve</button>
-          <button type="button" class="btn btn-danger-outline btn-sm" data-action="reject">Reject</button>
-          <button type="button" class="btn btn-ghost-brand btn-sm" data-action="stream">SSE resume</button>
-        </div>`;
-      card.querySelector('[data-action="approve"]').onclick = async () => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="thread">${escapeHtml(item.threadId)}</td>
+        <td>${statusBadge("Interrupted")}</td>
+        <td class="mono dim">${escapeHtml(item.step)}</td>
+        <td class="mono">${escapeHtml(item.lastNode ?? "—")}</td>
+        <td class="payload" title="${escapeHtml(item.interruptPayload ?? "")}">${escapeHtml(item.interruptPayload ?? "")}</td>
+        <td>
+          <div class="acts">
+            <button type="button" class="btn btn-ok btn-sm" data-action="approve">Approve</button>
+            <button type="button" class="btn btn-bad btn-sm" data-action="reject">Reject</button>
+            <button type="button" class="btn btn-sm" data-action="open">Open</button>
+          </div>
+        </td>`;
+      tr.querySelector('[data-action="approve"]').onclick = async () => {
         await resumeThread(item.threadId, "approve", "ok");
         document.getElementById("refreshHitl").click();
       };
-      card.querySelector('[data-action="reject"]').onclick = async () => {
+      tr.querySelector('[data-action="reject"]').onclick = async () => {
         await resumeThread(item.threadId, "reject", "no");
         document.getElementById("refreshHitl").click();
       };
-      card.querySelector('[data-action="stream"]').onclick = () => {
+      tr.querySelector('[data-action="open"]').onclick = () => {
         document.getElementById("threadId").value = item.threadId;
         setTab("inspector");
-        bindStream(
-          api(
-            "/api/threads/" +
-              encodeURIComponent(item.threadId) +
-              "/stream?mode=resume&kind=approve&payload=ok"
-          ),
-          () => document.getElementById("refreshHitl").click()
-        );
+        document.getElementById("loadThread").click();
       };
-      list.appendChild(card);
+      tbody.appendChild(tr);
     }
+    list.appendChild(table);
   };
 
   async function resumeThread(threadId, kind, payload) {
@@ -264,70 +293,73 @@
             label: "data(label)",
             "text-valign": "center",
             "text-halign": "center",
-            "font-size": 12,
-            "font-family": "IBM Plex Mono, ui-monospace, Consolas, monospace",
-            color: "#e8eef8",
-            "background-color": "#1c3a7a",
-            "background-opacity": 0.92,
-            "border-width": 1.5,
-            "border-color": "#a9c9ff",
+            "font-size": 11,
+            "font-family": "ui-monospace, Cascadia Code, Consolas, monospace",
+            color: "#fafafa",
+            "background-color": "#18181b",
+            "border-width": 1,
+            "border-color": "#3f3f46",
             width: "label",
             height: "label",
-            padding: "14px",
+            padding: "12px",
             shape: "round-rectangle",
-          },
-        },
-        {
-          selector: "node.terminal",
-          style: {
-            "background-color": "#1a4a24",
-            "border-color": "#a6ff86",
-            shape: "ellipse",
           },
         },
         {
           selector: "node.start",
           style: {
-            "background-color": "#6b1444",
-            "border-color": "#ff9bd8",
+            "background-color": "#1c3a7a",
+            "border-color": "#a9c9ff",
+            color: "#a9c9ff",
+            shape: "ellipse",
+          },
+        },
+        {
+          selector: "node.terminal",
+          style: {
+            "background-color": "#052e16",
+            "border-color": "#4ade80",
+            color: "#4ade80",
             shape: "ellipse",
           },
         },
         {
           selector: "node:selected",
           style: {
-            "border-width": 3,
-            "border-color": "#ffd68a",
+            "border-width": 2,
+            "border-color": "#a9c9ff",
+            "background-color": "#1c3a7a",
           },
         },
         {
           selector: "edge",
           style: {
-            width: 2,
-            "line-color": "#4a5d7a",
-            "target-arrow-color": "#4a5d7a",
+            width: 1.5,
+            "line-color": "#3f3f46",
+            "target-arrow-color": "#3f3f46",
             "target-arrow-shape": "triangle",
+            "arrow-scale": 0.9,
             "curve-style": "bezier",
             label: "data(label)",
             "font-size": 10,
-            "font-family": "IBM Plex Mono, ui-monospace, Consolas, monospace",
-            color: "#8b9bb8",
+            "font-family": "ui-monospace, Consolas, monospace",
+            color: "#71717a",
             "text-rotation": "autorotate",
-            "text-margin-y": -8,
+            "text-margin-y": -10,
           },
         },
         {
           selector: "edge:selected",
           style: {
-            "line-color": "#ffd68a",
-            "target-arrow-color": "#ffd68a",
-            width: 3,
+            "line-color": "#a9c9ff",
+            "target-arrow-color": "#a9c9ff",
+            width: 2,
           },
         },
       ],
       layout: { name: "preset" },
-      wheelSensitivity: 0.25,
-      minZoom: 0.2,
+      wheelSensitivity: 0.2,
+      minZoom: 0.25,
       maxZoom: 2.5,
     });
 
@@ -336,25 +368,24 @@
       document.getElementById("topoSelection").innerHTML = `
         <div class="meta-head">${statusBadge("Node")}</div>
         <dl class="kv">
-          <dt>Id</dt><dd>${escapeHtml(node.id())}</dd>
-          <dt>Label</dt><dd>${escapeHtml(node.data("label"))}</dd>
-          <dt>Kind</dt><dd>${escapeHtml(node.data("kind") || "node")}</dd>
+          <dt>id</dt><dd>${escapeHtml(node.id())}</dd>
+          <dt>kind</dt><dd>${escapeHtml(node.data("kind") || "node")}</dd>
         </dl>`;
     });
     cy.on("tap", "edge", (event) => {
       const edge = event.target;
       document.getElementById("topoSelection").innerHTML = `
-        <div class="meta-head"><span class="badge badge-edge">Edge</span></div>
+        <div class="meta-head"><span class="badge badge-edge">edge</span></div>
         <dl class="kv">
-          <dt>From</dt><dd>${escapeHtml(edge.data("source"))}</dd>
-          <dt>To</dt><dd>${escapeHtml(edge.data("target"))}</dd>
-          <dt>Label</dt><dd>${escapeHtml(edge.data("label") || "—")}</dd>
+          <dt>from</dt><dd>${escapeHtml(edge.data("source"))}</dd>
+          <dt>to</dt><dd>${escapeHtml(edge.data("target"))}</dd>
+          <dt>label</dt><dd>${escapeHtml(edge.data("label") || "—")}</dd>
         </dl>`;
     });
     cy.on("tap", (event) => {
       if (event.target === cy) {
         document.getElementById("topoSelection").innerHTML =
-          `<p class="muted">Click a node or edge on the graph.</p>`;
+          `<p class="dim">Select a node or edge.</p>`;
       }
     });
     return cy;
@@ -425,15 +456,14 @@
   function renderChannels(data) {
     const channels = Object.entries(data.channels || {});
     if (!channels.length) {
-      document.getElementById("topoChannels").innerHTML =
-        `<p class="muted">No channels.</p>`;
+      document.getElementById("topoChannels").innerHTML = `<p class="dim">No channels.</p>`;
       return;
     }
     document.getElementById("topoChannels").innerHTML =
       `<div class="chip-row">${channels
         .map(([k, v]) => `<span class="chip">${escapeHtml(k)} · ${escapeHtml(v)}</span>`)
         .join("")}</div>
-       <p class="muted" style="margin-top:0.65rem;font-size:0.75rem;font-family:var(--mono)">recursionLimit=${escapeHtml(data.recursionLimit)}</p>`;
+       <p class="dim mono small" style="margin-top:10px">recursionLimit=${escapeHtml(data.recursionLimit)}</p>`;
   }
 
   function paintTopology(data) {
@@ -441,7 +471,7 @@
     const host = ensureCy();
     if (!host) {
       document.getElementById("topoSelection").innerHTML =
-        `<div class="alert alert-warning">Cytoscape failed to load (CDN). Check network.</div>`;
+        `<div class="alert alert-warning">Cytoscape CDN failed to load.</div>`;
       return;
     }
     const elements = topologyToElements(data);
@@ -451,14 +481,14 @@
     host.layout({
       name: layoutName,
       rankDir: "LR",
-      nodeSep: 40,
-      edgeSep: 20,
-      rankSep: 60,
+      nodeSep: 36,
+      edgeSep: 16,
+      rankSep: 56,
       animate: false,
-      padding: 30,
+      padding: 40,
       directed: true,
     }).run();
-    host.fit(undefined, 40);
+    host.fit(undefined, 48);
     renderChannels(data);
     document.getElementById("topologyOut").textContent = JSON.stringify(data, null, 2);
   }
@@ -476,9 +506,15 @@
   document.getElementById("fitTopology").onclick = () => {
     if (cy) {
       cy.resize();
-      cy.fit(undefined, 40);
+      cy.fit(undefined, 48);
     } else if (lastTopology) {
       paintTopology(lastTopology);
     }
   };
+
+  // Prefetch interrupt count for rail badge
+  fetch(api("/api/hitl"))
+    .then((r) => (r.ok ? r.json() : []))
+    .then((items) => setHitlCount(Array.isArray(items) ? items.length : 0))
+    .catch(() => {});
 })();

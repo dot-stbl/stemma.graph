@@ -21,4 +21,6 @@
     <EmbeddedResource Include="wwwroot\**\*" />
   </ItemGroup>
 
+  <!-- brand.png is binary; served as raw bytes, not via string asset reader -->
+
 </Project>
