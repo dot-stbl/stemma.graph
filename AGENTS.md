@@ -15,5 +15,7 @@ dotnet test  stemma.graph.slnx   # xUnit + Shouldly + NSubstitute + Bogus
 ## Current status
 
 Scaffolding only — no runtime code yet. Architecture decisions live in
-[CLAUDE.md](CLAUDE.md). Research on LangGraph internals in progress (see
-`stemma-research.md` in temp dir).
+[.agents/decisions.md](.agents/decisions.md). Roadmap in
+[.agents/roadmap.md](.agents/roadmap.md). Conventions pointer in
+[.agents/conventions.md](.agents/conventions.md). Research on LangGraph
+internals in progress (see `stemma-research.md` in temp dir).

@@ -104,15 +104,36 @@ API-ключей.** Workflow: `.github/workflows/publish.yml` — триггер
 
 ## Где что лежит
 
+**Корень** — публичные точки входа и общие конфиги:
+
 - README.md — публичный обзор, quick start, roadmap.
 - CLAUDE.md — **этот файл**: внутренняя кухня, конвенции, workflow.
 - AGENTS.md — короткий указатель на CLAUDE.md для AI-агентов.
 - CONTRIBUTING.md — как контрибьютить (setup, build, tests, commit).
-- .agents/ — repo-local правила (когда появятся — сегодня пусто).
+- LICENSE — MIT.
+- .editorconfig / Directory.Build.props / Directory.Packages.props —
+  enforced стиль и build defaults.
+- .gitignore / .gitattributes — git hygiene.
+- .githooks/ — commit-msg (AI attribution strip), pre-commit (no-op).
+- .github/workflows/ — CI + publish.
+- stemma.graph.slnx — solution.
+
+**`.agents/`** — внутренние документы (не публикуются на NuGet, не
+рендерятся в README):
+
+- `.agents/decisions.md` — принятые решения + open questions.
+- `.agents/roadmap.md` — порядок работ.
+- `.agents/conventions.md` — где живут конвенции (single source of truth).
+- `.agents/adr/` — ADR (architecture decision records) для нетривиальных решений.
+- `.agents/research/` — внешние исследования (LangGraph internals и т.п.).
 
 ## Связанное
 
-- [LangGraph research notes](file:///C:/Users/bradw/AppData/Local/Temp/opencode/stemma-research.md)
-  — research по LangGraph internals (background agent).
-- `.agents/rules/` в user-global — общие C#/process правила (приоритет ниже
+- [`.agents/decisions.md`](.agents/decisions.md) — принятые решения.
+- [`.agents/roadmap.md`](.agents/roadmap.md) — что делаем дальше.
+- [`.agents/conventions.md`](.agents/conventions.md) — где живут конвенции.
+- [`.agents/research/`](.agents/research/) — внешние исследования.
+- LangGraph research notes (background agent, ещё в процессе):
+  `C:/Users/bradw/AppData/Local/Temp/opencode/stemma-research.md`.
+- `~/.agents/rules/` в user-global — общие C#/process правила (приоритет ниже
   repo-local).
