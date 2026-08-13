@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
@@ -74,6 +75,9 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
     /// <summary>
     ///     Loads the latest checkpoint for a thread.
     /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Checkpoint or null when missing.</returns>
     public Task<CheckpointSnapshot?> GetCheckpointAsync(
         string threadId,
         CancellationToken cancellationToken = default)
@@ -82,8 +86,12 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
     }
 
     /// <summary>
-    ///     Resumes an interrupted thread with a command.
+    ///     Resumes an interrupted thread with a command (drains to terminal event).
     /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="command">Resume command.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Terminal stream event.</returns>
     public async Task<StreamEvent> ResumeAsync(
         string threadId,
         Command command,
@@ -92,30 +100,39 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
         TrackThread(threadId);
         return await Graph.ResumeInvokeAsync(threadId, command, cancellationToken);
     }
-}
-
-/// <summary>
-///     HITL queue row.
-/// </summary>
-public sealed class HitlThreadSummary
-{
-    /// <summary>
-    ///     Thread id.
-    /// </summary>
-    public required string ThreadId { get; init; }
 
     /// <summary>
-    ///     Superstep of the interrupt.
+    ///     Streams resume events for an interrupted thread (SSE source).
     /// </summary>
-    public long Step { get; init; }
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="command">Resume command.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Live stream of graph events.</returns>
+    public IAsyncEnumerable<StreamEvent> StreamResumeAsync(
+        string threadId,
+        Command command,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(threadId);
+        return Graph.ResumeAsync(threadId, command, StreamMode.Events, cancellationToken);
+    }
 
     /// <summary>
-    ///     Last node name.
+    ///     Streams a new invoke for a thread (SSE source).
     /// </summary>
-    public string? LastNode { get; init; }
-
-    /// <summary>
-    ///     Interrupt payload string form.
-    /// </summary>
-    public string? InterruptPayload { get; init; }
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="input">Seed channel writes.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Live stream of graph events.</returns>
+    public IAsyncEnumerable<StreamEvent> StreamInvokeAsync(
+        string threadId,
+        IEnumerable<ChannelWrite> input,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(threadId);
+        return Graph.StreamAsync(
+            input,
+            new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Events },
+            cancellationToken);
+    }
 }

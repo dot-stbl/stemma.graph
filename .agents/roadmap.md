@@ -10,12 +10,12 @@
 |---|---|
 | Architecture specs | ✅ archived → `openspec/specs/*` (12 capabilities) |
 | MVP runtime | ✅ Pregel + InMemory + HITL + stream + DI + Testing + Generators |
-| Samples | ✅ 01 ReAct · 02 HITL · 03 AOT · 04 ReviewBot · 05 DocQ |
+| Samples | ✅ 01 ReAct · 02 HITL · 03 AOT · 04 ReviewBot · 05 DocQ · 06 UiHost |
 | Benchmarks | ✅ `benchmarks/Voluta.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
 | File checkpointer | ✅ `Voluta.Checkpoints.File` |
 | MicrosoftAi | ✅ thin `IChatClient` helpers |
-| UI | ✅ `Voluta.UI` + `MapVolutaUI` (inspector / HITL / topology) |
+| UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample 06 |
 | EF / S3 checkpointers | ❌ later |
 | NuGet 0.1 tag | ❌ PublicAPI review + publish |
 | Arch tests (package isolation) | ❌ later |
@@ -39,7 +39,7 @@
 2. CI: path filters for `openspec/**` / `benchmarks/**`; optional pack smoke
 3. Architecture tests: Abstractions isolation, core ↛ UI/EF
 4. EF checkpointer (if product needs it)
-5. UI polish: live stream SSE, multi-thread discovery
+5. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
 6. Docs site (D-011)
 
 ## Не в планах

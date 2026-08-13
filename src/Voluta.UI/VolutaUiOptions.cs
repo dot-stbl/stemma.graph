@@ -13,5 +13,5 @@ public sealed class VolutaUiOptions
     /// <summary>
     ///     URL path prefix (default <c>/voluta</c>).
     /// </summary>
-    public string PathPrefix { get; init; } = "/voluta";
+    public string PathPrefix { get; set; } = "/voluta";
 }

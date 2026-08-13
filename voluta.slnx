@@ -28,6 +28,7 @@
     <Project Path="samples/Voluta.Samples.Shared/Voluta.Samples.Shared.csproj" />
     <Project Path="samples/04-ReviewBot/04-ReviewBot.csproj" />
     <Project Path="samples/05-DocQ/05-DocQ.csproj" />
+    <Project Path="samples/06-UiHost/06-UiHost.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Voluta.Benchmarks/Voluta.Benchmarks.csproj" />

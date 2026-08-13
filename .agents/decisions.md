@@ -174,7 +174,7 @@ the NuGet tag:
 | Topology export | `CompiledGraph.Describe()` → `GraphDescription` |
 | File checkpointer | `Voluta.Checkpoints.File` |
 | MicrosoftAi | `Voluta.MicrosoftAi` (`ChatClientNode`) |
-| UI | `Voluta.UI` (`AddVolutaUI` / `MapVolutaUI`) |
+| UI | `Voluta.UI` Razor RCL (`AddVolutaUI` / `MapVolutaUI` + SSE) — see D-025 |
 | Harness samples | `04-ReviewBot`, `05-DocQ` + `Voluta.Samples.Shared` |
 | Benchmarks | `benchmarks/Voluta.Benchmarks` |
 
@@ -206,6 +206,31 @@ find/replace (793 вхождения в 166 файлах), а не deprecation �
 `Directory.Build.props`, завязанные на литеральные имена проектов (AOT-ярус и выбор иконки),
 обновлены вместе с именами — иначе они молча перестали бы срабатывать.
 
+### D-025 — UI package: **Razor RCL + SSE + MapVolutaUI options**
+
+**Решение (2026-08-14, issue #14):** `Voluta.UI` is a **Razor Class Library**
+(`Microsoft.NET.Sdk.Razor` + `FrameworkReference Microsoft.AspNetCore.App`), not a
+thin embedded-HTML-only package. Host integration stays Swagger-style:
+
+```csharp
+builder.Services.AddVolutaUI(session);
+app.MapVolutaUI(o => o.PathPrefix = "/voluta"); // default /voluta
+```
+
+**Live stream:** Server-Sent Events from `IAsyncEnumerable<StreamEvent>`
+(`GET {prefix}/api/threads/{threadId}/stream`) — **not** WebSocket / SignalR /
+Blazor Interactive Server as the default. Cancel on client disconnect.
+
+**UI chrome:** MD3 dark-ish tokens + Material Symbols; modular static shell
+(inspector / HITL / topology). No MudBlazor, no Vite/React monorepo in this package.
+
+**Isolation:** `Voluta` must not reference `Voluta.UI` (full-runtime host package only).
+
+**Sample:** `samples/06-UiHost` — `dotnet run` → `http://localhost:5188/voluta`.
+
+**Out of scope (still):** Interactive Server circuit default, multi-graph host,
+auth, full graph canvas editor.
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
@@ -213,7 +238,7 @@ find/replace (793 вхождения в 166 файлах), а не deprecation �
 3. **Token-level LLM streaming** — graph stream mode vs node-local (MicrosoftAi).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
-6. **UI next** — live SSE stream, multi-thread discovery beyond process-tracked ids.
+6. **UI next** — multi-thread discovery beyond process-tracked ids; richer inspector.
 7. **AOT CI** — optional `dotnet publish` smoke on schedule vs every PR (slow).
 8. **0.1 NuGet** — PublicAPI Unshipped review before first tag.
 
