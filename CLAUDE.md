@@ -23,7 +23,7 @@ API .NET-native: generic state, типизированные редьюсеры,
 **Specs (source of truth):** main OpenSpec under
 [`openspec/specs/`](openspec/specs/) (12 capabilities). Planning change archived:
 [`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](openspec/changes/archive/2026-08-14-architecture-runtime-core/).
-Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-023).
+Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-024).
 Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**

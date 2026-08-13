@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/dot-stbl/voluta">
-    <img src="https://raw.githubusercontent.com/dot-stbl/voluta/main/assets/banner-voluta.png"
+    <img src="https://raw.githubusercontent.com/dot-stbl/voluta/main/assets/banner.png"
          alt="Voluta — stateful, cyclic, durable agent graphs for .NET">
   </a>
 </p>
