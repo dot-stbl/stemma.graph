@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Checkpoint;
+namespace StemmaGraph.Abstractions.Checkpoint;
 
 /// <summary>
 ///     Pluggable durable store for C-shape checkpoints. Implementations live in core

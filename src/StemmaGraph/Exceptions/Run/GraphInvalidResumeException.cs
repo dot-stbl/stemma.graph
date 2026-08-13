@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime.Exceptions;
+namespace StemmaGraph.Exceptions.Run;
 
 /// <summary>
 ///     Resume was requested for a thread that is not interrupted.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Checkpoint;
+namespace StemmaGraph.Abstractions.Checkpoint;
 
 /// <summary>
 ///     A write produced by a completed task that has not yet been fully applied

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Checkpoint;
+using StemmaGraph.Abstractions.Checkpoint;
+
+namespace StemmaGraph.Testing.Checkpoint;
 
 /// <summary>
 ///     <see cref="ICheckpointer" /> decorator that throws on the N-th <see cref="PutAsync" />

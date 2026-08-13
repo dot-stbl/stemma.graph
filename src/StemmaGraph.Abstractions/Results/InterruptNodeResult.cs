@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Results;
+namespace StemmaGraph.Abstractions.Results;
 
 /// <summary>
 ///     HITL pause: run status becomes interrupted and a checkpoint records the payload.

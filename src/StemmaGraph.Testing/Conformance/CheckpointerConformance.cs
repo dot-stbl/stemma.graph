@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Runtime;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.Checkpoint;
 
-namespace StemmaGraph.Checkpoint;
+namespace StemmaGraph.Testing.Conformance;
 
 /// <summary>
 ///     Behavioral contract for <see cref="ICheckpointer" />. Call from provider unit tests

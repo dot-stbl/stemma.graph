@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.State;
+namespace StemmaGraph.Abstractions.State;
 
 /// <summary>
 ///     Marks whether a partial update property was set. Default is unset (no write).

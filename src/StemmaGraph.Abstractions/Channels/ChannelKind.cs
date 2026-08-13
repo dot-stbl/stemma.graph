@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Channels;
+namespace StemmaGraph.Abstractions.Channels;
 
 /// <summary>
 ///     Built-in channel merge kinds for multi-writer supersteps.

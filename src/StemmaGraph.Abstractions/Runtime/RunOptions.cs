@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Streaming;
 
-namespace StemmaGraph.Runtime;
+namespace StemmaGraph.Abstractions.Runtime;
 
 /// <summary>
 ///     Options for invoke / stream of a compiled graph. Cancellation is a method parameter, not options.

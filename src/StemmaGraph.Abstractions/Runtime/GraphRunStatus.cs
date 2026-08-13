@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime;
+namespace StemmaGraph.Abstractions.Runtime;
 
 /// <summary>
 ///     Lifecycle status of a graph run / thread checkpoint.

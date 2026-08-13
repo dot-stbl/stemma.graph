@@ -13,12 +13,14 @@
 // The agent is pure simulation: after two tool rounds it finishes.
 
 using StemmaGraph;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Graph;
-using StemmaGraph.Results;
-using StemmaGraph.Runtime;
-using StemmaGraph.Streaming;
+using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Graph.Builder;
+using StemmaGraph.Graph.Options;
 
 const string ThreadId = "react-sample-1";
 

@@ -2,9 +2,9 @@
 // Copyright (c) Stemma contributors
 
 using System.Collections;
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.Runtime.Channels;
+namespace StemmaGraph.Channels;
 
 /// <summary>
 ///     Channel that merges multiple superstep writes into an ordered list.

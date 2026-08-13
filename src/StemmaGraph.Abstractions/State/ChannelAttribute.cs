@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.State;
+namespace StemmaGraph.Abstractions.State;
 
 /// <summary>
 ///     Declares a state property as a named channel with a merge kind.

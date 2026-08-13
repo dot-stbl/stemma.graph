@@ -3,6 +3,7 @@
 
 using StemmaGraph.Checkpoint;
 using Xunit;
+using StemmaGraph.Testing.Conformance;
 
 namespace StemmaGraph.Testing.Unit.Conformance;
 

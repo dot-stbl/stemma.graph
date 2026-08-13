@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.Runtime.Channels;
+namespace StemmaGraph.Channels;
 
 /// <summary>
 ///     Internal channel storage with superstep multi-write update and checkpoint restore.

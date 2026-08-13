@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime;
+namespace StemmaGraph.Abstractions.Runtime;
 
 /// <summary>
 ///     Resume input for an interrupted thread (approve / reject / update / free-form payload).

@@ -16,8 +16,8 @@ namespace StemmaGraph.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class GraphStateGenerator : IIncrementalGenerator
 {
-    private const string GraphStateAttributeMetadataName = "StemmaGraph.State.GraphStateAttribute";
-    private const string ChannelAttributeMetadataName = "StemmaGraph.State.ChannelAttribute";
+    private const string GraphStateAttributeMetadataName = "StemmaGraph.Abstractions.State.GraphStateAttribute";
+    private const string ChannelAttributeMetadataName = "StemmaGraph.Abstractions.State.ChannelAttribute";
 
     private static readonly SymbolDisplayFormat TypeDisplayFormat = new(
         SymbolDisplayGlobalNamespaceStyle.Included,
@@ -165,8 +165,8 @@ public sealed class GraphStateGenerator : IIncrementalGenerator
         _ = sb.AppendLine("#nullable enable");
         _ = sb.AppendLine();
         _ = sb.AppendLine("using System.Collections.Generic;");
-        _ = sb.AppendLine("using StemmaGraph.Channels;");
-        _ = sb.AppendLine("using StemmaGraph.State;");
+        _ = sb.AppendLine("using StemmaGraph.Abstractions.Channels;");
+        _ = sb.AppendLine("using StemmaGraph.Abstractions.State;");
         _ = sb.AppendLine();
 
         if (ns is not null)

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
-using StemmaGraph.Runtime.Exceptions;
+using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Exceptions;
 
-namespace StemmaGraph.Runtime.Channels;
+namespace StemmaGraph.Channels;
 
 /// <summary>
 ///     Channel that accepts at most one write per superstep.

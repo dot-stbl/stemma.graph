@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-namespace StemmaGraph.Runtime.Exceptions;
+namespace StemmaGraph.Exceptions;
 
 /// <summary>
 ///     Base type for graph runtime and compile failures with a stable machine code.

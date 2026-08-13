@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 
-using StemmaGraph.Channels;
+using StemmaGraph.Abstractions.Channels;
 
-namespace StemmaGraph.State;
+namespace StemmaGraph.Abstractions.State;
 
 /// <summary>
 ///     One channel registration entry produced by hand or by source generation.

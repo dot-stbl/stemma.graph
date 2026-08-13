@@ -3,7 +3,7 @@
 //
 // Marker for the StemmaGraph.Abstractions assembly.
 
-namespace StemmaGraph;
+namespace StemmaGraph.Abstractions;
 
 /// <summary>
 ///     Marker interface for the StemmaGraph.Abstractions assembly.
