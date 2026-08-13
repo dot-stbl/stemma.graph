@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using StemmaGraph;

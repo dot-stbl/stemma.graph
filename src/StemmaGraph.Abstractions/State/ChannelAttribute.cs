@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Abstractions.Channels;
 
 namespace StemmaGraph.Abstractions.State;

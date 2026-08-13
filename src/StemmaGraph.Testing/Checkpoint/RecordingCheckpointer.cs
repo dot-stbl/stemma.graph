@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using System.Collections.Concurrent;
 using StemmaGraph.Abstractions.Checkpoint;
 namespace StemmaGraph.Testing.Checkpoint;

@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // Marker for the StemmaGraph.Abstractions assembly.
 
 namespace StemmaGraph.Abstractions;

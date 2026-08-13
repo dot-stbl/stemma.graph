@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // 03-AotSmoke — minimal linear graph for Native AOT publish smoke.
 //
 // Build (JIT / normal):

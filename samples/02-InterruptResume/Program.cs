@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // 02-InterruptResume — HITL interrupt + Command approve resume.
 //
 // Run:

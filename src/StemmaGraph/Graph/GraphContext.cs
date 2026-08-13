@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 namespace StemmaGraph.Graph;
 
 /// <summary>
@@ -12,10 +9,12 @@ namespace StemmaGraph.Graph;
 /// <param name="nodeName">Node being executed.</param>
 /// <param name="channelValues">Snapshot of channel values before this superstep's apply.</param>
 /// <param name="resumePayload">Resume command payload when continuing after interrupt.</param>
+/// <param name="taskPayload">Send/PUSH task payload when this invocation was scheduled via Send.</param>
 public sealed class GraphContext(
     string nodeName,
     IReadOnlyDictionary<string, object?> channelValues,
-    object? resumePayload = null)
+    object? resumePayload = null,
+    object? taskPayload = null)
 {
     private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
@@ -28,6 +27,11 @@ public sealed class GraphContext(
     ///     Resume command payload when this invocation is a resume of an interrupted node.
     /// </summary>
     public object? ResumePayload { get; } = resumePayload;
+
+    /// <summary>
+    ///     Payload from a <see cref="Abstractions.Runtime.Send" /> that scheduled this task.
+    /// </summary>
+    public object? TaskPayload { get; } = taskPayload;
 
     /// <summary>
     ///     Reads a channel value cast to <typeparamref name="T" />, or default when missing/null.

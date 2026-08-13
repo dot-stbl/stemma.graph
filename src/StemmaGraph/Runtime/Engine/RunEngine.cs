@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Results;
@@ -53,6 +50,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 store,
                 lastNode,
                 nextNodes,
+                [],
                 null),
             cancellationToken);
 
@@ -149,14 +147,14 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken)
     {
-        var ready = RunEngineRouting.FilterRunnableNodes(topology, nextNodes);
+        var readyTasks = RunEngineRouting.ToPullTasks(topology, nextNodes);
         var isFirstResumeStep = resumePayload is not null;
 
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (ready.Count == 0)
+            if (readyTasks.Count == 0)
             {
                 await checkpointer.PutAsync(
                     RunEngineSnapshots.Build(
@@ -165,6 +163,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Done,
                         store,
                         lastNode,
+                        [],
                         [],
                         interruptPayload: null),
                     cancellationToken);
@@ -188,7 +187,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        ready,
+                        readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [],
                         null),
                     cancellationToken);
 
@@ -202,7 +202,10 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             }
 
             var snapshot = store.SnapshotValues();
-            var orderedReady = ready.OrderBy(name => name, StringComparer.Ordinal).ToList();
+            var orderedReady = readyTasks
+                .OrderBy(static task => task.NodeName, StringComparer.Ordinal)
+                .ThenBy(static task => task.TaskId, StringComparer.Ordinal)
+                .ToList();
             var payloadForStep = isFirstResumeStep ? resumePayload : null;
             isFirstResumeStep = false;
 
@@ -222,7 +225,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Cancelled,
                         store,
                         lastNode,
-                        orderedReady,
+                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [],
                         null),
                     cancellationToken);
 
@@ -243,7 +247,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        orderedReady,
+                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [],
                         null),
                     cancellationToken);
 
@@ -269,6 +274,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         store,
                         lastNode,
                         [interrupted.NodeName],
+                        [],
                         interruptResult.Payload),
                     cancellationToken);
 
@@ -295,7 +301,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        orderedReady,
+                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [],
                         null),
                     cancellationToken);
 
@@ -308,26 +315,55 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 throw applyError;
             }
 
-            foreach (var nodeName in orderedReady)
+            foreach (var nodeName in orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal))
             {
                 store.MarkSeen(nodeName);
             }
 
-            lastNode = orderedReady[^1];
+            lastNode = orderedReady[^1].NodeName;
             var scheduled = new List<string>();
-            foreach (var nodeName in orderedReady)
+            var pendingSends = new List<PendingSend>();
+            foreach (var execution in executions)
             {
                 scheduled.AddRange(
                     RunEngineRouting.ResolveNextNodes(
                         topology,
-                        nodeName,
+                        execution.NodeName,
                         store.SnapshotValues(),
                         null));
+
+                if (execution.Result is ContinueNodeResult continueResult)
+                {
+                    foreach (var send in continueResult.Sends)
+                    {
+                        if (!topology.Nodes.ContainsKey(send.Node))
+                        {
+                            throw new GraphRunFailedException(
+                                $"Send targets unknown node '{send.Node}' from '{execution.NodeName}'.");
+                        }
+
+                        pendingSends.Add(
+                            new PendingSend
+                            {
+                                NodeName = send.Node,
+                                Payload = send.Payload,
+                                TaskId = $"{execution.NodeName}->{send.Node}:{pendingSends.Count}",
+                            });
+                    }
+                }
             }
 
-            ready = RunEngineRouting.FilterRunnableNodes(
+            var nextPull = RunEngineRouting.ToPullTasks(
                 topology,
                 [.. scheduled.Distinct(StringComparer.Ordinal)]);
+            readyTasks =
+            [
+                .. nextPull,
+                .. pendingSends.Select(static send => new ReadyTask(
+                    send.NodeName,
+                    send.TaskId,
+                    send.Payload)),
+            ];
 
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
@@ -336,14 +372,15 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     GraphRunStatus.Running,
                     store,
                     lastNode,
-                    ready,
+                    readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                    pendingSends,
                     null),
                 cancellationToken);
 
             foreach (var streamItem in RunEngineStreaming.EmitCommit(
                          options.StreamMode,
                          step,
-                         orderedReady,
+                         orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
                          writes,
                          store))
             {
@@ -354,11 +391,25 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 }
 
 /// <summary>
-///     Node execution result pair for one superstep task.
+///     One ready task for a superstep (PULL edge or PUSH/Send).
 /// </summary>
-internal sealed class NodeExecution(string nodeName, NodeResult result)
+internal sealed class ReadyTask(string nodeName, string taskId, object? taskPayload)
 {
     public string NodeName { get; } = nodeName;
+
+    public string TaskId { get; } = taskId;
+
+    public object? TaskPayload { get; } = taskPayload;
+}
+
+/// <summary>
+///     Node execution result pair for one superstep task.
+/// </summary>
+internal sealed class NodeExecution(string nodeName, string taskId, NodeResult result)
+{
+    public string NodeName { get; } = nodeName;
+
+    public string TaskId { get; } = taskId;
 
     public NodeResult Result { get; } = result;
 }
@@ -385,7 +436,7 @@ file static class RunEngineRouting
             : [];
     }
 
-    public static IReadOnlyList<string> FilterRunnableNodes(GraphTopology topology, IReadOnlyList<string> candidates)
+    public static IReadOnlyList<ReadyTask> ToPullTasks(GraphTopology topology, IReadOnlyList<string> candidates)
     {
         return
         [
@@ -393,6 +444,7 @@ file static class RunEngineRouting
                 .Where(name => name != GraphConstants.End && topology.Nodes.ContainsKey(name))
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(name => name, StringComparer.Ordinal)
+                .Select(static name => new ReadyTask(name, name, null))
         ];
     }
 }
@@ -418,25 +470,29 @@ file static class RunEngineExecution
 {
     public static async Task<ReadyExecutionOutcome> TryExecuteReadyAsync(
         GraphTopology topology,
-        IReadOnlyList<string> orderedReady,
+        IReadOnlyList<ReadyTask> orderedReady,
         IReadOnlyDictionary<string, object?> snapshot,
         object? resumePayload,
         CancellationToken cancellationToken)
     {
         try
         {
-            var tasks = orderedReady.Select(async nodeName =>
+            var tasks = orderedReady.Select(async readyTask =>
             {
-                if (!topology.Nodes.TryGetValue(nodeName, out var handler))
+                if (!topology.Nodes.TryGetValue(readyTask.NodeName, out var handler))
                 {
-                    throw new GraphRunFailedException($"Unknown ready node '{nodeName}'.");
+                    throw new GraphRunFailedException($"Unknown ready node '{readyTask.NodeName}'.");
                 }
 
-                var context = new GraphContext(nodeName, snapshot, resumePayload);
+                var context = new GraphContext(
+                    readyTask.NodeName,
+                    snapshot,
+                    resumePayload,
+                    readyTask.TaskPayload);
                 try
                 {
                     var result = await handler(context, cancellationToken);
-                    return new NodeExecution(nodeName, result);
+                    return new NodeExecution(readyTask.NodeName, readyTask.TaskId, result);
                 }
                 catch (OperationCanceledException)
                 {
@@ -445,7 +501,7 @@ file static class RunEngineExecution
                 catch (Exception exception) when (exception is not GraphException)
                 {
                     throw new GraphRunFailedException(
-                        $"Node '{nodeName}' threw: {exception.Message}",
+                        $"Node '{readyTask.NodeName}' threw: {exception.Message}",
                         exception);
                 }
             });
@@ -496,7 +552,9 @@ file static class RunEngineExecution
     public static IReadOnlyList<TaskChannelWrite> CollectWrites(IReadOnlyList<NodeExecution> executions)
     {
         var writes = new List<TaskChannelWrite>();
-        foreach (var execution in executions.OrderBy(static item => item.NodeName, StringComparer.Ordinal))
+        foreach (var execution in executions
+                     .OrderBy(static item => item.NodeName, StringComparer.Ordinal)
+                     .ThenBy(static item => item.TaskId, StringComparer.Ordinal))
         {
             if (execution.Result is not ContinueNodeResult continueResult)
             {
@@ -505,7 +563,7 @@ file static class RunEngineExecution
 
             foreach (var write in continueResult.Writes)
             {
-                writes.Add(new TaskChannelWrite(execution.NodeName, write));
+                writes.Add(new TaskChannelWrite(execution.TaskId, write));
             }
         }
 
@@ -525,6 +583,7 @@ file static class RunEngineSnapshots
         ChannelStore store,
         string? lastNode,
         IReadOnlyList<string> nextNodes,
+        IReadOnlyList<PendingSend> pendingSends,
         object? interruptPayload)
     {
         return new CheckpointSnapshot
@@ -536,6 +595,7 @@ file static class RunEngineSnapshots
             ChannelVersions = new Dictionary<string, long>(store.Versions, StringComparer.Ordinal),
             VersionsSeen = store.VersionsSeen,
             PendingWrites = [],
+            PendingSends = [.. pendingSends],
             LastNode = lastNode,
             NextNodes = [.. nextNodes],
             InterruptPayload = interruptPayload

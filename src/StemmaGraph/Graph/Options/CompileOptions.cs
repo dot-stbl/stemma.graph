@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 namespace StemmaGraph.Graph.Options;
 
 /// <summary>

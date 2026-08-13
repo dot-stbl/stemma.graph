@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Abstractions.Runtime;
 
 namespace StemmaGraph.Abstractions.Checkpoint;
@@ -53,6 +50,11 @@ public sealed class CheckpointSnapshot
     ///     Incomplete-task writes retained for mid-superstep recovery.
     /// </summary>
     public IReadOnlyList<PendingWrite> PendingWrites { get; init; } = [];
+
+    /// <summary>
+    ///     Scheduled PUSH/Send tasks not yet executed (empty when none).
+    /// </summary>
+    public IReadOnlyList<PendingSend> PendingSends { get; init; } = [];
 
     /// <summary>
     ///     Last node (or task) that completed before this snapshot, when known.

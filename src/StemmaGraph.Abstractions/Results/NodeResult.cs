@@ -1,7 +1,5 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Abstractions.Runtime;
 
 namespace StemmaGraph.Abstractions.Results;
 
@@ -33,6 +31,37 @@ public abstract class NodeResult
     public static ContinueNodeResult Continue(params ChannelWrite[] writes)
     {
         return new ContinueNodeResult(writes);
+    }
+
+    /// <summary>
+    ///     Creates a continue result with channel writes and Send fan-out tasks.
+    /// </summary>
+    /// <param name="writes">Partial channel updates.</param>
+    /// <param name="sends">PUSH tasks for the next superstep.</param>
+    /// <returns>A continue result with optional sends.</returns>
+    public static ContinueNodeResult Continue(IReadOnlyList<ChannelWrite> writes, IReadOnlyList<Send> sends)
+    {
+        return new ContinueNodeResult(writes, sends);
+    }
+
+    /// <summary>
+    ///     Creates a continue result that only schedules Send tasks (no channel writes).
+    /// </summary>
+    /// <param name="sends">PUSH tasks for the next superstep.</param>
+    /// <returns>A continue result with sends only.</returns>
+    public static ContinueNodeResult ContinueWithSends(IReadOnlyList<Send> sends)
+    {
+        return new ContinueNodeResult([], sends);
+    }
+
+    /// <summary>
+    ///     Creates a continue result that only schedules Send tasks (no channel writes).
+    /// </summary>
+    /// <param name="sends">PUSH tasks for the next superstep.</param>
+    /// <returns>A continue result with sends only.</returns>
+    public static ContinueNodeResult ContinueWithSends(params Send[] sends)
+    {
+        return new ContinueNodeResult([], sends);
     }
 
     /// <summary>

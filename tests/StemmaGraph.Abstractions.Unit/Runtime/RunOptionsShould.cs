@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using Shouldly;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;

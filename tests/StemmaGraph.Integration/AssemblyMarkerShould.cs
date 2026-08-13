@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // Integration-test smoke check. Real integration scenarios land in
 // subsequent PRs alongside the runtime.
 

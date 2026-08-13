@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // 05-DocQ — search sandbox markdown/docs → answer with citations.
 //
 // Run:

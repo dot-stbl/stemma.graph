@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // 01-HelloWorld — simulated ReAct loop (agent ⇄ tools) without a real LLM.
 //
 // Run:

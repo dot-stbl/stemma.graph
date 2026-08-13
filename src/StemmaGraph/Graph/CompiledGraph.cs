@@ -1,12 +1,10 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Runtime.Engine;
 using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Abstractions.Topology;
 
 namespace StemmaGraph.Graph;
 
@@ -27,6 +25,33 @@ public sealed class CompiledGraph
     {
         this.topology = topology;
         this.checkpointer = checkpointer;
+    }
+
+    /// <summary>
+    ///     Read-only topology export for UI / tooling (no handlers).
+    /// </summary>
+    public GraphDescription Describe()
+    {
+        var staticEdges = new List<GraphEdgeDescription>();
+        foreach (var (source, targets) in topology.StaticEdges.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+        {
+            foreach (var target in targets)
+            {
+                staticEdges.Add(new GraphEdgeDescription { Source = source, Target = target });
+            }
+        }
+
+        return new GraphDescription
+        {
+            Nodes = [.. topology.Nodes.Keys.OrderBy(static name => name, StringComparer.Ordinal)],
+            Channels = new Dictionary<string, ChannelKind>(topology.Channels, StringComparer.Ordinal),
+            StaticEdges = staticEdges,
+            ConditionalSources =
+            [
+                .. topology.ConditionalEdges.Keys.OrderBy(static name => name, StringComparer.Ordinal)
+            ],
+            RecursionLimit = topology.RecursionLimit,
+        };
     }
 
     /// <summary>

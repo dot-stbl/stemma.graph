@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // Smoke-test for the StemmaGraph test project. Real tests land in subsequent
 // PRs alongside the runtime types they cover.
 

@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using StemmaGraph.Abstractions.Checkpoint;
 using System.Collections.Concurrent;
 namespace StemmaGraph.Checkpoint;
@@ -90,6 +87,7 @@ file static class InMemoryCheckpointClone
                     StringComparer.Ordinal),
                 StringComparer.Ordinal),
             PendingWrites = [.. snapshot.PendingWrites],
+            PendingSends = [.. snapshot.PendingSends],
             LastNode = snapshot.LastNode,
             NextNodes = [.. snapshot.NextNodes],
             InterruptPayload = snapshot.InterruptPayload

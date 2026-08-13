@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-
 using Shouldly;
 using StemmaGraph;
 using StemmaGraph.Checkpoint;

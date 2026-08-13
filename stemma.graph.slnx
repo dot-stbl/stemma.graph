@@ -17,6 +17,9 @@
     <Project Path="src/StemmaGraph.DependencyInjection/StemmaGraph.DependencyInjection.csproj" />
     <Project Path="src/StemmaGraph.Testing/StemmaGraph.Testing.csproj" />
     <Project Path="src/StemmaGraph.Generators/StemmaGraph.Generators.csproj" />
+    <Project Path="src/StemmaGraph.Checkpoints.File/StemmaGraph.Checkpoints.File.csproj" />
+    <Project Path="src/StemmaGraph.MicrosoftAi/StemmaGraph.MicrosoftAi.csproj" />
+    <Project Path="src/StemmaGraph.UI/StemmaGraph.UI.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
@@ -36,5 +39,6 @@
     <Project Path="tests/StemmaGraph.Testing.Unit/StemmaGraph.Testing.Unit.csproj" />
     <Project Path="tests/StemmaGraph.Generators.Unit/StemmaGraph.Generators.Unit.csproj" />
     <Project Path="tests/StemmaGraph.Integration/StemmaGraph.Integration.csproj" />
+    <Project Path="tests/StemmaGraph.Checkpoints.File.Unit/StemmaGraph.Checkpoints.File.Unit.csproj" />
   </Folder>
 </Solution>

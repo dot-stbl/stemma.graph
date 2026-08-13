@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StemmaGraph UI</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="material-symbols-outlined">account_tree</span>
+      <strong>StemmaGraph</strong>
+      <span class="muted">ops console</span>
+    </div>
+    <nav class="tabs">
+      <button data-tab="inspector" class="active">Run inspector</button>
+      <button data-tab="hitl">HITL queue</button>
+      <button data-tab="topology">Topology</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="panel-inspector" class="panel active">
+      <div class="row">
+        <label>Thread id <input id="threadId" placeholder="react-sample-1" /></label>
+        <button id="loadThread" class="primary">Load checkpoint</button>
+      </div>
+      <pre id="inspectorOut" class="card">Load a thread to inspect the latest C-shape checkpoint.</pre>
+    </section>
+
+    <section id="panel-hitl" class="panel">
+      <div class="row">
+        <button id="refreshHitl" class="primary">Refresh interrupted</button>
+      </div>
+      <div id="hitlList" class="list"></div>
+    </section>
+
+    <section id="panel-topology" class="panel">
+      <div class="row">
+        <button id="loadTopology" class="primary">Load topology</button>
+      </div>
+      <pre id="topologyOut" class="card">Compiled graph metadata (nodes, edges, channels).</pre>
+    </section>
+  </main>
+
+  <script>
+    const base = location.pathname.replace(/\/?(index\.html)?$/, '') || '/stemma';
+    const api = (path) => base + path;
+
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.getElementById('loadThread').onclick = async () => {
+      const id = document.getElementById('threadId').value.trim();
+      const out = document.getElementById('inspectorOut');
+      if (!id) { out.textContent = 'Enter a thread id.'; return; }
+      const res = await fetch(api('/api/threads/' + encodeURIComponent(id)));
+      out.textContent = res.ok ? JSON.stringify(await res.json(), null, 2) : await res.text();
+    };
+
+    document.getElementById('refreshHitl').onclick = async () => {
+      const res = await fetch(api('/api/hitl'));
+      const list = document.getElementById('hitlList');
+      list.innerHTML = '';
+      if (!res.ok) { list.textContent = await res.text(); return; }
+      const items = await res.json();
+      if (!items.length) {
+        list.innerHTML = '<div class="card muted">No interrupted threads tracked in this process.</div>';
+        return;
+      }
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'card hitl';
+        card.innerHTML = `
+          <div><strong>${item.threadId}</strong> · step ${item.step} · ${item.lastNode ?? '-'}</div>
+          <div class="muted">${item.interruptPayload ?? ''}</div>
+          <button class="primary">Approve</button>`;
+        card.querySelector('button').onclick = async () => {
+          const r = await fetch(api('/api/threads/' + encodeURIComponent(item.threadId) + '/resume'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'approve', payload: 'ok' })
+          });
+          alert(r.ok ? JSON.stringify(await r.json()) : await r.text());
+          document.getElementById('refreshHitl').click();
+        };
+        list.appendChild(card);
+      }
+    };
+
+    document.getElementById('loadTopology').onclick = async () => {
+      const res = await fetch(api('/api/topology'));
+      document.getElementById('topologyOut').textContent =
+        res.ok ? JSON.stringify(await res.json(), null, 2) : await res.text();
+    };
+  </script>
+</body>
+</html>

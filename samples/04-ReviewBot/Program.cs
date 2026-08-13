@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) Stemma contributors
-//
 // 04-ReviewBot — plan → tool gather → review (HITL optional).
 //
 // Run (offline / no API key):
