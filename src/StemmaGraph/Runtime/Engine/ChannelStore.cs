@@ -8,7 +8,7 @@ using StemmaGraph.Runtime.Exceptions;
 namespace StemmaGraph.Runtime;
 
 /// <summary>
-/// Mutable channel map + versions for one run thread.
+///     Mutable channel map + versions for one run thread.
 /// </summary>
 internal sealed class ChannelStore
 {
@@ -17,7 +17,7 @@ internal sealed class ChannelStore
     private readonly Dictionary<string, Dictionary<string, long>> versionsSeen = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Creates channels for the declared topology.
+    ///     Creates channels for the declared topology.
     /// </summary>
     public ChannelStore(IReadOnlyDictionary<string, ChannelKind> declarations)
     {
@@ -29,34 +29,34 @@ internal sealed class ChannelStore
     }
 
     /// <summary>
-    /// Current channel versions.
+    ///     Current channel versions.
     /// </summary>
     public IReadOnlyDictionary<string, long> Versions => versions;
 
     /// <summary>
-    /// Per-node versions_seen map.
+    ///     Per-node versions_seen map.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, long>> VersionsSeen =>
         versionsSeen.ToDictionary(
-            pair => pair.Key,
-            pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
+            static pair => pair.Key,
+            static pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
                 pair.Value,
                 StringComparer.Ordinal),
             StringComparer.Ordinal);
 
     /// <summary>
-    /// Snapshots current channel values.
+    ///     Snapshots current channel values.
     /// </summary>
     public IReadOnlyDictionary<string, object?> SnapshotValues()
     {
         return channels.ToDictionary(
-            pair => pair.Key,
-            pair => pair.Value.Get(),
+            static pair => pair.Key,
+            static pair => pair.Value.Get(),
             StringComparer.Ordinal);
     }
 
     /// <summary>
-    /// Restores values, versions, and versions_seen from a checkpoint.
+    ///     Restores values, versions, and versions_seen from a checkpoint.
     /// </summary>
     public void Restore(
         IReadOnlyDictionary<string, object?> values,
@@ -76,7 +76,7 @@ internal sealed class ChannelStore
 
         foreach (var name in channels.Keys)
         {
-            versions.TryAdd(name, 0);
+            _ = versions.TryAdd(name, 0);
         }
 
         versionsSeen.Clear();
@@ -87,7 +87,7 @@ internal sealed class ChannelStore
     }
 
     /// <summary>
-    /// Seeds initial input writes before the first superstep (as step 0 apply).
+    ///     Seeds initial input writes before the first superstep (as step 0 apply).
     /// </summary>
     public void ApplyInputWrites(IEnumerable<ChannelWrite> writes)
     {
@@ -95,13 +95,13 @@ internal sealed class ChannelStore
     }
 
     /// <summary>
-    /// Applies node writes for a superstep in deterministic channel/task order.
+    ///     Applies node writes for a superstep in deterministic channel/task order.
     /// </summary>
     public void ApplyWrites(IReadOnlyList<(string TaskId, ChannelWrite Write)> writes)
     {
         var ordered = writes
-            .OrderBy(item => item.Write.ChannelName, StringComparer.Ordinal)
-            .ThenBy(item => item.TaskId, StringComparer.Ordinal)
+            .OrderBy(static item => item.Write.ChannelName, StringComparer.Ordinal)
+            .ThenBy(static item => item.TaskId, StringComparer.Ordinal)
             .ToList();
 
         var grouped = new Dictionary<string, List<object?>>(StringComparer.Ordinal);
@@ -120,7 +120,7 @@ internal sealed class ChannelStore
     }
 
     /// <summary>
-    /// Marks channels as seen by a node after it ran.
+    ///     Marks channels as seen by a node after it ran.
     /// </summary>
     public void MarkSeen(string nodeName)
     {
@@ -138,7 +138,7 @@ internal sealed class ChannelStore
 
     private void ApplyGrouped(IReadOnlyDictionary<string, List<object?>> grouped)
     {
-        foreach (var (channelName, values) in grouped.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        foreach (var (channelName, values) in grouped.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
             if (!channels.TryGetValue(channelName, out var channel))
             {
@@ -162,14 +162,14 @@ internal sealed class ChannelStore
 }
 
 /// <summary>
-/// Groups channel writes by name in deterministic order.
+///     Groups channel writes by name in deterministic order.
 /// </summary>
 file static class ChannelWriteGrouping
 {
     public static Dictionary<string, List<object?>> Group(IEnumerable<ChannelWrite> writes)
     {
         var grouped = new Dictionary<string, List<object?>>(StringComparer.Ordinal);
-        foreach (var write in writes.OrderBy(item => item.ChannelName, StringComparer.Ordinal))
+        foreach (var write in writes.OrderBy(static item => item.ChannelName, StringComparer.Ordinal))
         {
             if (!grouped.TryGetValue(write.ChannelName, out var list))
             {

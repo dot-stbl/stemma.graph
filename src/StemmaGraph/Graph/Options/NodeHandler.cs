@@ -7,7 +7,7 @@ using StemmaGraph.Results;
 namespace StemmaGraph;
 
 /// <summary>
-/// Async node body: reads a frozen superstep view and returns continue or interrupt.
+///     Async node body: reads a frozen superstep view and returns continue or interrupt.
 /// </summary>
 /// <param name="context">Frozen channel snapshot and resume payload for this task.</param>
 /// <param name="cancellationToken">Cooperative cancellation from the host stream/invoke.</param>

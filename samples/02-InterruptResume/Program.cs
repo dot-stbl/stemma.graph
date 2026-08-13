@@ -118,7 +118,7 @@ static string FormatValue(object? value)
         null => "null",
         string text => text,
         System.Collections.IEnumerable enumerable and not string =>
-            "[" + string.Join(", ", enumerable.Cast<object?>().Select(item => item?.ToString() ?? "null")) + "]",
+            "[" + string.Join(", ", enumerable.Cast<object?>().Select(static item => item?.ToString() ?? "null")) + "]",
         _ => value.ToString() ?? "null",
     };
 }

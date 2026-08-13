@@ -4,31 +4,24 @@
 namespace StemmaGraph.Runtime.Exceptions;
 
 /// <summary>
-/// Run exceeded the configured superstep recursion limit.
+///     Run exceeded the configured superstep recursion limit.
 /// </summary>
-public sealed class GraphOutOfStepsException : GraphException
+/// <remarks>
+///     Initializes an out-of-steps failure.
+/// </remarks>
+/// <param name="limit">Configured recursion limit.</param>
+/// <param name="step">Superstep index that exceeded the limit.</param>
+public sealed class GraphOutOfStepsException(int limit, long step) : GraphException(
+    "graph.out_of_steps",
+    $"Run exceeded recursion limit of {limit} supersteps (at step {step}).")
 {
     /// <summary>
-    /// Initializes an out-of-steps failure.
+    ///     Configured maximum superstep count.
     /// </summary>
-    /// <param name="limit">Configured recursion limit.</param>
-    /// <param name="step">Superstep index that exceeded the limit.</param>
-    public GraphOutOfStepsException(int limit, long step)
-        : base(
-            "graph.out_of_steps",
-            $"Run exceeded recursion limit of {limit} supersteps (at step {step}).")
-    {
-        Limit = limit;
-        Step = step;
-    }
+    public int Limit { get; } = limit;
 
     /// <summary>
-    /// Configured maximum superstep count.
+    ///     Superstep index when the limit was hit.
     /// </summary>
-    public int Limit { get; }
-
-    /// <summary>
-    /// Superstep index when the limit was hit.
-    /// </summary>
-    public long Step { get; }
+    public long Step { get; } = step;
 }

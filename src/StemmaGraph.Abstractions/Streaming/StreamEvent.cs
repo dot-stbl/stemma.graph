@@ -6,42 +6,42 @@ using StemmaGraph.Channels;
 namespace StemmaGraph.Streaming;
 
 /// <summary>
-/// Single item in a multi-mode graph stream (values, updates, or lifecycle events).
+///     Single item in a multi-mode graph stream (values, updates, or lifecycle events).
 /// </summary>
 public sealed class StreamEvent
 {
     /// <summary>
-    /// Stream mode that produced this item.
+    ///     Stream mode that produced this item.
     /// </summary>
     public StreamMode Mode { get; init; }
 
     /// <summary>
-    /// Lifecycle / observation kind for events-mode and terminal signals.
+    ///     Lifecycle / observation kind for events-mode and terminal signals.
     /// </summary>
     public StreamEventKind Kind { get; init; }
 
     /// <summary>
-    /// Superstep index associated with this item, when applicable.
+    ///     Superstep index associated with this item, when applicable.
     /// </summary>
     public long Step { get; init; }
 
     /// <summary>
-    /// Node names that produced updates, when applicable.
+    ///     Node names that produced updates, when applicable.
     /// </summary>
     public IReadOnlyList<string> NodeNames { get; init; } = [];
 
     /// <summary>
-    /// Channel writes for updates-mode items.
+    ///     Channel writes for updates-mode items.
     /// </summary>
     public IReadOnlyList<ChannelWrite> Writes { get; init; } = [];
 
     /// <summary>
-    /// Channel state snapshot for values-mode items (name → value).
+    ///     Channel state snapshot for values-mode items (name → value).
     /// </summary>
     public IReadOnlyDictionary<string, object?>? State { get; init; }
 
     /// <summary>
-    /// Optional interrupt or fault payload.
+    ///     Optional interrupt or fault payload.
     /// </summary>
     public object? Payload { get; init; }
 }

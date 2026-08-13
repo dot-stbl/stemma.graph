@@ -7,7 +7,7 @@ using StemmaGraph.Channels;
 namespace StemmaGraph.Runtime.Channels;
 
 /// <summary>
-/// Channel that merges multiple superstep writes into an ordered list.
+///     Channel that merges multiple superstep writes into an ordered list.
 /// </summary>
 internal sealed class AppendChannel : IChannel
 {
@@ -44,7 +44,7 @@ internal sealed class AppendChannel : IChannel
 }
 
 /// <summary>
-/// Pure helpers for append-channel merge semantics.
+///     Pure helpers for append-channel merge semantics.
 /// </summary>
 file static class AppendChannelHelpers
 {

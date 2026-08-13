@@ -6,12 +6,12 @@ using StemmaGraph.State;
 namespace StemmaGraph.Graph;
 
 /// <summary>
-/// Applies generated or hand-built channel schemas to a <see cref="StateGraph"/>.
+///     Applies generated or hand-built channel schemas to a <see cref="StateGraph" />.
 /// </summary>
 public static class StateGraphChannelExtensions
 {
     /// <summary>
-    /// Registers every channel from <paramref name="schema"/> on the builder.
+    ///     Registers every channel from <paramref name="schema" /> on the builder.
     /// </summary>
     /// <param name="graph">Graph builder.</param>
     /// <param name="schema">Channel schema (often from source-generated <c>CreateSchema</c>).</param>
@@ -20,7 +20,7 @@ public static class StateGraphChannelExtensions
     {
         foreach (var channel in schema.Channels)
         {
-            graph.AddChannel(channel.Name, channel.Kind);
+            _ = graph.AddChannel(channel.Name, channel.Kind);
         }
 
         return graph;

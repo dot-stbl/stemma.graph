@@ -2,32 +2,31 @@
 // Copyright (c) Stemma contributors
 
 using System.Collections.Concurrent;
-
 namespace StemmaGraph.Checkpoint;
 
 /// <summary>
-/// <see cref="ICheckpointer"/> decorator that records Put/Get/List calls for assertions.
+///     <see cref="ICheckpointer" /> decorator that records Put/Get/List calls for assertions.
 /// </summary>
 public sealed class RecordingCheckpointer(ICheckpointer inner) : ICheckpointer
 {
-    private readonly ConcurrentQueue<CheckpointSnapshot> puts = new();
     private readonly ConcurrentQueue<CheckpointGetRecord> gets = new();
     private readonly ConcurrentQueue<CheckpointListRecord> lists = new();
+    private readonly ConcurrentQueue<CheckpointSnapshot> puts = new();
 
     /// <summary>
-    /// Snapshots passed to <see cref="PutAsync"/>, in call order.
+    ///     Snapshots passed to <see cref="PutAsync" />, in call order.
     /// </summary>
-    public IReadOnlyList<CheckpointSnapshot> Puts => puts.ToArray();
+    public IReadOnlyList<CheckpointSnapshot> Puts => [.. puts];
 
     /// <summary>
-    /// Get calls (thread id + result), in call order.
+    ///     Get calls (thread id + result), in call order.
     /// </summary>
-    public IReadOnlyList<CheckpointGetRecord> Gets => gets.ToArray();
+    public IReadOnlyList<CheckpointGetRecord> Gets => [.. gets];
 
     /// <summary>
-    /// List calls (thread id + result), in call order.
+    ///     List calls (thread id + result), in call order.
     /// </summary>
-    public IReadOnlyList<CheckpointListRecord> Lists => lists.ToArray();
+    public IReadOnlyList<CheckpointListRecord> Lists => [.. lists];
 
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
@@ -56,14 +55,14 @@ public sealed class RecordingCheckpointer(ICheckpointer inner) : ICheckpointer
 }
 
 /// <summary>
-/// Recorded <see cref="ICheckpointer.GetAsync"/> invocation.
+///     Recorded <see cref="ICheckpointer.GetAsync" /> invocation.
 /// </summary>
 /// <param name="ThreadId">Thread identifier passed to Get.</param>
 /// <param name="Result">Snapshot returned by the inner checkpointer.</param>
 public sealed record CheckpointGetRecord(string ThreadId, CheckpointSnapshot? Result);
 
 /// <summary>
-/// Recorded <see cref="ICheckpointer.ListAsync"/> invocation.
+///     Recorded <see cref="ICheckpointer.ListAsync" /> invocation.
 /// </summary>
 /// <param name="ThreadId">Thread identifier passed to List.</param>
 /// <param name="Result">Snapshots returned by the inner checkpointer.</param>

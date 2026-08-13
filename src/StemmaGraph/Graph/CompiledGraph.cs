@@ -9,15 +9,15 @@ using StemmaGraph.Streaming;
 namespace StemmaGraph.Graph;
 
 /// <summary>
-/// Immutable compiled graph: stream, invoke, and resume against a checkpointer.
+///     Immutable compiled graph: stream, invoke, and resume against a checkpointer.
 /// </summary>
 public sealed class CompiledGraph
 {
-    private readonly GraphTopology topology;
     private readonly ICheckpointer checkpointer;
+    private readonly GraphTopology topology;
 
     /// <summary>
-    /// Initializes a compiled graph from validated topology.
+    ///     Initializes a compiled graph from validated topology.
     /// </summary>
     /// <param name="topology">Immutable topology.</param>
     /// <param name="checkpointer">Checkpoint provider for this runnable.</param>
@@ -28,7 +28,7 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    /// Streams multi-mode observation items until the run reaches a terminal status.
+    ///     Streams multi-mode observation items until the run reaches a terminal status.
     /// </summary>
     /// <param name="input">Initial channel writes (seed).</param>
     /// <param name="options">Thread id and stream mode.</param>
@@ -44,7 +44,7 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    /// Drains the stream to completion and returns the last terminal event.
+    ///     Drains the stream to completion and returns the last terminal event.
     /// </summary>
     /// <param name="input">Initial channel writes (seed).</param>
     /// <param name="options">Thread id and preferred observation mode.</param>
@@ -61,7 +61,7 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    /// Resumes an interrupted thread with a command.
+    ///     Resumes an interrupted thread with a command.
     /// </summary>
     /// <param name="threadId">Thread identifier.</param>
     /// <param name="command">Resume payload / values.</param>
@@ -76,7 +76,7 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    /// Resumes an interrupted thread with a command and stream mode.
+    ///     Resumes an interrupted thread with a command and stream mode.
     /// </summary>
     /// <param name="threadId">Thread identifier.</param>
     /// <param name="command">Resume payload / values.</param>
@@ -94,7 +94,7 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    /// Drains a resume stream to the next terminal event.
+    ///     Drains a resume stream to the next terminal event.
     /// </summary>
     /// <param name="threadId">Thread identifier.</param>
     /// <param name="command">Resume payload / values.</param>
@@ -135,7 +135,7 @@ public sealed class CompiledGraph
         return last ?? new StreamEvent
         {
             Mode = streamMode,
-            Kind = StreamEventKind.End,
+            Kind = StreamEventKind.End
         };
     }
 }

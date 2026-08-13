@@ -4,47 +4,47 @@
 namespace StemmaGraph.Streaming;
 
 /// <summary>
-/// Discriminator for lifecycle and observation stream items.
+///     Discriminator for lifecycle and observation stream items.
 /// </summary>
 public enum StreamEventKind
 {
     /// <summary>
-    /// Unspecified or mode-default item.
+    ///     Unspecified or mode-default item.
     /// </summary>
     None = 0,
 
     /// <summary>
-    /// Run or stream started.
+    ///     Run or stream started.
     /// </summary>
     Start = 1,
 
     /// <summary>
-    /// Values-mode state snapshot after a commit.
+    ///     Values-mode state snapshot after a commit.
     /// </summary>
     Values = 2,
 
     /// <summary>
-    /// Updates-mode channel write delta.
+    ///     Updates-mode channel write delta.
     /// </summary>
     Updates = 3,
 
     /// <summary>
-    /// Run interrupted for HITL.
+    ///     Run interrupted for HITL.
     /// </summary>
     Interrupt = 4,
 
     /// <summary>
-    /// Run completed successfully.
+    ///     Run completed successfully.
     /// </summary>
     End = 5,
 
     /// <summary>
-    /// Run failed.
+    ///     Run failed.
     /// </summary>
     Failed = 6,
 
     /// <summary>
-    /// Run cancelled.
+    ///     Run cancelled.
     /// </summary>
-    Cancelled = 7,
+    Cancelled = 7
 }

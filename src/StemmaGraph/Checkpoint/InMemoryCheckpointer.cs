@@ -2,11 +2,10 @@
 // Copyright (c) Stemma contributors
 
 using System.Collections.Concurrent;
-
 namespace StemmaGraph.Checkpoint;
 
 /// <summary>
-/// Process-local C-shape checkpointer for tests and single-process samples.
+///     Process-local C-shape checkpointer for tests and single-process samples.
 /// </summary>
 public sealed class InMemoryCheckpointer : ICheckpointer
 {
@@ -60,7 +59,7 @@ public sealed class InMemoryCheckpointer : ICheckpointer
         lock (list)
         {
             var ordered = list
-                .OrderBy(snapshot => snapshot.Step)
+                .OrderBy(static snapshot => snapshot.Step)
                 .Select(InMemoryCheckpointClone.Clone)
                 .ToList();
             return Task.FromResult<IReadOnlyList<CheckpointSnapshot>>(ordered);
@@ -69,7 +68,7 @@ public sealed class InMemoryCheckpointer : ICheckpointer
 }
 
 /// <summary>
-/// Deep-enough clone of C-shape snapshots for InMemory isolation.
+///     Deep-enough clone of C-shape snapshots for InMemory isolation.
 /// </summary>
 file static class InMemoryCheckpointClone
 {
@@ -84,15 +83,15 @@ file static class InMemoryCheckpointClone
             ChannelValues = new Dictionary<string, object?>(snapshot.ChannelValues, StringComparer.Ordinal),
             ChannelVersions = new Dictionary<string, long>(snapshot.ChannelVersions, StringComparer.Ordinal),
             VersionsSeen = snapshot.VersionsSeen.ToDictionary(
-                pair => pair.Key,
-                pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
+                static pair => pair.Key,
+                static pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
                     pair.Value,
                     StringComparer.Ordinal),
                 StringComparer.Ordinal),
-            PendingWrites = snapshot.PendingWrites.ToList(),
+            PendingWrites = [.. snapshot.PendingWrites],
             LastNode = snapshot.LastNode,
-            NextNodes = snapshot.NextNodes.ToList(),
-            InterruptPayload = snapshot.InterruptPayload,
+            NextNodes = [.. snapshot.NextNodes],
+            InterruptPayload = snapshot.InterruptPayload
         };
     }
 }

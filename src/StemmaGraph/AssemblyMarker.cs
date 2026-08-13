@@ -8,7 +8,7 @@
 namespace StemmaGraph;
 
 /// <summary>
-/// Marker type for the StemmaGraph assembly. Real public surface lands in
-/// subsequent PRs during the MVP implementation.
+///     Marker type for the StemmaGraph assembly. Real public surface lands in
+///     subsequent PRs during the MVP implementation.
 /// </summary>
 public static class AssemblyMarker;

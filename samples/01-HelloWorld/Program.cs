@@ -32,7 +32,7 @@ var graph = new StateGraph()
     .AddEdge(GraphConstants.Start, "agent")
     .AddConditionalEdges(
         "agent",
-        context => context.Read<string>("status") == "tools" ? "tools" : GraphConstants.End)
+        static context => context.Read<string>("status") == "tools" ? "tools" : GraphConstants.End)
     .AddEdge("tools", "agent")
     .Compile(checkpointer, new CompileOptions { RecursionLimit = 32 });
 
@@ -127,7 +127,7 @@ static string FormatValue(object? value)
         null => "null",
         string text => text,
         System.Collections.IEnumerable enumerable and not string =>
-            "[" + string.Join(", ", enumerable.Cast<object?>().Select(item => item?.ToString() ?? "null")) + "]",
+            "[" + string.Join(", ", enumerable.Cast<object?>().Select(static item => item?.ToString() ?? "null")) + "]",
         _ => value.ToString() ?? "null",
     };
 }

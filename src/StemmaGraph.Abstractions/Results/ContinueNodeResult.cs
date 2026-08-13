@@ -6,21 +6,16 @@ using StemmaGraph.Channels;
 namespace StemmaGraph.Results;
 
 /// <summary>
-/// Successful node completion carrying partial channel writes for apply_writes.
+///     Successful node completion carrying partial channel writes for apply_writes.
 /// </summary>
-public sealed class ContinueNodeResult : NodeResult
+/// <remarks>
+///     Initializes a continue result.
+/// </remarks>
+/// <param name="writes">Partial channel updates; empty means no channel changes.</param>
+public sealed class ContinueNodeResult(IReadOnlyList<ChannelWrite> writes) : NodeResult
 {
     /// <summary>
-    /// Initializes a continue result.
+    ///     Partial channel writes produced by the node.
     /// </summary>
-    /// <param name="writes">Partial channel updates; empty means no channel changes.</param>
-    public ContinueNodeResult(IReadOnlyList<ChannelWrite> writes)
-    {
-        Writes = writes;
-    }
-
-    /// <summary>
-    /// Partial channel writes produced by the node.
-    /// </summary>
-    public IReadOnlyList<ChannelWrite> Writes { get; }
+    public IReadOnlyList<ChannelWrite> Writes { get; } = writes;
 }

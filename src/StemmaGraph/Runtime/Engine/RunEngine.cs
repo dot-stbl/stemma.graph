@@ -13,17 +13,18 @@ using StemmaGraph.Streaming;
 namespace StemmaGraph.Runtime;
 
 /// <summary>
-/// Pregel superstep loop for a single stream/invoke/resume session.
+///     Pregel superstep loop for a single stream/invoke/resume session.
 /// </summary>
 internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpointer)
 {
     /// <summary>
-    /// Runs from input (or empty) until terminal, yielding stream events for the selected mode.
+    ///     Runs from input (or empty) until terminal, yielding stream events for the selected mode.
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> StreamAsync(
         IEnumerable<ChannelWrite> input,
         RunOptions options,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken = default)
     {
         var store = new ChannelStore(topology.Channels);
         var inputList = input.ToList();
@@ -36,7 +37,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             topology,
             GraphConstants.Start,
             store.SnapshotValues(),
-            resumePayload: null);
+            null);
         long step = 0;
         string? lastNode = null;
 
@@ -48,7 +49,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 store,
                 lastNode,
                 nextNodes,
-                interruptPayload: null),
+                null),
             cancellationToken);
 
         if (options.StreamMode == StreamMode.Events)
@@ -57,7 +58,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             {
                 Mode = StreamMode.Events,
                 Kind = StreamEventKind.Start,
-                Step = step,
+                Step = step
             };
         }
 
@@ -67,7 +68,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                            nextNodes,
                            step,
                            lastNode,
-                           resumePayload: null,
+                           null,
                            cancellationToken))
         {
             yield return item;
@@ -75,21 +76,18 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
     }
 
     /// <summary>
-    /// Resumes an interrupted thread with a command payload.
+    ///     Resumes an interrupted thread with a command payload.
     /// </summary>
     public async IAsyncEnumerable<StreamEvent> ResumeAsync(
         string threadId,
         Command command,
         StreamMode streamMode,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken = default)
     {
-        var checkpoint = await checkpointer.GetAsync(threadId, cancellationToken);
-        if (checkpoint is null)
-        {
-            throw new GraphInvalidResumeException(
-                $"No checkpoint found for thread '{threadId}'.");
-        }
-
+        var checkpoint = await checkpointer.GetAsync(threadId, cancellationToken) ??
+                         throw new GraphInvalidResumeException(
+                             $"No checkpoint found for thread '{threadId}'.");
         if (checkpoint.Status != GraphRunStatus.Interrupted)
         {
             throw new GraphInvalidResumeException(
@@ -105,7 +103,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         }
 
         var nextNodes = checkpoint.NextNodes.Count > 0
-            ? checkpoint.NextNodes.ToList()
+            ? [.. checkpoint.NextNodes]
             : RunEngineRouting.ResolveNextNodes(
                 topology,
                 GraphConstants.Start,
@@ -120,7 +118,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             {
                 Mode = StreamMode.Events,
                 Kind = StreamEventKind.Start,
-                Step = checkpoint.Step,
+                Step = checkpoint.Step
             };
         }
 
@@ -144,7 +142,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         long step,
         string? lastNode,
         object? resumePayload,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken)
     {
         var ready = RunEngineRouting.FilterRunnableNodes(topology, nextNodes);
         var isFirstResumeStep = resumePayload is not null;
@@ -186,7 +185,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         store,
                         lastNode,
                         ready,
-                        interruptPayload: null),
+                        null),
                     cancellationToken);
 
                 yield return RunEngineStreaming.Terminal(
@@ -220,7 +219,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         store,
                         lastNode,
                         orderedReady,
-                        interruptPayload: null),
+                        null),
                     cancellationToken);
 
                 yield return RunEngineStreaming.Terminal(
@@ -241,7 +240,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         store,
                         lastNode,
                         orderedReady,
-                        interruptPayload: null),
+                        null),
                     cancellationToken);
 
                 yield return RunEngineStreaming.Terminal(
@@ -276,7 +275,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     Step = step,
                     NodeNames = [interrupted.NodeName],
                     Payload = interruptResult.Payload,
-                    State = options.StreamMode == StreamMode.Values ? store.SnapshotValues() : null,
+                    State = options.StreamMode == StreamMode.Values ? store.SnapshotValues() : null
                 };
                 yield break;
             }
@@ -293,7 +292,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         store,
                         lastNode,
                         orderedReady,
-                        interruptPayload: null),
+                        null),
                     cancellationToken);
 
                 yield return RunEngineStreaming.Terminal(
@@ -319,12 +318,12 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         topology,
                         nodeName,
                         store.SnapshotValues(),
-                        resumePayload: null));
+                        null));
             }
 
             ready = RunEngineRouting.FilterRunnableNodes(
                 topology,
-                scheduled.Distinct(StringComparer.Ordinal).ToList());
+                [.. scheduled.Distinct(StringComparer.Ordinal)]);
 
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
@@ -334,7 +333,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     store,
                     lastNode,
                     ready,
-                    interruptPayload: null),
+                    null),
                 cancellationToken);
 
             foreach (var streamItem in RunEngineStreaming.EmitCommit(
@@ -351,7 +350,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 }
 
 /// <summary>
-/// Node execution result pair for one superstep task.
+///     Node execution result pair for one superstep task.
 /// </summary>
 internal sealed class NodeExecution(string nodeName, NodeResult result)
 {
@@ -361,7 +360,7 @@ internal sealed class NodeExecution(string nodeName, NodeResult result)
 }
 
 /// <summary>
-/// Ready-set routing helpers.
+///     Ready-set routing helpers.
 /// </summary>
 file static class RunEngineRouting
 {
@@ -374,26 +373,28 @@ file static class RunEngineRouting
         if (topology.ConditionalEdges.TryGetValue(source, out var router))
         {
             var context = new GraphContext(source, channelValues, resumePayload);
-            return router(context).ToList();
+            return [.. router(context)];
         }
 
         return topology.StaticEdges.TryGetValue(source, out var targets)
-            ? targets.ToList()
+            ? [.. targets]
             : [];
     }
 
     public static List<string> FilterRunnableNodes(GraphTopology topology, IReadOnlyList<string> candidates)
     {
-        return candidates
-            .Where(name => name != GraphConstants.End && topology.Nodes.ContainsKey(name))
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
+        return
+        [
+            .. candidates
+                .Where(name => name != GraphConstants.End && topology.Nodes.ContainsKey(name))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(name => name, StringComparer.Ordinal)
+        ];
     }
 }
 
 /// <summary>
-/// Outcome of attempting to execute the ready set.
+///     Outcome of attempting to execute the ready set.
 /// </summary>
 internal sealed class ReadyExecutionOutcome
 {
@@ -407,7 +408,7 @@ internal sealed class ReadyExecutionOutcome
 }
 
 /// <summary>
-/// Parallel node execution helpers.
+///     Parallel node execution helpers.
 /// </summary>
 file static class RunEngineExecution
 {
@@ -447,7 +448,7 @@ file static class RunEngineExecution
 
             return new ReadyExecutionOutcome
             {
-                Executions = (await Task.WhenAll(tasks)).ToList(),
+                Executions = [.. await Task.WhenAll(tasks)]
             };
         }
         catch (OperationCanceledException exception)
@@ -455,7 +456,7 @@ file static class RunEngineExecution
             return new ReadyExecutionOutcome
             {
                 Cancelled = true,
-                Exception = exception,
+                Exception = exception
             };
         }
         catch (GraphException exception)
@@ -468,7 +469,7 @@ file static class RunEngineExecution
             {
                 Failure = new GraphRunFailedException(
                     $"Node execution failed: {exception.Message}",
-                    exception),
+                    exception)
             };
         }
     }
@@ -491,7 +492,7 @@ file static class RunEngineExecution
     public static List<(string TaskId, ChannelWrite Write)> CollectWrites(IReadOnlyList<NodeExecution> executions)
     {
         var writes = new List<(string TaskId, ChannelWrite Write)>();
-        foreach (var execution in executions.OrderBy(item => item.NodeName, StringComparer.Ordinal))
+        foreach (var execution in executions.OrderBy(static item => item.NodeName, StringComparer.Ordinal))
         {
             if (execution.Result is not ContinueNodeResult continueResult)
             {
@@ -509,7 +510,7 @@ file static class RunEngineExecution
 }
 
 /// <summary>
-/// Checkpoint snapshot builders for the run engine.
+///     Checkpoint snapshot builders for the run engine.
 /// </summary>
 file static class RunEngineSnapshots
 {
@@ -532,14 +533,14 @@ file static class RunEngineSnapshots
             VersionsSeen = store.VersionsSeen,
             PendingWrites = [],
             LastNode = lastNode,
-            NextNodes = nextNodes.ToList(),
-            InterruptPayload = interruptPayload,
+            NextNodes = [.. nextNodes],
+            InterruptPayload = interruptPayload
         };
     }
 }
 
 /// <summary>
-/// Stream event emission helpers.
+///     Stream event emission helpers.
 /// </summary>
 file static class RunEngineStreaming
 {
@@ -557,8 +558,8 @@ file static class RunEngineStreaming
                 Mode = StreamMode.Updates,
                 Kind = StreamEventKind.Updates,
                 Step = step,
-                NodeNames = nodeNames.ToList(),
-                Writes = writes.Select(item => item.Write).ToList(),
+                NodeNames = [.. nodeNames],
+                Writes = [.. writes.Select(static item => item.Write)]
             };
         }
         else if (mode == StreamMode.Values)
@@ -568,8 +569,8 @@ file static class RunEngineStreaming
                 Mode = StreamMode.Values,
                 Kind = StreamEventKind.Values,
                 Step = step,
-                NodeNames = nodeNames.ToList(),
-                State = store.SnapshotValues(),
+                NodeNames = [.. nodeNames],
+                State = store.SnapshotValues()
             };
         }
     }
@@ -587,7 +588,7 @@ file static class RunEngineStreaming
             Kind = kind,
             Step = step,
             State = mode == StreamMode.Values ? store.SnapshotValues() : null,
-            Payload = payload,
+            Payload = payload
         };
     }
 }
