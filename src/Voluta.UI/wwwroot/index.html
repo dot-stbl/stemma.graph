@@ -51,7 +51,16 @@
           </div>
         </header>
 
-        <div class="split">
+        <div class="inspector-layout">
+          <aside class="pane threads-pane">
+            <div class="pane-h">
+              <span>Threads</span>
+              <button type="button" id="refreshThreads" class="btn btn-sm">↻</button>
+            </div>
+            <div class="thread-list" id="threadList">
+              <p class="dim" style="padding:12px">Loading…</p>
+            </div>
+          </aside>
           <div class="split-main">
             <div class="pane">
               <div class="pane-h">
@@ -60,7 +69,7 @@
               <div class="pane-b" id="inspectorMeta">
                 <div class="placeholder">
                   <p>No checkpoint loaded.</p>
-                  <p class="dim">Enter a thread id and press Load — or open Interrupts.</p>
+                  <p class="dim">Pick a thread from the list or enter an id.</p>
                 </div>
               </div>
             </div>

@@ -161,6 +161,44 @@
     });
   }
 
+  async function loadThreadList() {
+    const list = document.getElementById("threadList");
+    const res = await fetch(api("/api/threads"));
+    if (!res.ok) {
+      list.innerHTML = `<p class="dim" style="padding:12px">${escapeHtml(await res.text())}</p>`;
+      return;
+    }
+    const items = await res.json();
+    if (!items.length) {
+      list.innerHTML = `<p class="dim" style="padding:12px">No tracked threads.</p>`;
+      return;
+    }
+    const current = document.getElementById("threadId").value.trim();
+    list.innerHTML = "";
+    for (const item of items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "thread-item" + (item.threadId === current ? " active" : "");
+      btn.innerHTML = `
+        <span class="tid">${escapeHtml(item.threadId)}</span>
+        <span class="tmeta">
+          ${statusBadge(item.status)}
+          <span class="mono">step ${escapeHtml(item.step)}</span>
+          <span class="mono">${escapeHtml(item.lastNode ?? "—")}</span>
+        </span>
+        ${item.goal ? `<span class="tgoal">${escapeHtml(item.goal)}</span>` : ""}`;
+      btn.onclick = () => {
+        document.getElementById("threadId").value = item.threadId;
+        list.querySelectorAll(".thread-item").forEach((el) => el.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("loadThread").click();
+      };
+      list.appendChild(btn);
+    }
+  }
+
+  document.getElementById("refreshThreads").onclick = () => loadThreadList();
+
   document.getElementById("loadThread").onclick = async () => {
     const id = document.getElementById("threadId").value.trim();
     const out = document.getElementById("inspectorOut");
@@ -178,7 +216,11 @@
     const data = await res.json();
     renderCheckpointMeta(data);
     out.textContent = JSON.stringify(data, null, 2);
+    loadThreadList();
   };
+
+  // Initial thread list
+  loadThreadList();
 
   document.getElementById("startStream").onclick = () => {
     const id = document.getElementById("threadId").value.trim();

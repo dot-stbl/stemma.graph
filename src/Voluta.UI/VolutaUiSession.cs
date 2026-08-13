@@ -45,6 +45,50 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
     }
 
     /// <summary>
+    ///     Lists every tracked thread with its latest checkpoint status (for the inspector list).
+    /// </summary>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Thread summaries ordered by id.</returns>
+    public async Task<IReadOnlyList<ThreadSummary>> ListThreadsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var result = new List<ThreadSummary>();
+        foreach (var threadId in knownThreads.Keys.OrderBy(static id => id, StringComparer.Ordinal))
+        {
+            var snapshot = await Checkpointer.GetAsync(threadId, cancellationToken);
+            if (snapshot is null)
+            {
+                result.Add(
+                    new ThreadSummary
+                    {
+                        ThreadId = threadId,
+                        Status = "Unknown",
+                        Step = 0,
+                    });
+                continue;
+            }
+
+            string? goal = null;
+            if (snapshot.ChannelValues.TryGetValue("goal", out var goalValue) && goalValue is not null)
+            {
+                goal = goalValue.ToString();
+            }
+
+            result.Add(
+                new ThreadSummary
+                {
+                    ThreadId = threadId,
+                    Status = snapshot.Status.ToString(),
+                    Step = snapshot.Step,
+                    LastNode = snapshot.LastNode,
+                    Goal = goal,
+                });
+        }
+
+        return result;
+    }
+
+    /// <summary>
     ///     Lists tracked thread ids that currently have an interrupted checkpoint.
     /// </summary>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -53,20 +97,27 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
         CancellationToken cancellationToken = default)
     {
         var result = new List<HitlThreadSummary>();
-        foreach (var threadId in knownThreads.Keys.OrderBy(static id => id, StringComparer.Ordinal))
+        foreach (var thread in await ListThreadsAsync(cancellationToken))
         {
-            var snapshot = await Checkpointer.GetAsync(threadId, cancellationToken);
-            if (snapshot?.Status == GraphRunStatus.Interrupted)
+            if (thread.Status != GraphRunStatus.Interrupted.ToString())
             {
-                result.Add(
-                    new HitlThreadSummary
-                    {
-                        ThreadId = threadId,
-                        Step = snapshot.Step,
-                        InterruptPayload = snapshot.InterruptPayload?.ToString(),
-                        LastNode = snapshot.LastNode,
-                    });
+                continue;
             }
+
+            var snapshot = await Checkpointer.GetAsync(thread.ThreadId, cancellationToken);
+            if (snapshot is null)
+            {
+                continue;
+            }
+
+            result.Add(
+                new HitlThreadSummary
+                {
+                    ThreadId = thread.ThreadId,
+                    Step = snapshot.Step,
+                    InterruptPayload = snapshot.InterruptPayload?.ToString(),
+                    LastNode = snapshot.LastNode,
+                });
         }
 
         return result;

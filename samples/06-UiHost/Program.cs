@@ -1,29 +1,49 @@
-// 06-UiHost — minimal WebApplication hosting Voluta.UI (ops console + SSE).
+// 06-UiHost — WebApplication hosting Voluta.UI with a realistic multi-node graph
+// and several seeded threads (HITL + completed) so the console has data to inspect.
 //
 // Run:
 //   dotnet run --project samples/06-UiHost
 // Open:
 //   http://localhost:5188/voluta
-//
-// Seeds one interrupted HITL thread on startup so the queue is non-empty.
 
 using Voluta;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
 using Voluta.Checkpoint;
 using Voluta.Graph;
 using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
 using Voluta.UI;
-
-const string SeedThreadId = "ui-host-hitl-1";
 
 var checkpointer = new InMemoryCheckpointer();
 var graph = new StateGraph()
+    .AddChannel("goal", ChannelKind.LastValue)
+    .AddChannel("plan", ChannelKind.LastValue)
+    .AddChannel("evidence", ChannelKind.Append)
+    .AddChannel("risk", ChannelKind.LastValue)
+    .AddChannel("verdict", ChannelKind.LastValue)
     .AddChannel("messages", ChannelKind.Append)
-    .AddNode("gate", GateNodeAsync)
-    .AddEdge(GraphConstants.Start, "gate")
-    .AddEdge("gate", GraphConstants.End)
-    .Compile(checkpointer);
+    .AddChannel("status", ChannelKind.LastValue)
+    .AddNode("intake", IntakeAsync)
+    .AddNode("plan", PlanAsync)
+    .AddNode("retrieve", RetrieveAsync)
+    .AddNode("risk_gate", RiskGateAsync)
+    .AddNode("synthesize", SynthesizeAsync)
+    .AddNode("notify", NotifyAsync)
+    .AddEdge(GraphConstants.Start, "intake")
+    .AddEdge("intake", "plan")
+    .AddEdge("plan", "retrieve")
+    .AddEdge("retrieve", "risk_gate")
+    .AddConditionalEdges(
+        "risk_gate",
+        static context => context.Read<string>("status") == "blocked"
+            ? GraphConstants.End
+            : "synthesize")
+    .AddEdge("synthesize", "notify")
+    .AddEdge("notify", GraphConstants.End)
+    .Compile(checkpointer, new CompileOptions { RecursionLimit = 32 });
 
 var session = new VolutaUiSession(graph, checkpointer);
 
@@ -34,34 +54,246 @@ var app = builder.Build();
 app.MapGet("/", static () => Results.Redirect("/voluta"));
 app.MapVolutaUI(static options => options.PathPrefix = "/voluta");
 
-await SeedInterruptedThreadAsync(session);
+await SeedDemoThreadsAsync(session, app.Logger);
 
 app.Logger.LogInformation(
-    "Voluta UI host ready. Open {Url} (seed thread {ThreadId})",
-    "http://localhost:5188/voluta",
-    SeedThreadId);
+    "Voluta UI host ready. Open {Url} — threads: payment-hitl, deploy-hitl, research-done, audit-blocked",
+    "http://localhost:5188/voluta");
 
 await app.RunAsync();
 
-static async Task SeedInterruptedThreadAsync(VolutaUiSession session)
+static async Task SeedDemoThreadsAsync(VolutaUiSession session, ILogger logger)
 {
-    await foreach (var _ in session.StreamInvokeAsync(
-                       SeedThreadId,
-                       [new ChannelWrite("messages", "user: transfer $50")]))
-    {
-        // Drain until interrupt / end so HITL queue has a row.
-    }
+    // 1) Payment transfer — stops at risk_gate (HITL)
+    await DrainAsync(
+        session.StreamInvokeAsync(
+            "payment-hitl",
+            [
+                new ChannelWrite("goal", "wire transfer $4,200 to vendor ACME"),
+                new ChannelWrite("messages", "user: please pay the ACME invoice"),
+                new ChannelWrite("status", "start"),
+            ]));
 
-    session.TrackThread(SeedThreadId);
+    // 2) Deploy to prod — second interrupt, different payload
+    await DrainAsync(
+        session.StreamInvokeAsync(
+            "deploy-hitl",
+            [
+                new ChannelWrite("goal", "deploy release 0.1.4 to production"),
+                new ChannelWrite("messages", "user: ship 0.1.4"),
+                new ChannelWrite("status", "start"),
+            ]));
+
+    // 3) Research — auto-approve risk (no HITL) by seeding resume path via low risk
+    //    We use goal keyword "docs" so risk_gate continues without interrupt.
+    await DrainAsync(
+        session.StreamInvokeAsync(
+            "research-done",
+            [
+                new ChannelWrite("goal", "docs: summarize StateGraph compile options"),
+                new ChannelWrite("messages", "user: how does CompileOptions work?"),
+                new ChannelWrite("status", "start"),
+            ]));
+
+    // 4) Audit — high risk that ends as blocked after reject-style path
+    //    Keyword "purge" → risk_gate interrupts; we resume with reject → status blocked.
+    await DrainAsync(
+        session.StreamInvokeAsync(
+            "audit-blocked",
+            [
+                new ChannelWrite("goal", "purge stale customer PII from analytics lake"),
+                new ChannelWrite("messages", "user: delete old PII partitions"),
+                new ChannelWrite("status", "start"),
+            ]));
+
+    await DrainAsync(
+        session.StreamResumeAsync(
+            "audit-blocked",
+            new Command
+            {
+                Kind = "reject",
+                Payload = "reject: policy — no bulk PII purge without DPO",
+            }));
+
+    logger.LogInformation(
+        "Seeded threads: payment-hitl (interrupt), deploy-hitl (interrupt), research-done (Done), audit-blocked (Done/blocked)");
 }
 
-static Task<NodeResult> GateNodeAsync(GraphContext context, CancellationToken cancellationToken)
+static async Task DrainAsync(IAsyncEnumerable<StreamEvent> stream)
+{
+    await using var enumerator = stream.GetAsyncEnumerator();
+    while (await enumerator.MoveNextAsync())
+    {
+    }
+}
+
+static Task<NodeResult> IntakeAsync(GraphContext context, CancellationToken cancellationToken)
 {
     cancellationToken.ThrowIfCancellationRequested();
+    var goal = context.Read<string>("goal") ?? "unspecified goal";
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("messages", $"intake: accepted goal «{goal}»"),
+            new ChannelWrite("status", "planning")));
+}
 
-    return context.ResumePayload is null
-        ? Task.FromResult<NodeResult>(
-            NodeResult.Interrupt(new { action = "transfer", amount = 50, currency = "USD" }))
-        : Task.FromResult<NodeResult>(
-            NodeResult.Continue(new ChannelWrite("messages", "gate: transfer approved")));
+static Task<NodeResult> PlanAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var goal = context.Read<string>("goal") ?? "";
+    var plan = goal.Contains("deploy", StringComparison.OrdinalIgnoreCase)
+        ? "1) freeze change window 2) canary 5% 3) full rollout 4) watch SLOs"
+        : goal.Contains("docs", StringComparison.OrdinalIgnoreCase)
+            ? "1) locate API surface 2) extract options 3) write short answer"
+            : goal.Contains("purge", StringComparison.OrdinalIgnoreCase)
+                ? "1) scope tables 2) legal hold check 3) dry-run delete 4) execute"
+                : "1) verify payee 2) check balance 3) dual-control approve 4) settle";
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("plan", plan),
+            new ChannelWrite("messages", "plan: checklist ready"),
+            new ChannelWrite("status", "retrieve")));
+}
+
+static Task<NodeResult> RetrieveAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var goal = context.Read<string>("goal") ?? "";
+    var hits = EvidenceForGoal(goal);
+
+    var writes = new List<ChannelWrite>
+    {
+        new("messages", $"retrieve: {hits.Count} evidence item(s)"),
+        new("status", "risk"),
+    };
+    foreach (var hit in hits)
+    {
+        writes.Add(new ChannelWrite("evidence", hit));
+    }
+
+    return Task.FromResult<NodeResult>(NodeResult.Continue(writes));
+}
+
+static IReadOnlyList<string> EvidenceForGoal(string goal)
+{
+    if (goal.Contains("deploy", StringComparison.OrdinalIgnoreCase))
+    {
+        return
+        [
+            "ci: green on main @ a7fad91",
+            "slo: error-rate 0.12% (budget 0.5%)",
+            "change-calendar: prod window open until 18:00 UTC",
+        ];
+    }
+
+    if (goal.Contains("docs", StringComparison.OrdinalIgnoreCase))
+    {
+        return
+        [
+            "src/Voluta/Graph/Options/CompileOptions.cs — RecursionLimit",
+            "openspec/specs/graph-runtime/spec.md — superstep barrier",
+            "samples/01-HelloWorld — conditional edges demo",
+        ];
+    }
+
+    if (goal.Contains("purge", StringComparison.OrdinalIgnoreCase))
+    {
+        return
+        [
+            "table analytics.events_pii rows≈12.4M",
+            "retention policy: 90d · legal hold: ON for tenant acme",
+            "last purge job: 2026-07-02 (failed approval)",
+        ];
+    }
+
+    return
+    [
+        "vendor ACME · IBAN ····4821 · currency USD",
+        "open invoice INV-20418 · amount 4200.00",
+        "wallet balance 18_240.55 · dual-control required > 1_000",
+    ];
+}
+
+static Task<NodeResult> RiskGateAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var goal = context.Read<string>("goal") ?? "";
+
+    // Low-risk docs path: no interrupt.
+    if (goal.Contains("docs", StringComparison.OrdinalIgnoreCase))
+    {
+        return Task.FromResult<NodeResult>(
+            NodeResult.Continue(
+                new ChannelWrite("risk", "low"),
+                new ChannelWrite("messages", "risk_gate: auto-approved (docs)"),
+                new ChannelWrite("status", "synthesize")));
+    }
+
+    // Resume: engine injects Command.Payload as ResumePayload (not the Command itself).
+    if (context.ResumePayload is not null)
+    {
+        return Task.FromResult(ResumeRiskGate(context.ResumePayload));
+    }
+
+    var level = goal.Contains("purge", StringComparison.OrdinalIgnoreCase) ? "critical"
+        : goal.Contains("deploy", StringComparison.OrdinalIgnoreCase) ? "high"
+        : "medium";
+
+    return Task.FromResult<NodeResult>(
+        NodeResult.Interrupt(
+            new
+            {
+                gate = "risk_gate",
+                level,
+                goal,
+                requires = "dual_control",
+                summary = level switch
+                {
+                    "critical" => "Bulk PII purge — legal hold may apply",
+                    "high" => "Production deploy — confirm change window",
+                    _ => "Payment above threshold — dual control required",
+                },
+            }));
+}
+
+static NodeResult ResumeRiskGate(object resumePayload)
+{
+    var payloadText = resumePayload.ToString() ?? "";
+    var rejected = payloadText.Contains("reject", StringComparison.OrdinalIgnoreCase)
+                   || payloadText.Contains("deny", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(payloadText, "no", StringComparison.OrdinalIgnoreCase);
+    return rejected
+        ? NodeResult.Continue(
+            new ChannelWrite("risk", "rejected"),
+            new ChannelWrite("messages", $"risk_gate: rejected ({payloadText})"),
+            new ChannelWrite("status", "blocked"),
+            new ChannelWrite("verdict", "blocked by operator"))
+        : NodeResult.Continue(
+            new ChannelWrite("risk", "accepted"),
+            new ChannelWrite("messages", "risk_gate: operator approved"),
+            new ChannelWrite("status", "synthesize"));
+}
+
+static Task<NodeResult> SynthesizeAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var plan = context.Read<string>("plan") ?? "";
+    var risk = context.Read<string>("risk") ?? "unknown";
+    var verdict =
+        $"OK · risk={risk} · executed plan length={plan.Length} chars · {DateTimeOffset.UtcNow:u}";
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("verdict", verdict),
+            new ChannelWrite("messages", "synthesize: verdict drafted"),
+            new ChannelWrite("status", "notify")));
+}
+
+static Task<NodeResult> NotifyAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var verdict = context.Read<string>("verdict") ?? "(no verdict)";
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("messages", $"notify: posted «{verdict}»"),
+            new ChannelWrite("status", "done")));
 }

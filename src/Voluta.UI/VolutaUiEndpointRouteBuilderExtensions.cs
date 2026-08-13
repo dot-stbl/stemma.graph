@@ -81,6 +81,11 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                 Results.Json(await session.ListInterruptedAsync(cancellationToken), JsonSerializerOptions.Web));
 
         endpoints.MapGet(
+            $"{prefix}/api/threads",
+            async (VolutaUiSession session, CancellationToken cancellationToken) =>
+                Results.Json(await session.ListThreadsAsync(cancellationToken), JsonSerializerOptions.Web));
+
+        endpoints.MapGet(
             $"{prefix}/api/threads/{{threadId}}",
             async (string threadId, VolutaUiSession session, CancellationToken cancellationToken) =>
             {
