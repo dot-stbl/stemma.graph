@@ -71,11 +71,11 @@ See `proposal.md` for why. Repo is scaffolding only (`StemmaGraph` + `StemmaGrap
 
 **Why:** Library samples and ASP.NET product share one runtime.
 
-### D8 — Send / subgraphs designed, not MVP-shipped
+### D8 — Send / subgraphs designed for 0.1; **shipped on main post-MVP**
 
-**Choice:** Specs + reserved task/PUSH/pending shapes; implement after 0.1.
+**Choice (design-time):** Specs + reserved task/PUSH/pending shapes; implement after 0.1.
 
-**Why:** Avoids checkpoint/API dead-ends; keeps 0.1 shippable.
+**Update (implemented):** `Send` + `ContinueWithSends`, engine PUSH ready tasks, `PendingSends` on checkpoint; `Subgraph.AsNode`; `CompiledGraph.Describe` for UI.
 
 ### D9 — StemmaGraph.Testing as real package
 
@@ -104,14 +104,15 @@ See `proposal.md` for why. Repo is scaffolding only (`StemmaGraph` + `StemmaGrap
 ## Package map (target)
 
 ```
-StemmaGraph.Abstractions     ICheckpointer, CheckpointSnapshot, ChannelWrite, NodeResult, …
-StemmaGraph                 runtime, builder, InMemory checkpointer
+StemmaGraph.Abstractions     ICheckpointer, CheckpointSnapshot, ChannelWrite, NodeResult, Send, …
+StemmaGraph                 runtime, builder, InMemory checkpointer, Subgraph helper
+StemmaGraph.DependencyInjection  AddStemmaGraph
 StemmaGraph.Testing         recording/fault/stream capture/fixtures/conformance
+StemmaGraph.Checkpoints.File                  (shipped)
+StemmaGraph.MicrosoftAi                       (shipped, thin IChatClient helpers)
+StemmaGraph.UI                                (shipped, MapStemmaUI first cut)
 StemmaGraph.Checkpoints.EntityFrameworkCore   (later)
 StemmaGraph.Checkpoints.S3                    (later)
-StemmaGraph.Checkpoints.File                  (later)
-StemmaGraph.MicrosoftAi                       (later, optional)
-StemmaGraph.UI.*                              (later, separate)
 ```
 
 ## Runtime loop (reference)
