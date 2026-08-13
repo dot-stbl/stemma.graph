@@ -10,30 +10,24 @@ namespace StemmaGraph.UI;
 /// <summary>
 ///     In-process session store for the ops UI (one host → one graph + checkpointer).
 /// </summary>
-public sealed class StemmaUiSession
+/// <remarks>
+///     Creates a session bound to a compiled graph and its checkpointer.
+/// </remarks>
+/// <param name="graph">Runnable graph.</param>
+/// <param name="checkpointer">Same checkpointer used at compile time.</param>
+public sealed class StemmaUiSession(CompiledGraph graph, ICheckpointer checkpointer)
 {
     private readonly ConcurrentDictionary<string, byte> knownThreads = new(StringComparer.Ordinal);
 
     /// <summary>
-    ///     Creates a session bound to a compiled graph and its checkpointer.
-    /// </summary>
-    /// <param name="graph">Runnable graph.</param>
-    /// <param name="checkpointer">Same checkpointer used at compile time.</param>
-    public StemmaUiSession(CompiledGraph graph, ICheckpointer checkpointer)
-    {
-        Graph = graph;
-        Checkpointer = checkpointer;
-    }
-
-    /// <summary>
     ///     Compiled graph.
     /// </summary>
-    public CompiledGraph Graph { get; }
+    public CompiledGraph Graph { get; } = graph;
 
     /// <summary>
     ///     Checkpoint store.
     /// </summary>
-    public ICheckpointer Checkpointer { get; }
+    public ICheckpointer Checkpointer { get; } = checkpointer;
 
     /// <summary>
     ///     Topology export for the topology screen.

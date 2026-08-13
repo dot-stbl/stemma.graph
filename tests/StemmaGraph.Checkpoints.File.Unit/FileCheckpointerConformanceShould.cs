@@ -1,4 +1,3 @@
-using StemmaGraph.Checkpoints.File;
 using StemmaGraph.Testing.Conformance;
 using Xunit;
 

@@ -12,7 +12,6 @@ using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
 using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Graph.Builder;
 using StemmaGraph.Graph.Options;
 using StemmaGraph.Samples.Shared;
@@ -41,7 +40,7 @@ catch (Exception exception)
 }
 
 var chatClient = HarnessCli.CreateChatClient(offline, out var chatLifetime);
-using var _ = chatLifetime;
+using var chatDispose = chatLifetime;
 
 var checkpointer = new InMemoryCheckpointer();
 var graph = new StateGraph()

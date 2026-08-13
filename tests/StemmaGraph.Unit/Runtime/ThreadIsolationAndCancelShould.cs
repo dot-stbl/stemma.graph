@@ -1,13 +1,11 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.Runtime;
 
@@ -60,7 +58,7 @@ public sealed class ThreadIsolationAndCancelShould
             .AddEdge("slow", GraphConstants.End)
             .Compile(new InMemoryCheckpointer());
 
-        await Should.ThrowAsync<OperationCanceledException>(async () =>
+        _ = await Should.ThrowAsync<OperationCanceledException>(async () =>
         {
             await foreach (var _ in graph.StreamAsync(
                                [],

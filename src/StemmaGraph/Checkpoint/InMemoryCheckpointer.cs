@@ -1,5 +1,5 @@
-using StemmaGraph.Abstractions.Checkpoint;
 using System.Collections.Concurrent;
+using StemmaGraph.Abstractions.Checkpoint;
 namespace StemmaGraph.Checkpoint;
 
 /// <summary>

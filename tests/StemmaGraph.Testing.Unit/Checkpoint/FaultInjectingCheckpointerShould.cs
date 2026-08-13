@@ -1,9 +1,9 @@
 using Shouldly;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Abstractions.Runtime;
-using Xunit;
 using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Testing.Checkpoint;
+using Xunit;
 
 namespace StemmaGraph.Testing.Unit.Checkpoint;
 
@@ -46,7 +46,7 @@ public sealed class FaultInjectingCheckpointerShould
     [Fact(DisplayName = "Given failOnPutNumber less than 1, when constructed, then throws")]
     public void RejectInvalidFailOnPutNumber()
     {
-        Should.Throw<ArgumentOutOfRangeException>(() =>
+        _ = Should.Throw<ArgumentOutOfRangeException>(static () =>
         {
             _ = new FaultInjectingCheckpointer(new InMemoryCheckpointer(), failOnPutNumber: 0);
         });

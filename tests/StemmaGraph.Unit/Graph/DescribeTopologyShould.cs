@@ -1,5 +1,4 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Checkpoint;

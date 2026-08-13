@@ -1,12 +1,10 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Exceptions;
-using Xunit;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.Graph;
 
@@ -62,6 +60,6 @@ public sealed class StateGraphCompileShould
             .AddEdge("tools", "agent")
             .Compile(new InMemoryCheckpointer());
 
-        graph.ShouldNotBeNull();
+        _ = graph.ShouldNotBeNull();
     }
 }

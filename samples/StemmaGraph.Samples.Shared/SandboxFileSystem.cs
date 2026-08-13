@@ -5,8 +5,6 @@ namespace StemmaGraph.Samples.Shared;
 /// </summary>
 public sealed class SandboxFileSystem
 {
-    private readonly string rootFull;
-
     public SandboxFileSystem(string rootDirectory)
     {
         if (string.IsNullOrWhiteSpace(rootDirectory))
@@ -14,28 +12,28 @@ public sealed class SandboxFileSystem
             throw new ArgumentException("Sandbox root is required.", nameof(rootDirectory));
         }
 
-        rootFull = Path.GetFullPath(rootDirectory);
-        if (!Directory.Exists(rootFull))
+        Root = Path.GetFullPath(rootDirectory);
+        if (!Directory.Exists(Root))
         {
-            throw new DirectoryNotFoundException($"Sandbox root not found: {rootFull}");
+            throw new DirectoryNotFoundException($"Sandbox root not found: {Root}");
         }
     }
 
-    public string Root => rootFull;
+    public string Root { get; }
 
     public string Resolve(string relativeOrUnderRoot)
     {
         var combined = Path.IsPathRooted(relativeOrUnderRoot)
             ? Path.GetFullPath(relativeOrUnderRoot)
-            : Path.GetFullPath(Path.Combine(rootFull, relativeOrUnderRoot));
+            : Path.GetFullPath(Path.Combine(Root, relativeOrUnderRoot));
 
-        var rootWithSep = rootFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+        var rootWithSep = Root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                           + Path.DirectorySeparatorChar;
 
         return !combined.StartsWith(rootWithSep, StringComparison.OrdinalIgnoreCase)
-               && !string.Equals(combined, rootFull, StringComparison.OrdinalIgnoreCase)
+               && !string.Equals(combined, Root, StringComparison.OrdinalIgnoreCase)
             ? throw new UnauthorizedAccessException(
-                $"Path escapes sandbox: '{relativeOrUnderRoot}' → '{combined}' (root '{rootFull}').")
+                $"Path escapes sandbox: '{relativeOrUnderRoot}' → '{combined}' (root '{Root}').")
             : combined;
     }
 
@@ -49,11 +47,10 @@ public sealed class SandboxFileSystem
 
     public IReadOnlyList<string> ListFiles(string searchPattern = "*")
     {
-        return Directory
-            .EnumerateFiles(rootFull, searchPattern, SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(rootFull, path).Replace('\\', '/'))
-            .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return [.. Directory
+            .EnumerateFiles(Root, searchPattern, SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(Root, path).Replace('\\', '/'))
+            .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase)];
     }
 
     public IReadOnlyList<string> Search(string query, string searchPattern = "*.md", int maxHits = 40)

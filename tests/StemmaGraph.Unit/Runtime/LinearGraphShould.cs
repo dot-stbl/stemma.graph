@@ -1,13 +1,11 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.Runtime;
 

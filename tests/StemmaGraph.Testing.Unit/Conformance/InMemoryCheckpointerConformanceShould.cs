@@ -1,6 +1,6 @@
 using StemmaGraph.Checkpoint;
-using Xunit;
 using StemmaGraph.Testing.Conformance;
+using Xunit;
 
 namespace StemmaGraph.Testing.Unit.Conformance;
 

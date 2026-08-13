@@ -1,8 +1,8 @@
-using StemmaGraph.Graph.Options;
-using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Checkpoint;
 using StemmaGraph.Exceptions;
+using StemmaGraph.Graph.Options;
 
 namespace StemmaGraph.Graph.Builder;
 

@@ -1,15 +1,13 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Generators.Unit.Fixtures;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.State;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
+using StemmaGraph.Checkpoint;
+using StemmaGraph.Generators.Unit.Fixtures;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Generators.Unit;
 
@@ -60,7 +58,7 @@ public sealed class AgentStateGenerationShould
     [Fact(DisplayName = "Given both fields set, when ToWrites is called, then emits Messages and Status writes")]
     public void ToWritesEmitsAllSetFields()
     {
-        IList<object?> messages = new List<object?> { "hello" };
+        IList<object?> messages = ["hello"];
         var update = new AgentState.AgentStateUpdate
         {
             Messages = OptionalValue<IList<object?>>.Of(messages),

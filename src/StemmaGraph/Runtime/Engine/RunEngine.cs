@@ -3,11 +3,9 @@ using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
-using StemmaGraph.Checkpoint;
 using StemmaGraph.Exceptions;
 using StemmaGraph.Exceptions.Run;
 using StemmaGraph.Graph;
-using StemmaGraph.Graph.Options;
 
 // GraphConstants lives in root StemmaGraph namespace.
 
@@ -187,7 +185,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [.. readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                         [],
                         null),
                     cancellationToken);
@@ -225,7 +223,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Cancelled,
                         store,
                         lastNode,
-                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                         [],
                         null),
                     cancellationToken);
@@ -247,7 +245,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                         [],
                         null),
                     cancellationToken);
@@ -301,7 +299,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                         [],
                         null),
                     cancellationToken);
@@ -372,7 +370,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     GraphRunStatus.Running,
                     store,
                     lastNode,
-                    readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                    [.. readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                     pendingSends,
                     null),
                 cancellationToken);
@@ -380,7 +378,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             foreach (var streamItem in RunEngineStreaming.EmitCommit(
                          options.StreamMode,
                          step,
-                         orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal).ToList(),
+                         [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
                          writes,
                          store))
             {

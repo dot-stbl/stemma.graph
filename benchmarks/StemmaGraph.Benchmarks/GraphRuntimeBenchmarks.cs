@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
 using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Results;

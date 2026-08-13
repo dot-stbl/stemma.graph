@@ -13,7 +13,7 @@ public partial class AgentState
     /// Append-reduced message list channel.
     /// </summary>
     [Channel(ChannelKind.Append)]
-    public IList<object?> Messages { get; set; } = new List<object?>();
+    public IList<object?> Messages { get; set; } = [];
 
     /// <summary>
     /// LastValue status channel.

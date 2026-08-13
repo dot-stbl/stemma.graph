@@ -1,10 +1,9 @@
 using Shouldly;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Graph;
-using StemmaGraph.Exceptions;
 using StemmaGraph.Abstractions.State;
-using Xunit;
+using StemmaGraph.Exceptions;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.State;
 
@@ -22,6 +21,6 @@ public sealed class GraphChannelSchemaShould
 
         // Compile requires nodes + START edge — only assert AddChannels does not throw
         // and channels are available by re-adding a duplicate should fail.
-        Should.Throw<GraphCompileException>(() => graph.AddChannel("messages", ChannelKind.Append));
+        _ = Should.Throw<GraphCompileException>(() => graph.AddChannel("messages", ChannelKind.Append));
     }
 }

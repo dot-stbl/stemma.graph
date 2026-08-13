@@ -16,7 +16,7 @@ public sealed class ServiceCollectionExtensionsShould
         var graph = CreateLinearGraph();
 
         var services = new ServiceCollection();
-        services.AddStemmaGraph(graph);
+        _ = services.AddStemmaGraph(graph);
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<CompiledGraph>();
@@ -30,7 +30,7 @@ public sealed class ServiceCollectionExtensionsShould
     public void RegisterFactoryGraphAsSingleton()
     {
         var services = new ServiceCollection();
-        services.AddStemmaGraph(static _ => CreateLinearGraph());
+        _ = services.AddStemmaGraph(static _ => CreateLinearGraph());
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<CompiledGraph>();

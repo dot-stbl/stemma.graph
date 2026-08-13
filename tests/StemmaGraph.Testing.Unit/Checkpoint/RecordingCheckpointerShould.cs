@@ -1,9 +1,9 @@
 using Shouldly;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Abstractions.Runtime;
-using Xunit;
 using StemmaGraph.Abstractions.Checkpoint;
+using StemmaGraph.Abstractions.Runtime;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Testing.Checkpoint;
+using Xunit;
 
 namespace StemmaGraph.Testing.Unit.Checkpoint;
 
@@ -29,7 +29,7 @@ public sealed class RecordingCheckpointerShould
         recording.Puts[0].Status.ShouldBe(GraphRunStatus.Interrupted);
         recording.Gets.Count.ShouldBe(1);
         recording.Gets[0].ThreadId.ShouldBe("rec-1");
-        recording.Gets[0].Result.ShouldNotBeNull();
+        _ = recording.Gets[0].Result.ShouldNotBeNull();
         loaded!.Step.ShouldBe(2);
     }
 

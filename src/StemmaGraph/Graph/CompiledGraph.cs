@@ -1,10 +1,9 @@
-using StemmaGraph.Runtime.Engine;
-using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
+using StemmaGraph.Abstractions.Checkpoint;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
 using StemmaGraph.Abstractions.Topology;
+using StemmaGraph.Runtime.Engine;
 
 namespace StemmaGraph.Graph;
 

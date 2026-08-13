@@ -1,14 +1,12 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Exceptions;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
+using StemmaGraph.Checkpoint;
+using StemmaGraph.Exceptions;
 using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.Runtime;
 
@@ -61,9 +59,9 @@ public sealed class ParallelSuperstepShould
             .AddEdge("right", GraphConstants.End)
             .Compile(new InMemoryCheckpointer());
 
-        await Should.ThrowAsync<GraphConcurrentUpdateException>(async () =>
+        _ = await Should.ThrowAsync<GraphConcurrentUpdateException>(async () =>
         {
-            await graph.InvokeAsync([], new RunOptions { ThreadId = "lv-1" });
+            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "lv-1" });
         });
     }
 

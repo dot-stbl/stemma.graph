@@ -1,14 +1,12 @@
 using Shouldly;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Exceptions;
 using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Checkpoint;
+using StemmaGraph.Exceptions.Run;
+using StemmaGraph.Graph.Options;
 using StemmaGraph.Testing.Fixtures;
 using Xunit;
-using StemmaGraph.Graph.Options;
-using StemmaGraph.Exceptions.Run;
 
 namespace StemmaGraph.Testing.Unit.Fixtures;
 
@@ -36,9 +34,9 @@ public sealed class GraphFixturesShould
             new InMemoryCheckpointer(),
             new CompileOptions { RecursionLimit = 3 });
 
-        await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
+        _ = await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
         {
-            await graph.InvokeAsync([], new RunOptions { ThreadId = "fix-cycle" });
+            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "fix-cycle" });
         });
     }
 

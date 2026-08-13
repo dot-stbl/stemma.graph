@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,12 +12,6 @@ namespace StemmaGraph.UI;
 /// </summary>
 public static class StemmaUiEndpointRouteBuilderExtensions
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-    };
-
     /// <summary>
     ///     Registers <see cref="StemmaUiSession" /> as singleton.
     /// </summary>
@@ -48,22 +41,22 @@ public static class StemmaUiEndpointRouteBuilderExtensions
         }
 
         endpoints.MapGet(prefix, () => Results.Redirect($"{prefix}/"));
-        endpoints.MapGet($"{prefix}/", () => Results.Content(ReadWww("index.html"), "text/html; charset=utf-8"));
+        endpoints.MapGet($"{prefix}/", () => Results.Content(StemmaUiAssets.IndexHtml, "text/html; charset=utf-8"));
         endpoints.MapGet(
             $"{prefix}/index.html",
-            () => Results.Content(ReadWww("index.html"), "text/html; charset=utf-8"));
+            () => Results.Content(StemmaUiAssets.IndexHtml, "text/html; charset=utf-8"));
         endpoints.MapGet(
             $"{prefix}/styles.css",
-            () => Results.Content(ReadWww("styles.css"), "text/css; charset=utf-8"));
+            () => Results.Content(StemmaUiAssets.StylesCss, "text/css; charset=utf-8"));
 
         endpoints.MapGet(
             $"{prefix}/api/topology",
-            (StemmaUiSession session) => Results.Json(session.Topology, JsonOptions));
+            (StemmaUiSession session) => Results.Json(session.Topology, JsonSerializerOptions.Web));
 
         endpoints.MapGet(
             $"{prefix}/api/hitl",
             async (StemmaUiSession session, CancellationToken cancellationToken) =>
-                Results.Json(await session.ListInterruptedAsync(cancellationToken), JsonOptions));
+                Results.Json(await session.ListInterruptedAsync(cancellationToken), JsonSerializerOptions.Web));
 
         endpoints.MapGet(
             $"{prefix}/api/threads/{{threadId}}",
@@ -72,7 +65,7 @@ public static class StemmaUiEndpointRouteBuilderExtensions
                 var snapshot = await session.GetCheckpointAsync(threadId, cancellationToken);
                 return snapshot is null
                     ? Results.NotFound()
-                    : Results.Json(snapshot, JsonOptions);
+                    : Results.Json(snapshot, JsonSerializerOptions.Web);
             });
 
         endpoints.MapPost(
@@ -96,41 +89,9 @@ public static class StemmaUiEndpointRouteBuilderExtensions
                         step = terminal.Step,
                         payload = terminal.Payload?.ToString(),
                     },
-                    JsonOptions);
+                    JsonSerializerOptions.Web);
             });
 
         return endpoints;
     }
-
-    private static string ReadWww(string fileName)
-    {
-        var assembly = typeof(StemmaUiEndpointRouteBuilderExtensions).Assembly;
-        var resourceName = assembly.GetManifestResourceNames()
-            .FirstOrDefault(name => name.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
-        if (resourceName is null)
-        {
-            throw new InvalidOperationException($"Embedded UI resource not found: {fileName}");
-        }
-
-        using var stream = assembly.GetManifestResourceStream(resourceName)
-                           ?? throw new InvalidOperationException($"Cannot open resource {resourceName}");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
-}
-
-/// <summary>
-///     Resume POST body.
-/// </summary>
-public sealed class ResumeRequest
-{
-    /// <summary>
-    ///     Command kind (default approve).
-    /// </summary>
-    public string? Kind { get; init; }
-
-    /// <summary>
-    ///     Optional payload.
-    /// </summary>
-    public string? Payload { get; init; }
 }

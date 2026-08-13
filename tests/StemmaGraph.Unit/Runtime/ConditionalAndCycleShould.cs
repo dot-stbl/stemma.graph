@@ -1,16 +1,13 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Exceptions;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
+using StemmaGraph.Checkpoint;
+using StemmaGraph.Exceptions.Run;
 using StemmaGraph.Graph.Builder;
 using StemmaGraph.Graph.Options;
-using StemmaGraph.Exceptions.Run;
+using Xunit;
 
 namespace StemmaGraph.Unit.Runtime;
 
@@ -67,7 +64,7 @@ public sealed class ConditionalAndCycleShould
 
         var exception = await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
         {
-            await graph.InvokeAsync([], new RunOptions { ThreadId = "cycle-1" });
+            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "cycle-1" });
         });
 
         exception.Limit.ShouldBe(3);

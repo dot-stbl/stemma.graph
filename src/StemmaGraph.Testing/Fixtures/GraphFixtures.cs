@@ -1,6 +1,6 @@
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
+using StemmaGraph.Graph;
 using StemmaGraph.Graph.Builder;
 using StemmaGraph.Graph.Options;
 

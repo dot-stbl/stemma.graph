@@ -1,15 +1,12 @@
 using Shouldly;
-using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
-using StemmaGraph.Exceptions;
 using StemmaGraph.Abstractions.Streaming;
-using Xunit;
-using StemmaGraph.Graph.Builder;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Exceptions.Run;
+using StemmaGraph.Graph.Builder;
+using Xunit;
 
 namespace StemmaGraph.Unit.Runtime;
 
@@ -71,7 +68,7 @@ public sealed class InterruptResumeShould
         var terminal = await graph.InvokeAsync([], new RunOptions { ThreadId = "done-1" });
         terminal.Kind.ShouldBe(StreamEventKind.End);
 
-        await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
+        _ = await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
         {
             await foreach (var _ in graph.ResumeAsync("done-1", new Command { Kind = "approve" }))
             {

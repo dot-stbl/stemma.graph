@@ -11,11 +11,11 @@
 
 using StemmaGraph;
 using StemmaGraph.Abstractions.Channels;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Results;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Checkpoint;
+using StemmaGraph.Graph;
 using StemmaGraph.Graph.Builder;
 using StemmaGraph.Graph.Options;
 

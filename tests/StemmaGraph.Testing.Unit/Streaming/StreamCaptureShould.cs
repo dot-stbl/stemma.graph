@@ -1,9 +1,7 @@
 using Shouldly;
-using StemmaGraph;
-using StemmaGraph.Checkpoint;
-using StemmaGraph.Graph;
 using StemmaGraph.Abstractions.Runtime;
 using StemmaGraph.Abstractions.Streaming;
+using StemmaGraph.Checkpoint;
 using StemmaGraph.Testing.Fixtures;
 using StemmaGraph.Testing.Streaming;
 using Xunit;
@@ -23,6 +21,6 @@ public sealed class StreamCaptureShould
         var capture = await StreamCapture.CollectAsync(stream);
 
         capture.Events.ShouldNotBeEmpty();
-        capture.Events.ShouldContain(streamEvent => streamEvent.Kind == StreamEventKind.End);
+        capture.Events.ShouldContain(static streamEvent => streamEvent.Kind == StreamEventKind.End);
     }
 }

@@ -1,5 +1,5 @@
-using StemmaGraph.Graph.Options;
 using StemmaGraph.Abstractions.Channels;
+using StemmaGraph.Graph.Options;
 
 namespace StemmaGraph.Graph;
 

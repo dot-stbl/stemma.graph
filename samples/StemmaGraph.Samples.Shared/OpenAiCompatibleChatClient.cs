@@ -11,18 +11,11 @@ namespace StemmaGraph.Samples.Shared;
 /// <remarks>
 ///     Env: STEMMA_CHAT_ENDPOINT, STEMMA_CHAT_API_KEY, STEMMA_CHAT_MODEL.
 /// </remarks>
-public sealed class OpenAiCompatibleChatClient : IChatCompletionClient, IDisposable
+public sealed class OpenAiCompatibleChatClient(HttpClient http, string model, bool ownsHttp = false) : IChatCompletionClient, IDisposable
 {
-    private readonly HttpClient http;
-    private readonly string model;
-    private readonly bool ownsHttp;
-
-    public OpenAiCompatibleChatClient(HttpClient http, string model, bool ownsHttp = false)
-    {
-        this.http = http;
-        this.model = model;
-        this.ownsHttp = ownsHttp;
-    }
+    private readonly HttpClient http = http;
+    private readonly string model = model;
+    private readonly bool ownsHttp = ownsHttp;
 
     public static bool TryCreateFromEnvironment(out OpenAiCompatibleChatClient? client, out string? error)
     {
