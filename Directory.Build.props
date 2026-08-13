@@ -25,12 +25,10 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>agents;stateful-graphs;workflows;checkpointing;dotnet</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>package-icon.png</PackageIcon>
         <Copyright>Copyright (c) Stemma contributors</Copyright>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-
-        <!-- Pinned source-link for symbols.nuget.org. -->
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
         <!-- Globally suppressed warnings (with documented reason) -->
         <!-- NU1903 — Testcontainers.PostgreSql pulls SSH.NET 2024.1.0 which has
@@ -49,6 +47,20 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+    </ItemGroup>
+
+    <!-- NuGet package assets (icon + readme) for all packable library projects. -->
+    <ItemGroup Condition="'$(IsPackable)' != 'false'">
+        <None Include="$(MSBuildThisFileDirectory)assets\package-icon.png"
+              Pack="true"
+              PackagePath="package-icon.png"
+              Visible="false"
+              Condition="Exists('$(MSBuildThisFileDirectory)assets\package-icon.png')" />
+        <None Include="$(MSBuildThisFileDirectory)README.md"
+              Pack="true"
+              PackagePath="README.md"
+              Visible="false"
+              Condition="Exists('$(MSBuildThisFileDirectory)README.md')" />
     </ItemGroup>
 
 </Project>
