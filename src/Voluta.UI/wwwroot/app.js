@@ -1,5 +1,4 @@
 (() => {
-  // Prefer <base href> (injected at serve time). Fallback: path without trailing file.
   const baseEl = document.querySelector("base");
   const base = (baseEl && baseEl.getAttribute("href")
     ? baseEl.getAttribute("href").replace(/\/$/, "")
@@ -13,13 +12,19 @@
     pathHint.textContent = base;
   }
 
-  document.querySelectorAll(".tabs button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  function setTab(name) {
+    document.querySelectorAll(".tabs button").forEach((btn) => {
+      const on = btn.dataset.tab === name;
+      btn.classList.toggle("active", on);
+      btn.classList.toggle("outline", !on);
     });
+    document.querySelectorAll(".panel").forEach((panel) => {
+      panel.classList.toggle("active", panel.id === "panel-" + name);
+    });
+  }
+
+  document.querySelectorAll(".tabs button").forEach((btn) => {
+    btn.addEventListener("click", () => setTab(btn.dataset.tab));
   });
 
   function statusPill(status) {
@@ -41,26 +46,26 @@
 
   function renderCheckpointMeta(data) {
     const channels = Object.entries(data.channelValues || {})
-      .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd class="mono">${escapeHtml(v)}</dd>`)
+      .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
       .join("") || `<dt>—</dt><dd class="muted">no channels</dd>`;
     const versions = Object.entries(data.channelVersions || {})
       .map(([k, v]) => `${escapeHtml(k)}@${escapeHtml(v)}`)
       .join(", ") || "—";
 
     document.getElementById("inspectorMeta").innerHTML = `
-      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap">
+      <div class="meta-head">
         ${statusPill(data.status)}
         <span class="mono muted">step ${escapeHtml(data.step)}</span>
       </div>
       <dl class="kv">
-        <dt>thread</dt><dd class="mono">${escapeHtml(data.threadId)}</dd>
-        <dt>last node</dt><dd class="mono">${escapeHtml(data.lastNode ?? "—")}</dd>
-        <dt>next</dt><dd class="mono">${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
-        <dt>interrupt</dt><dd class="mono">${escapeHtml(data.interruptPayload ?? "—")}</dd>
-        <dt>versions</dt><dd class="mono">${versions}</dd>
+        <dt>Thread</dt><dd>${escapeHtml(data.threadId)}</dd>
+        <dt>Last node</dt><dd>${escapeHtml(data.lastNode ?? "—")}</dd>
+        <dt>Next</dt><dd>${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
+        <dt>Interrupt</dt><dd>${escapeHtml(data.interruptPayload ?? "—")}</dd>
+        <dt>Versions</dt><dd>${versions}</dd>
       </dl>
-      <div class="section-label tight" style="margin-top:0.85rem">channels</div>
-      <dl class="kv" style="margin-top:0.35rem">${channels}</dl>
+      <p class="block-label">Channels</p>
+      <dl class="kv" style="margin-top:0.4rem">${channels}</dl>
     `;
   }
 
@@ -82,35 +87,10 @@
     document.getElementById("startStream").disabled = false;
   }
 
-  document.getElementById("loadThread").onclick = async () => {
-    const id = document.getElementById("threadId").value.trim();
-    const out = document.getElementById("inspectorOut");
-    if (!id) {
-      out.textContent = "enter a thread id.";
-      return;
-    }
-    const res = await fetch(api("/api/threads/" + encodeURIComponent(id)));
-    if (!res.ok) {
-      out.textContent = await res.text();
-      document.getElementById("inspectorMeta").innerHTML =
-        `<div class="muted">not found or error (${res.status}).</div>`;
-      return;
-    }
-    const data = await res.json();
-    renderCheckpointMeta(data);
-    out.textContent = JSON.stringify(data, null, 2);
-  };
-
-  document.getElementById("startStream").onclick = () => {
-    const id = document.getElementById("threadId").value.trim();
-    if (!id) {
-      appendStreamLine("enter a thread id first.");
-      return;
-    }
+  function bindStream(url, onDone) {
     stopStream();
     document.getElementById("streamLog").innerHTML = "";
     appendStreamLine("connecting…");
-    const url = api("/api/threads/" + encodeURIComponent(id) + "/stream?mode=checkpoint");
     eventSource = new EventSource(url);
     document.getElementById("stopStream").disabled = false;
     document.getElementById("startStream").disabled = true;
@@ -128,6 +108,9 @@
     eventSource.addEventListener("done", () => {
       appendStreamLine("— done —");
       stopStream();
+      if (onDone) {
+        onDone();
+      }
     });
     eventSource.addEventListener("error", (ev) => {
       if (ev.data) {
@@ -137,6 +120,34 @@
       }
       stopStream();
     });
+  }
+
+  document.getElementById("loadThread").onclick = async () => {
+    const id = document.getElementById("threadId").value.trim();
+    const out = document.getElementById("inspectorOut");
+    if (!id) {
+      out.textContent = "Enter a thread id.";
+      return;
+    }
+    const res = await fetch(api("/api/threads/" + encodeURIComponent(id)));
+    if (!res.ok) {
+      out.textContent = await res.text();
+      document.getElementById("inspectorMeta").innerHTML =
+        `<p class="muted">Not found or error (${res.status}).</p>`;
+      return;
+    }
+    const data = await res.json();
+    renderCheckpointMeta(data);
+    out.textContent = JSON.stringify(data, null, 2);
+  };
+
+  document.getElementById("startStream").onclick = () => {
+    const id = document.getElementById("threadId").value.trim();
+    if (!id) {
+      appendStreamLine("Enter a thread id first.");
+      return;
+    }
+    bindStream(api("/api/threads/" + encodeURIComponent(id) + "/stream?mode=checkpoint"));
   };
 
   document.getElementById("stopStream").onclick = stopStream;
@@ -152,23 +163,23 @@
     const items = await res.json();
     if (!items.length) {
       list.innerHTML =
-        '<div class="card muted">no interrupted threads tracked in this process. run the sample seed or invoke a thread.</div>';
+        '<article><p class="muted">No interrupted threads. Seed runs on sample startup (ui-host-hitl-1).</p></article>';
       return;
     }
     for (const item of items) {
-      const card = document.createElement("div");
-      card.className = "card hitl";
+      const card = document.createElement("article");
+      card.className = "hitl-card";
       card.innerHTML = `
-        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <header>
           <strong class="mono">${escapeHtml(item.threadId)}</strong>
           ${statusPill("Interrupted")}
-          <span class="muted mono">step ${escapeHtml(item.step)} · ${escapeHtml(item.lastNode ?? "-")}</span>
-        </div>
-        <div class="muted mono">${escapeHtml(item.interruptPayload ?? "")}</div>
+          <small class="muted mono">step ${escapeHtml(item.step)} · ${escapeHtml(item.lastNode ?? "-")}</small>
+        </header>
+        <p class="payload muted">${escapeHtml(item.interruptPayload ?? "")}</p>
         <div class="hitl-actions">
-          <button type="button" class="primary" data-action="approve">approve</button>
-          <button type="button" class="danger" data-action="reject">reject</button>
-          <button type="button" class="ghost" data-action="stream">sse resume</button>
+          <button type="button" data-action="approve">Approve</button>
+          <button type="button" class="secondary" data-action="reject">Reject</button>
+          <button type="button" class="secondary outline" data-action="stream">SSE resume</button>
         </div>`;
 
       card.querySelector('[data-action="approve"]').onclick = async () => {
@@ -181,34 +192,15 @@
       };
       card.querySelector('[data-action="stream"]').onclick = () => {
         document.getElementById("threadId").value = item.threadId;
-        document.querySelector('[data-tab="inspector"]').click();
-        stopStream();
-        document.getElementById("streamLog").innerHTML = "";
-        appendStreamLine("sse resume…");
-        const url = api(
-          "/api/threads/" +
-            encodeURIComponent(item.threadId) +
-            "/stream?mode=resume&kind=approve&payload=ok"
+        setTab("inspector");
+        bindStream(
+          api(
+            "/api/threads/" +
+              encodeURIComponent(item.threadId) +
+              "/stream?mode=resume&kind=approve&payload=ok"
+          ),
+          () => document.getElementById("refreshHitl").click()
         );
-        eventSource = new EventSource(url);
-        document.getElementById("stopStream").disabled = false;
-        document.getElementById("startStream").disabled = true;
-        eventSource.addEventListener("stream", (ev) => {
-          try {
-            const data = JSON.parse(ev.data);
-            appendStreamLine(
-              `step=${data.step} kind=${data.kind} nodes=[${(data.nodeNames || []).join(",")}]`
-            );
-          } catch {
-            appendStreamLine(ev.data);
-          }
-        });
-        eventSource.addEventListener("done", () => {
-          appendStreamLine("— done —");
-          stopStream();
-          document.getElementById("refreshHitl").click();
-        });
-        eventSource.onerror = () => stopStream();
       };
       list.appendChild(card);
     }
@@ -227,9 +219,10 @@
   document.getElementById("loadTopology").onclick = async () => {
     const res = await fetch(api("/api/topology"));
     const view = document.getElementById("topologyView");
+    const raw = document.getElementById("topologyRaw");
     const out = document.getElementById("topologyOut");
     if (!res.ok) {
-      view.innerHTML = `<div class="muted">${escapeHtml(await res.text())}</div>`;
+      view.innerHTML = `<p class="muted">${escapeHtml(await res.text())}</p>`;
       return;
     }
     const data = await res.json();
@@ -243,15 +236,15 @@
       .map(([k, v]) => `<span class="chip">${escapeHtml(k)} · ${escapeHtml(v)}</span>`)
       .join("");
     view.innerHTML = `
-      <div class="section-label tight">nodes</div>
-      <div class="topo-nodes">${nodes || "—"}</div>
-      <div class="section-label tight" style="margin-top:1rem">edges</div>
-      <div class="topo-edges">${edges || "—"}</div>
-      <div class="section-label tight" style="margin-top:1rem">channels</div>
-      <div class="topo-nodes">${channels || "—"}</div>
-      <div class="muted tiny" style="margin-top:1rem">recursionLimit=${escapeHtml(data.recursionLimit)}</div>
+      <p class="block-label">Nodes</p>
+      <div class="chip-row">${nodes || "—"}</div>
+      <p class="block-label">Edges</p>
+      <div class="chip-row">${edges || "—"}</div>
+      <p class="block-label">Channels</p>
+      <div class="chip-row">${channels || "—"}</div>
+      <p class="muted mono" style="margin:0.5rem 0 0">recursionLimit=${escapeHtml(data.recursionLimit)}</p>
     `;
-    out.hidden = false;
+    raw.hidden = false;
     out.textContent = JSON.stringify(data, null, 2);
   };
 })();

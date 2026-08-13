@@ -19,8 +19,8 @@ internal static class VolutaUiAssets
     public static string RenderIndexHtml(string pathPrefix)
     {
         var baseHref = pathPrefix.EndsWith('/') ? pathPrefix : pathPrefix + "/";
-        const string marker = "<title>voluta · ops</title>";
-        var injection = $"<title>voluta · ops</title>\n  <base href=\"{baseHref}\" />";
+        const string marker = "<title>Voluta · ops</title>";
+        var injection = $"<title>Voluta · ops</title>\n  <base href=\"{baseHref}\" />";
         return IndexHtmlTemplate.Contains(marker, StringComparison.Ordinal)
             ? IndexHtmlTemplate.Replace(marker, injection, StringComparison.Ordinal)
             : $"<!doctype html><base href=\"{baseHref}\" />" + IndexHtmlTemplate;

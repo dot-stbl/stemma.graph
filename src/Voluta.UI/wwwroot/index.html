@@ -1,78 +1,95 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>voluta · ops</title>
-  <!-- base href injected at serve time so /voluta (no slash) still loads assets -->
+  <title>Voluta · ops</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="frame">
-    <header class="top">
-      <div class="brand">
-        <div class="wordmark">voluta</div>
-        <div class="rubric">ops console</div>
+  <header class="container-fluid top">
+    <div class="brand">
+      <strong>Voluta</strong>
+      <small>ops console</small>
+    </div>
+    <nav class="tabs">
+      <ul>
+        <li><button type="button" data-tab="inspector" class="active secondary">Inspector</button></li>
+        <li><button type="button" data-tab="hitl" class="secondary outline">HITL</button></li>
+        <li><button type="button" data-tab="topology" class="secondary outline">Topology</button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container-fluid">
+    <section id="panel-inspector" class="panel active">
+      <hgroup>
+        <h2>Run inspector</h2>
+        <p>Load a C-shape checkpoint or attach an SSE stream.</p>
+      </hgroup>
+      <div class="toolbar">
+        <label>
+          Thread id
+          <input id="threadId" type="text" placeholder="ui-host-hitl-1" value="ui-host-hitl-1" spellcheck="false" autocomplete="off" />
+        </label>
+        <div class="actions">
+          <button type="button" id="loadThread">Load</button>
+          <button type="button" id="startStream" class="secondary">SSE</button>
+          <button type="button" id="stopStream" class="secondary outline" disabled>Stop</button>
+        </div>
       </div>
-      <nav class="tabs" role="tablist">
-        <button type="button" data-tab="inspector" class="active" role="tab">inspector</button>
-        <button type="button" data-tab="hitl" role="tab">hitl</button>
-        <button type="button" data-tab="topology" role="tab">topology</button>
-      </nav>
-      <div class="top-meta mono muted">thread · checkpoint · stream</div>
-    </header>
+      <div class="grid">
+        <article id="inspectorMeta">
+          <p class="muted">Load a thread to inspect the latest checkpoint.</p>
+        </article>
+        <article>
+          <header>
+            <strong>Live stream</strong>
+            <small class="muted">GET …/stream · mode=checkpoint | resume | invoke</small>
+          </header>
+          <div id="streamLog" class="stream-log"></div>
+        </article>
+      </div>
+      <article>
+        <header><strong>Raw checkpoint</strong></header>
+        <pre id="inspectorOut" class="dump">—</pre>
+      </article>
+    </section>
 
-    <main>
-      <section id="panel-inspector" class="panel active">
-        <div class="section-label">run inspector</div>
-        <div class="row">
-          <label>thread id
-            <input id="threadId" class="mono" placeholder="ui-host-hitl-1" value="ui-host-hitl-1" spellcheck="false" />
-          </label>
-          <button type="button" id="loadThread" class="primary">load</button>
-          <button type="button" id="startStream" class="ghost">sse</button>
-          <button type="button" id="stopStream" class="ghost" disabled>stop</button>
-        </div>
-        <div class="grid-2">
-          <div class="card" id="inspectorMeta">
-            <div class="muted">load a thread to inspect the latest c-shape checkpoint.</div>
-          </div>
-          <div class="card">
-            <div class="section-label tight">live stream</div>
-            <div class="muted tiny">
-              get /api/threads/{id}/stream · mode=checkpoint | resume | invoke
-            </div>
-            <div id="streamLog" class="stream-log mono"></div>
-          </div>
-        </div>
-        <pre id="inspectorOut" class="card mono dump">—</pre>
-      </section>
+    <section id="panel-hitl" class="panel">
+      <hgroup>
+        <h2>HITL queue</h2>
+        <p>Interrupted threads tracked in this process.</p>
+      </hgroup>
+      <div class="toolbar">
+        <button type="button" id="refreshHitl">Refresh</button>
+      </div>
+      <div id="hitlList" class="list"></div>
+    </section>
 
-      <section id="panel-hitl" class="panel">
-        <div class="section-label">hitl queue</div>
-        <div class="row">
-          <button type="button" id="refreshHitl" class="primary">refresh</button>
-        </div>
-        <div id="hitlList" class="list"></div>
-      </section>
+    <section id="panel-topology" class="panel">
+      <hgroup>
+        <h2>Topology</h2>
+        <p>Compiled graph metadata.</p>
+      </hgroup>
+      <div class="toolbar">
+        <button type="button" id="loadTopology">Load</button>
+      </div>
+      <article id="topologyView">
+        <p class="muted">Nodes, edges, and channels.</p>
+      </article>
+      <article id="topologyRaw" hidden>
+        <header><strong>Raw</strong></header>
+        <pre id="topologyOut" class="dump"></pre>
+      </article>
+    </section>
+  </main>
 
-      <section id="panel-topology" class="panel">
-        <div class="section-label">topology</div>
-        <div class="row">
-          <button type="button" id="loadTopology" class="primary">load</button>
-        </div>
-        <div id="topologyView" class="card">
-          <div class="muted">compiled graph metadata (nodes, edges, channels).</div>
-        </div>
-        <pre id="topologyOut" class="card mono dump" hidden></pre>
-      </section>
-    </main>
-
-    <footer class="foot">
-      <span class="muted">by ▪stbl</span>
-      <span class="muted mono" id="pathHint"></span>
-    </footer>
-  </div>
+  <footer class="container-fluid foot">
+    <small class="muted">Voluta UI</small>
+    <small class="muted mono" id="pathHint"></small>
+  </footer>
   <script src="app.js"></script>
 </body>
 </html>
