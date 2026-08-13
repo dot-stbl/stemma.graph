@@ -178,7 +178,8 @@ the NuGet tag:
 | Harness samples | `ReviewBot`, `DocQ`, `MarketingAgent` + `MockAdMcp` + `Voluta.Samples.Shared`; UI host `UiHost` |
 | Benchmarks | `benchmarks/Voluta.Benchmarks` |
 
-Still deferred: EF/S3 checkpointers, NuGet `v0.1.0` (PublicAPI surface tracked — D-026), arch tests.
+Still deferred: NuGet `v0.1.0` (PublicAPI surface tracked — D-026), arch tests.
+EF/S3 checkpointers: see D-027.
 
 ### D-024 — Переименование в **Voluta**
 
@@ -249,6 +250,17 @@ auth, full graph canvas editor.
   uses optional parameters; `MapVolutaUI` optional-configure overload replaced
   with required `Action<VolutaUiOptions>` + parameterless default (RS0026/RS0027).
 
+### D-027 — EF Core + S3 checkpointer packages
+
+**Decision (2026-08-14):** Ship two additional `ICheckpointer` providers:
+
+| Package | Notes |
+|---------|--------|
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic: depends on `Microsoft.EntityFrameworkCore` + Relational only. Consumers register Npgsql/SqlServer/SQLite themselves. Table `voluta_checkpoints`, composite key `(thread_id, step)`, full C-shape JSON in `payload_json`. Prefer `IDbContextFactory<VolutaCheckpointDbContext>`. Schema/migrations owned by the consumer (`EnsureCreated` OK for tests). |
+| `Voluta.Checkpoints.S3` | `AWSSDK.S3`; key layout `{prefix}/{safeThreadId}/{step:D12}.json`. Same STJ C-shape wire as File. |
+
+Both pass `CheckpointerConformance.RunAllAsync`. PublicAPI ship gate enabled. Same polymorphic JSON limits as File (D-023 open serde question).
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
@@ -263,7 +275,7 @@ auth, full graph canvas editor.
 ## GitHub tracking
 
 Milestone: `v0.1 · MVP runtime`. Epic #1 (close after tag); UI #14 closed (RCL+SSE);
-UI epic #13 first-cut done (follow-ups open); backlog #8 (EF/S3 only).
+UI epic #13 first-cut done (follow-ups open); backlog #8 EF/S3 done (D-027).
 
 ## Связанное
 

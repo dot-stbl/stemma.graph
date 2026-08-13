@@ -321,9 +321,10 @@ what?". Those three questions are the entire library.
 | `Voluta.Generators` | `[GraphState]` source generator | on `main` |
 | `Voluta.Testing` | Test doubles + checkpointer conformance suite | on `main` |
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer | on `main` |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core checkpointer | on `main` |
+| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible checkpointer | on `main` |
 | `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | on `main` |
-| `Voluta.Checkpoints.EF` / S3 | Extra durable providers | planned |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/03-AotSmoke`.
