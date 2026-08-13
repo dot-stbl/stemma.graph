@@ -8,6 +8,7 @@
   let eventSource = null;
   let cy = null;
   let lastTopology = null;
+  let topologyLoaded = false;
 
   const pathHint = document.getElementById("pathHint");
   if (pathHint) {
@@ -20,16 +21,29 @@
 
   function setTab(name) {
     document.querySelectorAll("[data-tab]").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.tab === name);
+      const active = btn.dataset.tab === name;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
     });
     document.querySelectorAll(".panel").forEach((panel) => {
-      panel.classList.toggle("active", panel.id === "panel-" + name);
+      const active = panel.id === "panel-" + name;
+      panel.classList.toggle("active", active);
+      if (active) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "");
+      }
     });
-    if (name === "topology" && cy) {
-      setTimeout(() => {
-        cy.resize();
-        cy.fit(undefined, 40);
-      }, 50);
+    if (name === "topology") {
+      if (!topologyLoaded) {
+        topologyLoaded = true;
+        document.getElementById("loadTopology").click();
+      } else if (cy) {
+        setTimeout(() => {
+          cy.resize();
+          cy.fit(undefined, 40);
+        }, 50);
+      }
     }
   }
 
@@ -40,10 +54,11 @@
   function statusBadge(status) {
     const s = (status || "").toString();
     const cls =
-      s === "Done" ? "bg-green-lt text-green" :
-      s === "Interrupted" ? "bg-yellow-lt text-yellow" :
-      s === "Failed" || s === "Cancelled" ? "bg-red-lt text-red" :
-      "bg-secondary-lt";
+      s === "Done" ? "badge-done" :
+      s === "Interrupted" ? "badge-interrupted" :
+      s === "Failed" || s === "Cancelled" ? "badge-failed" :
+      s === "Node" ? "badge-node" :
+      "badge-muted";
     return `<span class="badge ${cls}">${escapeHtml(s || "—")}</span>`;
   }
 
@@ -58,7 +73,7 @@
   function renderCheckpointMeta(data) {
     const channels = Object.entries(data.channelValues || {})
       .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
-      .join("") || `<dt>—</dt><dd class="text-secondary">no channels</dd>`;
+      .join("") || `<dt>—</dt><dd class="muted">no channels</dd>`;
     const versions = Object.entries(data.channelVersions || {})
       .map(([k, v]) => `${escapeHtml(k)}@${escapeHtml(v)}`)
       .join(", ") || "—";
@@ -66,7 +81,7 @@
     document.getElementById("inspectorMeta").innerHTML = `
       <div class="meta-head">
         ${statusBadge(data.status)}
-        <span class="font-monospace text-secondary">step ${escapeHtml(data.step)}</span>
+        <span class="meta-step">step ${escapeHtml(data.step)}</span>
       </div>
       <dl class="kv">
         <dt>Thread</dt><dd>${escapeHtml(data.threadId)}</dd>
@@ -75,15 +90,15 @@
         <dt>Interrupt</dt><dd>${escapeHtml(data.interruptPayload ?? "—")}</dd>
         <dt>Versions</dt><dd>${versions}</dd>
       </dl>
-      <div class="subheader mt-3 mb-2">Channels</div>
+      <div class="subheader">Channels</div>
       <dl class="kv">${channels}</dl>
     `;
   }
 
-  function appendStreamLine(text) {
+  function appendStreamLine(text, kind) {
     const log = document.getElementById("streamLog");
     const line = document.createElement("div");
-    line.className = "line";
+    line.className = "line" + (kind ? " kind-" + kind : "");
     line.textContent = text;
     log.appendChild(line);
     log.scrollTop = log.scrollHeight;
@@ -101,7 +116,7 @@
   function bindStream(url, onDone) {
     stopStream();
     document.getElementById("streamLog").innerHTML = "";
-    appendStreamLine("connecting…");
+    appendStreamLine("connecting…", "meta");
     eventSource = new EventSource(url);
     document.getElementById("stopStream").disabled = false;
     document.getElementById("startStream").disabled = true;
@@ -109,15 +124,18 @@
     eventSource.addEventListener("stream", (ev) => {
       try {
         const data = JSON.parse(ev.data);
+        const kind = (data.kind || "").toString().toLowerCase();
+        const lineKind = kind.includes("interrupt") ? "interrupt" : "";
         appendStreamLine(
-          `step=${data.step} kind=${data.kind} nodes=[${(data.nodeNames || []).join(",")}] payload=${data.payload ?? ""}`
+          `step=${data.step} kind=${data.kind} nodes=[${(data.nodeNames || []).join(",")}] payload=${data.payload ?? ""}`,
+          lineKind
         );
       } catch {
         appendStreamLine(ev.data);
       }
     });
     eventSource.addEventListener("done", () => {
-      appendStreamLine("— done —");
+      appendStreamLine("— done —", "done");
       stopStream();
       if (onDone) {
         onDone();
@@ -127,7 +145,7 @@
       if (ev.data) {
         appendStreamLine("error: " + ev.data);
       } else {
-        appendStreamLine("connection closed / error");
+        appendStreamLine("connection closed / error", "meta");
       }
       stopStream();
     });
@@ -144,7 +162,7 @@
     if (!res.ok) {
       out.textContent = await res.text();
       document.getElementById("inspectorMeta").innerHTML =
-        `<p class="text-secondary mb-0">Not found or error (${res.status}).</p>`;
+        `<p class="muted">Not found or error (${res.status}).</p>`;
       return;
     }
     const data = await res.json();
@@ -155,7 +173,7 @@
   document.getElementById("startStream").onclick = () => {
     const id = document.getElementById("threadId").value.trim();
     if (!id) {
-      appendStreamLine("Enter a thread id first.");
+      appendStreamLine("Enter a thread id first.", "meta");
       return;
     }
     bindStream(api("/api/threads/" + encodeURIComponent(id) + "/stream?mode=checkpoint"));
@@ -168,52 +186,46 @@
     const list = document.getElementById("hitlList");
     list.innerHTML = "";
     if (!res.ok) {
-      list.innerHTML = `<div class="col-12"><div class="alert alert-danger">${escapeHtml(await res.text())}</div></div>`;
+      list.innerHTML = `<div class="alert alert-danger">${escapeHtml(await res.text())}</div>`;
       return;
     }
     const items = await res.json();
     if (!items.length) {
       list.innerHTML = `
-        <div class="col-12">
-          <div class="empty">
-            <p class="empty-title">No interrupted threads</p>
-            <p class="empty-subtitle text-secondary">
-              Sample seeds <code>ui-host-hitl-1</code> on startup. Resume clears the queue.
-            </p>
-          </div>
+        <div class="empty">
+          <p class="empty-title">No interrupted threads</p>
+          <p class="empty-sub">
+            Sample seeds <code>ui-host-hitl-1</code> on startup. Resume clears the queue.
+          </p>
         </div>`;
       return;
     }
     for (const item of items) {
-      const col = document.createElement("div");
-      col.className = "col-md-6 col-lg-4";
-      col.innerHTML = `
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-              <strong class="font-monospace">${escapeHtml(item.threadId)}</strong>
-              ${statusBadge("Interrupted")}
-            </div>
-            <div class="text-secondary small mb-1">
-              step ${escapeHtml(item.step)} · node <span class="font-monospace">${escapeHtml(item.lastNode ?? "-")}</span>
-            </div>
-            <div class="hitl-payload">${escapeHtml(item.interruptPayload ?? "")}</div>
-            <div class="btn-list">
-              <button type="button" class="btn btn-success btn-sm" data-action="approve">Approve</button>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="reject">Reject</button>
-              <button type="button" class="btn btn-outline-azure btn-sm" data-action="stream">SSE resume</button>
-            </div>
-          </div>
+      const card = document.createElement("article");
+      card.className = "card hitl-card";
+      card.innerHTML = `
+        <div class="hitl-card-head">
+          <strong>${escapeHtml(item.threadId)}</strong>
+          ${statusBadge("Interrupted")}
+        </div>
+        <div class="hitl-meta">
+          step ${escapeHtml(item.step)} · node ${escapeHtml(item.lastNode ?? "-")}
+        </div>
+        <div class="hitl-payload">${escapeHtml(item.interruptPayload ?? "")}</div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-success btn-sm" data-action="approve">Approve</button>
+          <button type="button" class="btn btn-danger-outline btn-sm" data-action="reject">Reject</button>
+          <button type="button" class="btn btn-ghost-brand btn-sm" data-action="stream">SSE resume</button>
         </div>`;
-      col.querySelector('[data-action="approve"]').onclick = async () => {
+      card.querySelector('[data-action="approve"]').onclick = async () => {
         await resumeThread(item.threadId, "approve", "ok");
         document.getElementById("refreshHitl").click();
       };
-      col.querySelector('[data-action="reject"]').onclick = async () => {
+      card.querySelector('[data-action="reject"]').onclick = async () => {
         await resumeThread(item.threadId, "reject", "no");
         document.getElementById("refreshHitl").click();
       };
-      col.querySelector('[data-action="stream"]').onclick = () => {
+      card.querySelector('[data-action="stream"]').onclick = () => {
         document.getElementById("threadId").value = item.threadId;
         setTab("inspector");
         bindStream(
@@ -225,7 +237,7 @@
           () => document.getElementById("refreshHitl").click()
         );
       };
-      list.appendChild(col);
+      list.appendChild(card);
     }
   };
 
@@ -253,11 +265,12 @@
             "text-valign": "center",
             "text-halign": "center",
             "font-size": 12,
-            "font-family": "ui-monospace, Consolas, monospace",
-            color: "#e6e7e9",
-            "background-color": "#206bc4",
-            "border-width": 1,
-            "border-color": "#4299e1",
+            "font-family": "IBM Plex Mono, ui-monospace, Consolas, monospace",
+            color: "#e8eef8",
+            "background-color": "#1c3a7a",
+            "background-opacity": 0.92,
+            "border-width": 1.5,
+            "border-color": "#a9c9ff",
             width: "label",
             height: "label",
             padding: "14px",
@@ -267,16 +280,16 @@
         {
           selector: "node.terminal",
           style: {
-            "background-color": "#2fb344",
-            "border-color": "#5ecf72",
+            "background-color": "#1a4a24",
+            "border-color": "#a6ff86",
             shape: "ellipse",
           },
         },
         {
           selector: "node.start",
           style: {
-            "background-color": "#ae3ec9",
-            "border-color": "#cc5de8",
+            "background-color": "#6b1444",
+            "border-color": "#ff9bd8",
             shape: "ellipse",
           },
         },
@@ -284,20 +297,21 @@
           selector: "node:selected",
           style: {
             "border-width": 3,
-            "border-color": "#ffd43b",
+            "border-color": "#ffd68a",
           },
         },
         {
           selector: "edge",
           style: {
             width: 2,
-            "line-color": "#6c7a91",
-            "target-arrow-color": "#6c7a91",
+            "line-color": "#4a5d7a",
+            "target-arrow-color": "#4a5d7a",
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
             label: "data(label)",
             "font-size": 10,
-            color: "#9aa4b2",
+            "font-family": "IBM Plex Mono, ui-monospace, Consolas, monospace",
+            color: "#8b9bb8",
             "text-rotation": "autorotate",
             "text-margin-y": -8,
           },
@@ -305,8 +319,8 @@
         {
           selector: "edge:selected",
           style: {
-            "line-color": "#ffd43b",
-            "target-arrow-color": "#ffd43b",
+            "line-color": "#ffd68a",
+            "target-arrow-color": "#ffd68a",
             width: 3,
           },
         },
@@ -320,7 +334,7 @@
     cy.on("tap", "node", (event) => {
       const node = event.target;
       document.getElementById("topoSelection").innerHTML = `
-        <div class="mb-2">${statusBadge("Node")}</div>
+        <div class="meta-head">${statusBadge("Node")}</div>
         <dl class="kv">
           <dt>Id</dt><dd>${escapeHtml(node.id())}</dd>
           <dt>Label</dt><dd>${escapeHtml(node.data("label"))}</dd>
@@ -330,7 +344,7 @@
     cy.on("tap", "edge", (event) => {
       const edge = event.target;
       document.getElementById("topoSelection").innerHTML = `
-        <div class="mb-2"><span class="badge bg-purple-lt text-purple">Edge</span></div>
+        <div class="meta-head"><span class="badge badge-edge">Edge</span></div>
         <dl class="kv">
           <dt>From</dt><dd>${escapeHtml(edge.data("source"))}</dd>
           <dt>To</dt><dd>${escapeHtml(edge.data("target"))}</dd>
@@ -340,7 +354,7 @@
     cy.on("tap", (event) => {
       if (event.target === cy) {
         document.getElementById("topoSelection").innerHTML =
-          `<p class="text-secondary mb-0">Click a node or edge on the graph.</p>`;
+          `<p class="muted">Click a node or edge on the graph.</p>`;
       }
     });
     return cy;
@@ -412,14 +426,14 @@
     const channels = Object.entries(data.channels || {});
     if (!channels.length) {
       document.getElementById("topoChannels").innerHTML =
-        `<p class="text-secondary mb-0">No channels.</p>`;
+        `<p class="muted">No channels.</p>`;
       return;
     }
     document.getElementById("topoChannels").innerHTML =
       `<div class="chip-row">${channels
         .map(([k, v]) => `<span class="chip">${escapeHtml(k)} · ${escapeHtml(v)}</span>`)
         .join("")}</div>
-       <div class="text-secondary small mt-2">recursionLimit=${escapeHtml(data.recursionLimit)}</div>`;
+       <p class="muted" style="margin-top:0.65rem;font-size:0.75rem;font-family:var(--mono)">recursionLimit=${escapeHtml(data.recursionLimit)}</p>`;
   }
 
   function paintTopology(data) {
@@ -427,7 +441,7 @@
     const host = ensureCy();
     if (!host) {
       document.getElementById("topoSelection").innerHTML =
-        `<div class="alert alert-warning mb-0">Cytoscape failed to load (CDN). Check network.</div>`;
+        `<div class="alert alert-warning">Cytoscape failed to load (CDN). Check network.</div>`;
       return;
     }
     const elements = topologyToElements(data);
@@ -453,7 +467,7 @@
     const res = await fetch(api("/api/topology"));
     if (!res.ok) {
       document.getElementById("topoSelection").innerHTML =
-        `<div class="alert alert-danger mb-0">${escapeHtml(await res.text())}</div>`;
+        `<div class="alert alert-danger">${escapeHtml(await res.text())}</div>`;
       return;
     }
     paintTopology(await res.json());
@@ -467,17 +481,4 @@
       paintTopology(lastTopology);
     }
   };
-
-  // Auto-load topology graph when opening tab first time
-  let topologyLoaded = false;
-  const originalSetTab = setTab;
-  // re-bind topology auto-load on tab buttons
-  document.querySelectorAll('[data-tab="topology"]').forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (!topologyLoaded) {
-        topologyLoaded = true;
-        document.getElementById("loadTopology").click();
-      }
-    });
-  });
 })();
