@@ -1,0 +1,4 @@
+#nullable enable
+static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, Voluta.Graph.CompiledGraph!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Voluta.Graph.CompiledGraph! graph) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Voluta.DependencyInjection.ServiceCollectionExtensions

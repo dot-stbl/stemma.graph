@@ -1,0 +1,165 @@
+#nullable enable
+static Voluta.Abstractions.Results.NodeResult.Continue(params Voluta.Abstractions.Channels.ChannelWrite![]! writes) -> Voluta.Abstractions.Results.ContinueNodeResult!
+static Voluta.Abstractions.Results.NodeResult.Continue(System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Channels.ChannelWrite!>! writes, System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Runtime.Send!>! sends) -> Voluta.Abstractions.Results.ContinueNodeResult!
+static Voluta.Abstractions.Results.NodeResult.Continue(System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Channels.ChannelWrite!>! writes) -> Voluta.Abstractions.Results.ContinueNodeResult!
+static Voluta.Abstractions.Results.NodeResult.ContinueWithSends(params Voluta.Abstractions.Runtime.Send![]! sends) -> Voluta.Abstractions.Results.ContinueNodeResult!
+static Voluta.Abstractions.Results.NodeResult.ContinueWithSends(System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Runtime.Send!>! sends) -> Voluta.Abstractions.Results.ContinueNodeResult!
+static Voluta.Abstractions.Results.NodeResult.Interrupt(object? payload) -> Voluta.Abstractions.Results.InterruptNodeResult!
+static Voluta.Abstractions.State.OptionalValue<T>.implicit operator Voluta.Abstractions.State.OptionalValue<T>(T value) -> Voluta.Abstractions.State.OptionalValue<T>
+static Voluta.Abstractions.State.OptionalValue<T>.Of(T value) -> Voluta.Abstractions.State.OptionalValue<T>
+Voluta.Abstractions.Channels.ChannelKind
+Voluta.Abstractions.Channels.ChannelKind.Append = 1 -> Voluta.Abstractions.Channels.ChannelKind
+Voluta.Abstractions.Channels.ChannelKind.LastValue = 0 -> Voluta.Abstractions.Channels.ChannelKind
+Voluta.Abstractions.Channels.ChannelWrite
+Voluta.Abstractions.Channels.ChannelWrite.ChannelName.get -> string!
+Voluta.Abstractions.Channels.ChannelWrite.ChannelWrite(string! channelName, object? value) -> void
+Voluta.Abstractions.Channels.ChannelWrite.Value.get -> object?
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ChannelValues.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ChannelValues.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ChannelVersions.get -> System.Collections.Generic.IReadOnlyDictionary<string!, long>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ChannelVersions.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.CheckpointSnapshot() -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.FormatVersion.get -> int
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.FormatVersion.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.InterruptPayload.get -> object?
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.InterruptPayload.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.LastNode.get -> string?
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.LastNode.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.NextNodes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.NextNodes.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingSends.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.PendingSend!>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingSends.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingWrites.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.PendingWrite!>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingWrites.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.Status.get -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.Status.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.Step.get -> long
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.Step.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ThreadId.get -> string!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ThreadId.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.VersionsSeen.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, long>!>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.VersionsSeen.init -> void
+Voluta.Abstractions.Checkpoint.ICheckpointer
+Voluta.Abstractions.Checkpoint.ICheckpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
+Voluta.Abstractions.Checkpoint.ICheckpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
+Voluta.Abstractions.Checkpoint.ICheckpointer.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Abstractions.Checkpoint.PendingSend
+Voluta.Abstractions.Checkpoint.PendingSend.NodeName.get -> string!
+Voluta.Abstractions.Checkpoint.PendingSend.NodeName.init -> void
+Voluta.Abstractions.Checkpoint.PendingSend.Payload.get -> object?
+Voluta.Abstractions.Checkpoint.PendingSend.Payload.init -> void
+Voluta.Abstractions.Checkpoint.PendingSend.PendingSend() -> void
+Voluta.Abstractions.Checkpoint.PendingSend.TaskId.get -> string!
+Voluta.Abstractions.Checkpoint.PendingSend.TaskId.init -> void
+Voluta.Abstractions.Checkpoint.PendingWrite
+Voluta.Abstractions.Checkpoint.PendingWrite.ChannelName.get -> string!
+Voluta.Abstractions.Checkpoint.PendingWrite.ChannelName.init -> void
+Voluta.Abstractions.Checkpoint.PendingWrite.PendingWrite() -> void
+Voluta.Abstractions.Checkpoint.PendingWrite.TaskId.get -> string!
+Voluta.Abstractions.Checkpoint.PendingWrite.TaskId.init -> void
+Voluta.Abstractions.Checkpoint.PendingWrite.Value.get -> object?
+Voluta.Abstractions.Checkpoint.PendingWrite.Value.init -> void
+Voluta.Abstractions.IAssemblyMarker
+Voluta.Abstractions.Results.ContinueNodeResult
+Voluta.Abstractions.Results.ContinueNodeResult.ContinueNodeResult(System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Channels.ChannelWrite!>! writes, System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Runtime.Send!>? sends = null) -> void
+Voluta.Abstractions.Results.ContinueNodeResult.Sends.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Runtime.Send!>!
+Voluta.Abstractions.Results.ContinueNodeResult.Writes.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Channels.ChannelWrite!>!
+Voluta.Abstractions.Results.InterruptNodeResult
+Voluta.Abstractions.Results.InterruptNodeResult.InterruptNodeResult(object? payload) -> void
+Voluta.Abstractions.Results.InterruptNodeResult.Payload.get -> object?
+Voluta.Abstractions.Results.NodeResult
+Voluta.Abstractions.Runtime.Command
+Voluta.Abstractions.Runtime.Command.Command() -> void
+Voluta.Abstractions.Runtime.Command.Kind.get -> string?
+Voluta.Abstractions.Runtime.Command.Kind.init -> void
+Voluta.Abstractions.Runtime.Command.Payload.get -> object?
+Voluta.Abstractions.Runtime.Command.Payload.init -> void
+Voluta.Abstractions.Runtime.Command.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+Voluta.Abstractions.Runtime.Command.Values.init -> void
+Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.GraphRunStatus.Cancelled = 4 -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.GraphRunStatus.Done = 2 -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.GraphRunStatus.Failed = 3 -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.GraphRunStatus.Interrupted = 1 -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.GraphRunStatus.Running = 0 -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Runtime.RunOptions
+Voluta.Abstractions.Runtime.RunOptions.RunOptions() -> void
+Voluta.Abstractions.Runtime.RunOptions.StreamMode.get -> Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Runtime.RunOptions.StreamMode.init -> void
+Voluta.Abstractions.Runtime.RunOptions.ThreadId.get -> string!
+Voluta.Abstractions.Runtime.RunOptions.ThreadId.init -> void
+Voluta.Abstractions.Runtime.Send
+Voluta.Abstractions.Runtime.Send.Node.get -> string!
+Voluta.Abstractions.Runtime.Send.Payload.get -> object?
+Voluta.Abstractions.Runtime.Send.Send(string! node, object? payload = null) -> void
+Voluta.Abstractions.State.ChannelAttribute
+Voluta.Abstractions.State.ChannelAttribute.ChannelAttribute(Voluta.Abstractions.Channels.ChannelKind kind) -> void
+Voluta.Abstractions.State.ChannelAttribute.Kind.get -> Voluta.Abstractions.Channels.ChannelKind
+Voluta.Abstractions.State.ChannelAttribute.Name.get -> string?
+Voluta.Abstractions.State.ChannelAttribute.Name.init -> void
+Voluta.Abstractions.State.GraphChannelDeclaration
+Voluta.Abstractions.State.GraphChannelDeclaration.GraphChannelDeclaration(string! name, Voluta.Abstractions.Channels.ChannelKind kind) -> void
+Voluta.Abstractions.State.GraphChannelDeclaration.Kind.get -> Voluta.Abstractions.Channels.ChannelKind
+Voluta.Abstractions.State.GraphChannelDeclaration.Name.get -> string!
+Voluta.Abstractions.State.GraphChannelSchema
+Voluta.Abstractions.State.GraphChannelSchema.Builder
+Voluta.Abstractions.State.GraphChannelSchema.Builder.Add(string! name, Voluta.Abstractions.Channels.ChannelKind kind) -> Voluta.Abstractions.State.GraphChannelSchema.Builder!
+Voluta.Abstractions.State.GraphChannelSchema.Builder.Build() -> Voluta.Abstractions.State.GraphChannelSchema!
+Voluta.Abstractions.State.GraphChannelSchema.Builder.Builder() -> void
+Voluta.Abstractions.State.GraphChannelSchema.Channels.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.State.GraphChannelDeclaration!>!
+Voluta.Abstractions.State.GraphChannelSchema.GraphChannelSchema(System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.State.GraphChannelDeclaration!>! channels) -> void
+Voluta.Abstractions.State.GraphStateAttribute
+Voluta.Abstractions.State.GraphStateAttribute.GraphStateAttribute() -> void
+Voluta.Abstractions.State.OptionalValue<T>
+Voluta.Abstractions.State.OptionalValue<T>.IsSet.get -> bool
+Voluta.Abstractions.State.OptionalValue<T>.OptionalValue() -> void
+Voluta.Abstractions.State.OptionalValue<T>.OptionalValue(T value) -> void
+Voluta.Abstractions.State.OptionalValue<T>.Value.get -> T
+Voluta.Abstractions.Streaming.StreamEvent
+Voluta.Abstractions.Streaming.StreamEvent.Kind.get -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEvent.Kind.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.Mode.get -> Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Streaming.StreamEvent.Mode.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.NodeNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Streaming.StreamEvent.NodeNames.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.Payload.get -> object?
+Voluta.Abstractions.Streaming.StreamEvent.Payload.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.State.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+Voluta.Abstractions.Streaming.StreamEvent.State.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.Step.get -> long
+Voluta.Abstractions.Streaming.StreamEvent.Step.init -> void
+Voluta.Abstractions.Streaming.StreamEvent.StreamEvent() -> void
+Voluta.Abstractions.Streaming.StreamEvent.Writes.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Channels.ChannelWrite!>!
+Voluta.Abstractions.Streaming.StreamEvent.Writes.init -> void
+Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Cancelled = 7 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.End = 5 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Failed = 6 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Interrupt = 4 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.None = 0 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Start = 1 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Updates = 3 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Values = 2 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Streaming.StreamMode.Events = 2 -> Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Streaming.StreamMode.Updates = 1 -> Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Streaming.StreamMode.Values = 0 -> Voluta.Abstractions.Streaming.StreamMode
+Voluta.Abstractions.Topology.GraphDescription
+Voluta.Abstractions.Topology.GraphDescription.Channels.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Voluta.Abstractions.Channels.ChannelKind>!
+Voluta.Abstractions.Topology.GraphDescription.Channels.init -> void
+Voluta.Abstractions.Topology.GraphDescription.ConditionalSources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Topology.GraphDescription.ConditionalSources.init -> void
+Voluta.Abstractions.Topology.GraphDescription.GraphDescription() -> void
+Voluta.Abstractions.Topology.GraphDescription.Nodes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Topology.GraphDescription.Nodes.init -> void
+Voluta.Abstractions.Topology.GraphDescription.RecursionLimit.get -> int
+Voluta.Abstractions.Topology.GraphDescription.RecursionLimit.init -> void
+Voluta.Abstractions.Topology.GraphDescription.StaticEdges.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Topology.GraphEdgeDescription!>!
+Voluta.Abstractions.Topology.GraphDescription.StaticEdges.init -> void
+Voluta.Abstractions.Topology.GraphEdgeDescription
+Voluta.Abstractions.Topology.GraphEdgeDescription.GraphEdgeDescription() -> void
+Voluta.Abstractions.Topology.GraphEdgeDescription.Source.get -> string!
+Voluta.Abstractions.Topology.GraphEdgeDescription.Source.init -> void
+Voluta.Abstractions.Topology.GraphEdgeDescription.Target.get -> string!
+Voluta.Abstractions.Topology.GraphEdgeDescription.Target.init -> void

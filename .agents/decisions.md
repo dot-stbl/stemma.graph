@@ -154,7 +154,7 @@ Validate: `openspec validate --specs --strict`.
 
 | Tier | Packages | Target |
 |------|----------|--------|
-| **AOT core** | `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/03-AotSmoke` (`PublishAot`) |
+| **AOT core** | `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/AotSmoke` (`PublishAot`) |
 | **Full runtime** | `Voluta.Checkpoints.File`, `Voluta.UI`, `Voluta.MicrosoftAi`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
 
 **AOT path (supported):** fluent `StateGraph` + InMemory (+ optional thin DI).  
@@ -175,10 +175,10 @@ the NuGet tag:
 | File checkpointer | `Voluta.Checkpoints.File` |
 | MicrosoftAi | `Voluta.MicrosoftAi` (`ChatClientNode`) |
 | UI | `Voluta.UI` Razor RCL (`AddVolutaUI` / `MapVolutaUI` + SSE) — see D-025 |
-| Harness samples | `04-ReviewBot`, `05-DocQ` + `Voluta.Samples.Shared` |
+| Harness samples | `ReviewBot`, `DocQ`, `MarketingAgent` + `MockAdMcp` + `Voluta.Samples.Shared`; UI host `UiHost` |
 | Benchmarks | `benchmarks/Voluta.Benchmarks` |
 
-Still deferred: EF/S3 checkpointers, PublicAPI ship gate, NuGet `v0.1.0`, arch tests.
+Still deferred: EF/S3 checkpointers, NuGet `v0.1.0` (PublicAPI surface tracked — D-026), arch tests.
 
 ### D-024 — Переименование в **Voluta**
 
@@ -226,10 +226,28 @@ Blazor Interactive Server as the default. Cancel on client disconnect.
 
 **Isolation:** `Voluta` must not reference `Voluta.UI` (full-runtime host package only).
 
-**Sample:** `samples/06-UiHost` — `dotnet run` → `http://localhost:5188/voluta`.
+**Sample:** `samples/UiHost` — `dotnet run` → `http://localhost:5188/voluta`.
 
 **Out of scope (still):** Interactive Server circuit default, multi-graph host,
 auth, full graph canvas editor.
+
+### D-026 — PublicAPI ship gate (v0.1 freeze prep)
+
+**Решение (2026-08-14):** packable product libraries track public surface with
+`Microsoft.CodeAnalysis.PublicApiAnalyzers` + `PublicAPI.Shipped.txt` /
+`PublicAPI.Unshipped.txt` (wired in `Directory.Build.props` for
+`Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection`,
+`Voluta.Checkpoints.File`, `Voluta.MicrosoftAi`, `Voluta.UI`).
+
+- **Shipped** empty until first NuGet tag — all current surface is **Unshipped**.
+- After `v0.1.0` publish: move Unshipped → Shipped; further API changes must
+  land in Unshipped (or break intentionally with review).
+- **Not tracked:** `Voluta.Testing` (`IsPackable=false`), `Voluta.Generators`
+  (Roslyn analyzer package).
+- **API hygiene while enabling:** `CompiledGraph.ResumeAsync` overloads split
+  so only the full `(threadId, command, streamMode, cancellationToken)` form
+  uses optional parameters; `MapVolutaUI` optional-configure overload replaced
+  with required `Action<VolutaUiOptions>` + parameterless default (RS0026/RS0027).
 
 ## Open questions (remaining)
 
@@ -240,12 +258,12 @@ auth, full graph canvas editor.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
 6. **UI next** — multi-thread discovery beyond process-tracked ids; richer inspector.
 7. **AOT CI** — optional `dotnet publish` smoke on schedule vs every PR (slow).
-8. **0.1 NuGet** — PublicAPI Unshipped review before first tag.
+8. **0.1 NuGet** — owner review of `PublicAPI.Unshipped.txt` then tag (D-026).
 
 ## GitHub tracking
 
-Milestone: `v0.1 · MVP runtime`. Epic #1; benches #10 closed; UI epic #13 (first cut);
-backlog #8 (partial — Send/File/AI/UI done; EF/S3 open).
+Milestone: `v0.1 · MVP runtime`. Epic #1 (close after tag); UI #14 closed (RCL+SSE);
+UI epic #13 first-cut done (follow-ups open); backlog #8 (EF/S3 only).
 
 ## Связанное
 

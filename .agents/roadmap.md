@@ -10,14 +10,15 @@
 |---|---|
 | Architecture specs | ✅ archived → `openspec/specs/*` (12 capabilities) |
 | MVP runtime | ✅ Pregel + InMemory + HITL + stream + DI + Testing + Generators |
-| Samples | ✅ 01 ReAct · 02 HITL · 03 AOT · 04 ReviewBot · 05 DocQ · 06 UiHost |
+| Samples | ✅ HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost |
 | Benchmarks | ✅ `benchmarks/Voluta.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
 | File checkpointer | ✅ `Voluta.Checkpoints.File` |
 | MicrosoftAi | ✅ thin `IChatClient` helpers |
-| UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample 06 |
+| UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample UiHost |
 | EF / S3 checkpointers | ❌ later |
-| NuGet 0.1 tag | ❌ PublicAPI review + publish |
+| PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
+| NuGet 0.1 tag | ❌ owner review of Unshipped surface → tag `v0.1.0` + publish |
 | Arch tests (package isolation) | ❌ later |
 
 ## Shipped package map
@@ -35,12 +36,11 @@
 
 ## Ближайшие шаги
 
-1. **PublicAPI Unshipped + `v0.1.0` NuGet tag** (owner call)
-2. CI: path filters for `openspec/**` / `benchmarks/**`; optional pack smoke
-3. Architecture tests: Abstractions isolation, core ↛ UI/EF
-4. EF checkpointer (if product needs it)
-5. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
-6. Docs site (D-011)
+1. **Owner review of PublicAPI.Unshipped.txt** → tag **`v0.1.0`** + nuget.org publish
+2. Architecture tests: Abstractions isolation, core ↛ UI/EF
+3. EF / S3 checkpointer (if product needs it)
+4. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
+5. Docs site (D-011)
 
 ## Не в планах
 

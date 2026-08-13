@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Voluta.Samples.HelloWorld</RootNamespace>
+    <Description>
+      HelloWorld: simulated ReAct loop (agent ⇄ tools) streaming channel updates.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\Voluta.Samples.Shared\Voluta.Samples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

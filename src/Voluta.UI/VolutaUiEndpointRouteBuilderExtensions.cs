@@ -28,17 +28,27 @@ public static class VolutaUiEndpointRouteBuilderExtensions
     }
 
     /// <summary>
-    ///     Maps UI shell + JSON API + SSE under the configured path prefix (default <c>/voluta</c>).
+    ///     Maps UI shell + JSON API + SSE under the default path prefix (<c>/voluta</c>).
     /// </summary>
     /// <param name="endpoints">Endpoint route builder (typically <see cref="WebApplication" />).</param>
-    /// <param name="configure">Optional options mutator (e.g. path prefix).</param>
+    /// <returns>The endpoint route builder.</returns>
+    public static IEndpointRouteBuilder MapVolutaUI(this IEndpointRouteBuilder endpoints)
+    {
+        return MapVolutaUI(endpoints, new VolutaUiOptions());
+    }
+
+    /// <summary>
+    ///     Maps UI shell + JSON API + SSE with an options mutator (e.g. path prefix).
+    /// </summary>
+    /// <param name="endpoints">Endpoint route builder (typically <see cref="WebApplication" />).</param>
+    /// <param name="configure">Options mutator.</param>
     /// <returns>The endpoint route builder.</returns>
     public static IEndpointRouteBuilder MapVolutaUI(
         this IEndpointRouteBuilder endpoints,
-        Action<VolutaUiOptions>? configure = null)
+        Action<VolutaUiOptions> configure)
     {
         var options = new VolutaUiOptions();
-        configure?.Invoke(options);
+        configure(options);
         return MapVolutaUI(endpoints, options);
     }
 
