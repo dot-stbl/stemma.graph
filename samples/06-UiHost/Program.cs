@@ -176,42 +176,33 @@ static Task<NodeResult> RetrieveAsync(GraphContext context, CancellationToken ca
 
 static IReadOnlyList<string> EvidenceForGoal(string goal)
 {
-    if (goal.Contains("deploy", StringComparison.OrdinalIgnoreCase))
+    return goal switch
     {
-        return
+        _ when goal.Contains("deploy", StringComparison.OrdinalIgnoreCase) =>
         [
             "ci: green on main @ a7fad91",
             "slo: error-rate 0.12% (budget 0.5%)",
             "change-calendar: prod window open until 18:00 UTC",
-        ];
-    }
-
-    if (goal.Contains("docs", StringComparison.OrdinalIgnoreCase))
-    {
-        return
+        ],
+        _ when goal.Contains("docs", StringComparison.OrdinalIgnoreCase) =>
         [
             "src/Voluta/Graph/Options/CompileOptions.cs — RecursionLimit",
             "openspec/specs/graph-runtime/spec.md — superstep barrier",
             "samples/01-HelloWorld — conditional edges demo",
-        ];
-    }
-
-    if (goal.Contains("purge", StringComparison.OrdinalIgnoreCase))
-    {
-        return
+        ],
+        _ when goal.Contains("purge", StringComparison.OrdinalIgnoreCase) =>
         [
             "table analytics.events_pii rows≈12.4M",
             "retention policy: 90d · legal hold: ON for tenant acme",
             "last purge job: 2026-07-02 (failed approval)",
-        ];
-    }
-
-    return
-    [
-        "vendor ACME · IBAN ····4821 · currency USD",
-        "open invoice INV-20418 · amount 4200.00",
-        "wallet balance 18_240.55 · dual-control required > 1_000",
-    ];
+        ],
+        _ =>
+        [
+            "vendor ACME · IBAN ····4821 · currency USD",
+            "open invoice INV-20418 · amount 4200.00",
+            "wallet balance 18_240.55 · dual-control required > 1_000",
+        ],
+    };
 }
 
 static Task<NodeResult> RiskGateAsync(GraphContext context, CancellationToken cancellationToken)
