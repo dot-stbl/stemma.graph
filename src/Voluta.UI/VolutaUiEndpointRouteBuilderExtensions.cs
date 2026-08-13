@@ -23,7 +23,7 @@ public static class VolutaUiEndpointRouteBuilderExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddVolutaUI(this IServiceCollection services, VolutaUiSession session)
     {
-        _ = services.AddSingleton(session);
+        services.AddSingleton(session);
         return services;
     }
 
@@ -57,33 +57,33 @@ public static class VolutaUiEndpointRouteBuilderExtensions
         // Single shell route — do not also MapGet(prefix+"/") (AmbiguousMatch with /voluta).
         // Inject <base href="{prefix}/"> so relative styles.css/app.js resolve under the prefix
         // when the browser URL is /voluta without a trailing slash.
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             prefix,
             () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/index.html",
             () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/styles.css",
             () => Results.Content(VolutaUiAssets.StylesCss, "text/css; charset=utf-8"));
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/app.js",
             () => Results.Content(VolutaUiAssets.AppJs, "text/javascript; charset=utf-8"));
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/brand.png",
             () => Results.File(VolutaUiAssets.BrandPng, "image/png"));
 
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/api/topology",
             (VolutaUiSession session) =>
                 Results.Json(VolutaUiJson.ToWire(session.Topology), JsonSerializerOptions.Web));
 
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/api/hitl",
             async (VolutaUiSession session, CancellationToken cancellationToken) =>
                 Results.Json(await session.ListInterruptedAsync(cancellationToken), JsonSerializerOptions.Web));
 
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/api/threads/{{threadId}}",
             async (string threadId, VolutaUiSession session, CancellationToken cancellationToken) =>
             {
@@ -93,7 +93,7 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                     : Results.Json(VolutaUiJson.ToWire(snapshot), JsonSerializerOptions.Web);
             });
 
-        _ = endpoints.MapPost(
+        endpoints.MapPost(
             $"{prefix}/api/threads/{{threadId}}/resume",
             async (
                 string threadId,
@@ -110,7 +110,7 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                 return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
             });
 
-        _ = endpoints.MapGet(
+        endpoints.MapGet(
             $"{prefix}/api/threads/{{threadId}}/stream",
             VolutaUiStreamEndpoint.HandleAsync);
 
