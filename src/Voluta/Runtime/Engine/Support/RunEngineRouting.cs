@@ -20,20 +20,46 @@ internal static class RunEngineRouting
             return [.. router(context)];
         }
 
+        // Topology lists are immutable after compile; return as-is (callers must not mutate).
         return topology.StaticEdges.TryGetValue(source, out var targets)
-            ? [.. targets]
+            ? targets
             : [];
     }
 
     public static IReadOnlyList<ReadyTask> ToPullTasks(GraphTopology topology, IReadOnlyList<string> candidates)
     {
-        return
-        [
-            .. candidates
-                .Where(name => name != GraphConstants.End && topology.Nodes.ContainsKey(name))
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(name => name, StringComparer.Ordinal)
-                .Select(static name => new ReadyTask(name, name, null))
-        ];
+        if (candidates.Count == 0)
+        {
+            return [];
+        }
+
+        var filtered = new List<string>(candidates.Count);
+        foreach (var name in candidates)
+        {
+            if (name == GraphConstants.End || !topology.Nodes.ContainsKey(name))
+            {
+                continue;
+            }
+
+            if (!filtered.Contains(name))
+            {
+                filtered.Add(name);
+            }
+        }
+
+        if (filtered.Count == 0)
+        {
+            return [];
+        }
+
+        filtered.Sort(StringComparer.Ordinal);
+        var tasks = new ReadyTask[filtered.Count];
+        for (var index = 0; index < filtered.Count; index++)
+        {
+            var name = filtered[index];
+            tasks[index] = new ReadyTask(name, name, null);
+        }
+
+        return tasks;
     }
 }

@@ -12,7 +12,8 @@ internal static class RunEngineStreaming
         long step,
         IReadOnlyList<string> nodeNames,
         IReadOnlyList<TaskChannelWrite> writes,
-        ChannelStore store)
+        ChannelStore store,
+        IReadOnlyDictionary<string, object?>? postApplySnapshot = null)
     {
         if (mode == StreamMode.Updates)
         {
@@ -21,19 +22,31 @@ internal static class RunEngineStreaming
                 Mode = StreamMode.Updates,
                 Kind = StreamEventKind.Updates,
                 Step = step,
-                NodeNames = [.. nodeNames],
+                NodeNames = nodeNames,
                 Writes = [.. writes.Select(static item => item.Write)]
             };
         }
         else if (mode == StreamMode.Values)
         {
+            // Shallow-copy when reusing post-apply snapshot so stream consumers cannot
+            // mutate the dictionary owned by the in-memory checkpointer after Put.
+            IReadOnlyDictionary<string, object?> state;
+            if (postApplySnapshot is null)
+            {
+                state = store.SnapshotValues();
+            }
+            else
+            {
+                state = new Dictionary<string, object?>(postApplySnapshot, StringComparer.Ordinal);
+            }
+
             yield return new StreamEvent
             {
                 Mode = StreamMode.Values,
                 Kind = StreamEventKind.Values,
                 Step = step,
-                NodeNames = [.. nodeNames],
-                State = store.SnapshotValues()
+                NodeNames = nodeNames,
+                State = state
             };
         }
     }
@@ -43,14 +56,17 @@ internal static class RunEngineStreaming
         StreamEventKind kind,
         long step,
         ChannelStore store,
-        object? payload = null)
+        object? payload = null,
+        IReadOnlyDictionary<string, object?>? stateSnapshot = null)
     {
         return new StreamEvent
         {
             Mode = mode == StreamMode.Events ? StreamMode.Events : mode,
             Kind = kind,
             Step = step,
-            State = mode == StreamMode.Values ? store.SnapshotValues() : null,
+            State = mode == StreamMode.Values
+                ? stateSnapshot ?? store.SnapshotValues()
+                : null,
             Payload = payload
         };
     }
