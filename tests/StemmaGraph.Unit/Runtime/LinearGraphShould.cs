@@ -34,7 +34,7 @@ public sealed class LinearGraphShould
             new RunOptions { ThreadId = "linear-1", StreamMode = StreamMode.Values });
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
-        _ = terminal.State.ShouldNotBeNull();
+        terminal.State.ShouldNotBeNull();
         var messages = terminal.State!["messages"].ShouldBeOfType<List<object?>>();
         messages.ShouldContain("seed");
         messages.ShouldContain("from-a");

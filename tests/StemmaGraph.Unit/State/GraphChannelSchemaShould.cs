@@ -21,6 +21,6 @@ public sealed class GraphChannelSchemaShould
 
         // Compile requires nodes + START edge — only assert AddChannels does not throw
         // and channels are available by re-adding a duplicate should fail.
-        _ = Should.Throw<GraphCompileException>(() => graph.AddChannel("messages", ChannelKind.Append));
+        Should.Throw<GraphCompileException>(() => graph.AddChannel("messages", ChannelKind.Append));
     }
 }

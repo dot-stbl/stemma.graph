@@ -59,9 +59,9 @@ public sealed class ParallelSuperstepShould
             .AddEdge("right", GraphConstants.End)
             .Compile(new InMemoryCheckpointer());
 
-        _ = await Should.ThrowAsync<GraphConcurrentUpdateException>(async () =>
+        await Should.ThrowAsync<GraphConcurrentUpdateException>(async () =>
         {
-            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "lv-1" });
+            await graph.InvokeAsync([], new RunOptions { ThreadId = "lv-1" });
         });
     }
 

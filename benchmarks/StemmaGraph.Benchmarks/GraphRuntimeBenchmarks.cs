@@ -86,7 +86,7 @@ public class GraphRuntimeBenchmarks
     public async Task LinearInvokeAsync()
     {
         var id = $"lin-{Interlocked.Increment(ref threadCounter)}";
-        _ = await linear.InvokeAsync(
+        await linear.InvokeAsync(
             [new ChannelWrite("v", 0)],
             new RunOptions { ThreadId = id, StreamMode = StreamMode.Values });
     }
@@ -95,7 +95,7 @@ public class GraphRuntimeBenchmarks
     public async Task CycleFiveTicksAsync()
     {
         var id = $"cyc-{Interlocked.Increment(ref threadCounter)}";
-        _ = await cycle.InvokeAsync(
+        await cycle.InvokeAsync(
             [new ChannelWrite("n", 0)],
             new RunOptions { ThreadId = id, StreamMode = StreamMode.Values });
     }
@@ -104,7 +104,7 @@ public class GraphRuntimeBenchmarks
     public async Task ParallelAppendAsync()
     {
         var id = $"par-{Interlocked.Increment(ref threadCounter)}";
-        _ = await parallelAppend.InvokeAsync(
+        await parallelAppend.InvokeAsync(
             [],
             new RunOptions { ThreadId = id, StreamMode = StreamMode.Updates });
     }
@@ -129,6 +129,6 @@ public class GraphRuntimeBenchmarks
         };
 
         await checkpointer.PutAsync(snapshot);
-        _ = await checkpointer.GetAsync(id);
+        await checkpointer.GetAsync(id);
     }
 }

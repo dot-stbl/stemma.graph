@@ -64,7 +64,7 @@ public sealed class ConditionalAndCycleShould
 
         var exception = await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
         {
-            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "cycle-1" });
+            await graph.InvokeAsync([], new RunOptions { ThreadId = "cycle-1" });
         });
 
         exception.Limit.ShouldBe(3);

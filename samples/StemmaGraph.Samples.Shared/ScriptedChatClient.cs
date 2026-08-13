@@ -53,8 +53,7 @@ public sealed class ScriptedChatClient : IChatCompletionClient
                 """);
         }
 
-        // Fallback: short keyword on user (harness tests without role system lines).
-        _ = userPrompt;
+        // Fallback when system role does not match planner/reviewer/docs.
         return Task.FromResult("ok (scripted offline reply)");
     }
 }

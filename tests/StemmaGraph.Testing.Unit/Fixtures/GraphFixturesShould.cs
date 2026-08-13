@@ -34,9 +34,9 @@ public sealed class GraphFixturesShould
             new InMemoryCheckpointer(),
             new CompileOptions { RecursionLimit = 3 });
 
-        _ = await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
+        await Should.ThrowAsync<GraphOutOfStepsException>(async () =>
         {
-            _ = await graph.InvokeAsync([], new RunOptions { ThreadId = "fix-cycle" });
+            await graph.InvokeAsync([], new RunOptions { ThreadId = "fix-cycle" });
         });
     }
 

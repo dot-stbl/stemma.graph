@@ -11,6 +11,6 @@ public sealed class AssemblyMarkerShould
     [Fact(DisplayName = "When the integration assembly loads, then it has the runtime type")]
     public void ReferenceStemmaGraphTypes()
     {
-        _ = typeof(AssemblyMarker).ShouldNotBeNull();
+        typeof(AssemblyMarker).ShouldNotBeNull();
     }
 }

@@ -12,9 +12,9 @@ public sealed class ICheckpointerShould
         var type = typeof(ICheckpointer);
 
         type.IsInterface.ShouldBeTrue();
-        _ = type.GetMethod(nameof(ICheckpointer.PutAsync)).ShouldNotBeNull();
-        _ = type.GetMethod(nameof(ICheckpointer.GetAsync)).ShouldNotBeNull();
-        _ = type.GetMethod(nameof(ICheckpointer.ListAsync)).ShouldNotBeNull();
+        type.GetMethod(nameof(ICheckpointer.PutAsync)).ShouldNotBeNull();
+        type.GetMethod(nameof(ICheckpointer.GetAsync)).ShouldNotBeNull();
+        type.GetMethod(nameof(ICheckpointer.ListAsync)).ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Given GetAsync signature, when inspected, then returns nullable CheckpointSnapshot task")]
@@ -22,7 +22,7 @@ public sealed class ICheckpointerShould
     {
         var method = typeof(ICheckpointer).GetMethod(nameof(ICheckpointer.GetAsync));
 
-        _ = method.ShouldNotBeNull();
+        method.ShouldNotBeNull();
         method!.ReturnType.ShouldBe(typeof(Task<CheckpointSnapshot?>));
     }
 }

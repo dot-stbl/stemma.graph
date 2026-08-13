@@ -46,9 +46,9 @@ public sealed class FaultInjectingCheckpointerShould
     [Fact(DisplayName = "Given failOnPutNumber less than 1, when constructed, then throws")]
     public void RejectInvalidFailOnPutNumber()
     {
-        _ = Should.Throw<ArgumentOutOfRangeException>(static () =>
+        Should.Throw<ArgumentOutOfRangeException>(static () =>
         {
-            _ = new FaultInjectingCheckpointer(new InMemoryCheckpointer(), failOnPutNumber: 0);
+            new FaultInjectingCheckpointer(new InMemoryCheckpointer(), failOnPutNumber: 0);
         });
     }
 }

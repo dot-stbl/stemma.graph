@@ -13,10 +13,10 @@ public sealed class ServiceCollectionExtensionsShould
     [Fact(DisplayName = "Given compiled graph, when AddStemmaGraph is called, then graph resolves as singleton")]
     public void RegisterCompiledGraphAsSingleton()
     {
-        var graph = CreateLinearGraph();
+        var graph = LinearGraphFixture.Create();
 
         var services = new ServiceCollection();
-        _ = services.AddStemmaGraph(graph);
+        services.AddStemmaGraph(graph);
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<CompiledGraph>();
@@ -30,27 +30,12 @@ public sealed class ServiceCollectionExtensionsShould
     public void RegisterFactoryGraphAsSingleton()
     {
         var services = new ServiceCollection();
-        _ = services.AddStemmaGraph(static _ => CreateLinearGraph());
+        services.AddStemmaGraph(static _ => LinearGraphFixture.Create());
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<CompiledGraph>();
         var second = provider.GetRequiredService<CompiledGraph>();
 
         first.ShouldBeSameAs(second);
-    }
-
-    private static CompiledGraph CreateLinearGraph()
-    {
-        return new StateGraph()
-            .AddNode(
-                "a",
-                static async (_, _) =>
-                {
-                    await Task.CompletedTask;
-                    return NodeResult.Continue();
-                })
-            .AddEdge(GraphConstants.Start, "a")
-            .AddEdge("a", GraphConstants.End)
-            .Compile(new InMemoryCheckpointer());
     }
 }

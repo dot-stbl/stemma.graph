@@ -14,7 +14,7 @@ public sealed class NodeResultShould
 
         var result = NodeResult.Continue(write);
 
-        _ = result.ShouldBeOfType<ContinueNodeResult>();
+        result.ShouldBeOfType<ContinueNodeResult>();
         result.Writes.Count.ShouldBe(1);
         result.Writes[0].ChannelName.ShouldBe("messages");
         result.Writes[0].Value.ShouldBe("hello");
@@ -25,7 +25,7 @@ public sealed class NodeResultShould
     {
         var result = NodeResult.Continue();
 
-        _ = result.ShouldBeOfType<ContinueNodeResult>();
+        result.ShouldBeOfType<ContinueNodeResult>();
         result.Writes.ShouldBeEmpty();
     }
 
@@ -52,7 +52,7 @@ public sealed class NodeResultShould
 
         var result = NodeResult.Interrupt(payload);
 
-        _ = result.ShouldBeOfType<InterruptNodeResult>();
+        result.ShouldBeOfType<InterruptNodeResult>();
         result.Payload.ShouldBeSameAs(payload);
     }
 

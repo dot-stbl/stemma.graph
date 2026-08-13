@@ -74,7 +74,7 @@ internal sealed class ChannelStore
 
         foreach (var name in channels.Keys)
         {
-            _ = versions.TryAdd(name, 0);
+            versions.TryAdd(name, 0);
         }
 
         versionsSeen.Clear();

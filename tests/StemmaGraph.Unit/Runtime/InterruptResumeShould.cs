@@ -68,7 +68,7 @@ public sealed class InterruptResumeShould
         var terminal = await graph.InvokeAsync([], new RunOptions { ThreadId = "done-1" });
         terminal.Kind.ShouldBe(StreamEventKind.End);
 
-        _ = await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
+        await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
         {
             await foreach (var _ in graph.ResumeAsync("done-1", new Command { Kind = "approve" }))
             {

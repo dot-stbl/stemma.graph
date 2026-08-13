@@ -45,7 +45,7 @@ public sealed class InMemoryCheckpointerShould
         await checkpointer.PutAsync(original);
         var loaded = await checkpointer.GetAsync("t1");
 
-        _ = loaded.ShouldNotBeNull();
+        loaded.ShouldNotBeNull();
         loaded!.Step.ShouldBe(3);
         loaded.Status.ShouldBe(GraphRunStatus.Running);
         loaded.LastNode.ShouldBe("agent");

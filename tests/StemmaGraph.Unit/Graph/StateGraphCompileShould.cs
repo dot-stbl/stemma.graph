@@ -60,6 +60,6 @@ public sealed class StateGraphCompileShould
             .AddEdge("tools", "agent")
             .Compile(new InMemoryCheckpointer());
 
-        _ = graph.ShouldNotBeNull();
+        graph.ShouldNotBeNull();
     }
 }

@@ -29,7 +29,7 @@ public sealed class RecordingCheckpointerShould
         recording.Puts[0].Status.ShouldBe(GraphRunStatus.Interrupted);
         recording.Gets.Count.ShouldBe(1);
         recording.Gets[0].ThreadId.ShouldBe("rec-1");
-        _ = recording.Gets[0].Result.ShouldNotBeNull();
+        recording.Gets[0].Result.ShouldNotBeNull();
         loaded!.Step.ShouldBe(2);
     }
 

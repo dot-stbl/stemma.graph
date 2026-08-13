@@ -58,7 +58,7 @@ public sealed class ThreadIsolationAndCancelShould
             .AddEdge("slow", GraphConstants.End)
             .Compile(new InMemoryCheckpointer());
 
-        _ = await Should.ThrowAsync<OperationCanceledException>(async () =>
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
         {
             await foreach (var _ in graph.StreamAsync(
                                [],

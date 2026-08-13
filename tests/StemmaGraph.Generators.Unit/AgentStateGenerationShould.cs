@@ -97,7 +97,7 @@ public sealed class AgentStateGenerationShould
             new RunOptions { ThreadId = "gen-1", StreamMode = StreamMode.Values });
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
-        _ = terminal.State.ShouldNotBeNull();
+        terminal.State.ShouldNotBeNull();
         terminal.State![nameof(AgentState.Status)].ShouldBe("from-node");
     }
 
