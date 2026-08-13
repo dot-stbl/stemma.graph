@@ -55,17 +55,38 @@ Not a 1:1 LangGraph port — .NET-native API.
 | `StemmaGraph.Checkpoints.*` | EF / S3 / File *(later)* |
 | `StemmaGraph.MicrosoftAi` / `StemmaGraph.UI.*` | *(later)* |
 
-Shipped on main: Abstractions, runtime, DependencyInjection, Testing, Generators, samples.
+Shipped on main: Abstractions, runtime, DependencyInjection, Testing, Generators, samples, benchmarks.
 NuGet icons (`Directory.Build.props`): **i1** core · **i4** checkpoint providers · **i5** rest.
 
 **Native AOT (core tier):** `StemmaGraph` + Abstractions + DependencyInjection are
 `IsAotCompatible`. Smoke: `samples/03-AotSmoke` (`PublishAot`).  
 **Full .NET tier:** Checkpoints / UI / MicrosoftAi — ASP.NET-style hosts; not AOT.
 
+### Samples
+
+| Sample | What it shows |
+|--------|----------------|
+| `01-HelloWorld` | Simulated ReAct loop (agent ⇄ tools) |
+| `02-InterruptResume` | HITL interrupt + `Command` resume |
+| `03-AotSmoke` | Native AOT publish smoke |
+| `04-ReviewBot` | CLI review harness (plan → sandbox tools → review) |
+| `05-DocQ` | Docs Q&A over a sandboxed folder |
+
+Shared helpers: `samples/StemmaGraph.Samples.Shared` (sandbox FS, chat client).
+
+### Benchmarks
+
+```bash
+dotnet run -c Release --project benchmarks/StemmaGraph.Benchmarks
+```
+
+Not gated on PR CI ([#10](https://github.com/dot-stbl/stemma.graph/issues/10)).
+
 ## Roadmap
 
 - [x] **Architecture** — OpenSpec `architecture-runtime-core`
 - [x] **MVP runtime** — Pregel + InMemory + Testing + samples ([epic #1](https://github.com/dot-stbl/stemma.graph/issues/1))
+- [x] **Benchmarks** — BenchmarkDotNet baselines (superstep / merge / checkpoint)
 - [ ] **0.1 NuGet tag** — PublicAPI review + publish
 - [ ] Later — providers, Send/subgraphs, MicrosoftAi, UI, v1.0
 

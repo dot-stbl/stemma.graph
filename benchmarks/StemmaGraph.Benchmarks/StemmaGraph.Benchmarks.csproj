@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>StemmaGraph.Benchmarks</RootNamespace>
+    <Description>BenchmarkDotNet baselines for StemmaGraph superstep / channels / checkpoint.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+  </ItemGroup>
+
+</Project>

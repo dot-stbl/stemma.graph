@@ -22,6 +22,12 @@
     <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
     <Project Path="samples/02-InterruptResume/02-InterruptResume.csproj" />
     <Project Path="samples/03-AotSmoke/03-AotSmoke.csproj" />
+    <Project Path="samples/StemmaGraph.Samples.Shared/StemmaGraph.Samples.Shared.csproj" />
+    <Project Path="samples/04-ReviewBot/04-ReviewBot.csproj" />
+    <Project Path="samples/05-DocQ/05-DocQ.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/StemmaGraph.Benchmarks/StemmaGraph.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/StemmaGraph.Unit/StemmaGraph.Unit.csproj" />
