@@ -7,7 +7,7 @@ using StemmaGraph.Runtime.Exceptions;
 namespace StemmaGraph.Runtime.Channels;
 
 /// <summary>
-/// Channel that accepts at most one write per superstep.
+///     Channel that accepts at most one write per superstep.
 /// </summary>
 internal sealed class LastValueChannel : IChannel
 {

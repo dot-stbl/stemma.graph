@@ -4,22 +4,22 @@
 namespace StemmaGraph.Checkpoint;
 
 /// <summary>
-/// <see cref="ICheckpointer"/> decorator that throws on the N-th <see cref="PutAsync"/>
-/// (1-based) to simulate crash-between-supersteps.
+///     <see cref="ICheckpointer" /> decorator that throws on the N-th <see cref="PutAsync" />
+///     (1-based) to simulate crash-between-supersteps.
 /// </summary>
 public sealed class FaultInjectingCheckpointer : ICheckpointer
 {
-    private readonly ICheckpointer inner;
     private readonly int failOnPutNumber;
     private readonly Exception fault;
+    private readonly ICheckpointer inner;
     private int putCount;
 
     /// <summary>
-    /// Initializes a fault-injecting decorator.
+    ///     Initializes a fault-injecting decorator.
     /// </summary>
     /// <param name="inner">Underlying checkpointer that receives successful Puts.</param>
     /// <param name="failOnPutNumber">1-based Put index that throws (must be ≥ 1).</param>
-    /// <param name="fault">Optional exception; defaults to <see cref="InvalidOperationException"/>.</param>
+    /// <param name="fault">Optional exception; defaults to <see cref="InvalidOperationException" />.</param>
     public FaultInjectingCheckpointer(
         ICheckpointer inner,
         int failOnPutNumber,
@@ -36,12 +36,12 @@ public sealed class FaultInjectingCheckpointer : ICheckpointer
         this.inner = inner;
         this.failOnPutNumber = failOnPutNumber;
         this.fault = fault
-            ?? new InvalidOperationException(
-                $"FaultInjectingCheckpointer: configured to fail on Put #{failOnPutNumber}.");
+                     ?? new InvalidOperationException(
+                         $"FaultInjectingCheckpointer: configured to fail on Put #{failOnPutNumber}.");
     }
 
     /// <summary>
-    /// Number of Put attempts observed so far (including the failing one).
+    ///     Number of Put attempts observed so far (including the failing one).
     /// </summary>
     public int PutAttempts => Volatile.Read(ref putCount);
 

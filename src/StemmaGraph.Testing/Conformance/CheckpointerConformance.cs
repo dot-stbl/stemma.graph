@@ -6,13 +6,13 @@ using StemmaGraph.Runtime;
 namespace StemmaGraph.Checkpoint;
 
 /// <summary>
-/// Behavioral contract for <see cref="ICheckpointer"/>. Call from provider unit tests
-/// (InMemory now; EF/S3 later) without rewriting scenarios.
+///     Behavioral contract for <see cref="ICheckpointer" />. Call from provider unit tests
+///     (InMemory now; EF/S3 later) without rewriting scenarios.
 /// </summary>
 public static class CheckpointerConformance
 {
     /// <summary>
-    /// Put then Get MUST roundtrip C-shape fields for the same thread.
+    ///     Put then Get MUST roundtrip C-shape fields for the same thread.
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -24,19 +24,13 @@ public static class CheckpointerConformance
         var original = CreateSampleSnapshot(threadId, step: 3, status: GraphRunStatus.Running);
 
         await checkpointer.PutAsync(original, cancellationToken);
-        var loaded = await checkpointer.GetAsync(threadId, cancellationToken);
-
-        if (loaded is null)
-        {
-            throw new InvalidOperationException(
-                "Conformance Put/Get: Get returned null after Put for the same thread.");
-        }
-
+        var loaded = await checkpointer.GetAsync(threadId, cancellationToken) ?? throw new InvalidOperationException(
+            "Conformance Put/Get: Get returned null after Put for the same thread.");
         AssertEqual(original, loaded);
     }
 
     /// <summary>
-    /// Get for an unknown thread MUST return null (not throw).
+    ///     Get for an unknown thread MUST return null (not throw).
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -54,8 +48,8 @@ public static class CheckpointerConformance
     }
 
     /// <summary>
-    /// When List is supported, multiple Puts MUST appear ordered by step ascending.
-    /// Providers that throw <see cref="NotSupportedException"/> skip this scenario.
+    ///     When List is supported, multiple Puts MUST appear ordered by step ascending.
+    ///     Providers that throw <see cref="NotSupportedException" /> skip this scenario.
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -98,7 +92,7 @@ public static class CheckpointerConformance
     }
 
     /// <summary>
-    /// Interrupted status and interrupt payload MUST roundtrip.
+    ///     Interrupted status and interrupt payload MUST roundtrip.
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -119,17 +113,12 @@ public static class CheckpointerConformance
             ChannelValues = new Dictionary<string, object?>(StringComparer.Ordinal),
             ChannelVersions = new Dictionary<string, long>(StringComparer.Ordinal),
             VersionsSeen = new Dictionary<string, IReadOnlyDictionary<string, long>>(StringComparer.Ordinal),
-            PendingWrites = [],
+            PendingWrites = []
         };
 
         await checkpointer.PutAsync(original, cancellationToken);
-        var loaded = await checkpointer.GetAsync(threadId, cancellationToken);
-
-        if (loaded is null)
-        {
-            throw new InvalidOperationException("Conformance interrupt: Get returned null after Put.");
-        }
-
+        var loaded = await checkpointer.GetAsync(threadId, cancellationToken) ??
+                     throw new InvalidOperationException("Conformance interrupt: Get returned null after Put.");
         if (loaded.Status != GraphRunStatus.Interrupted)
         {
             throw new InvalidOperationException(
@@ -143,7 +132,7 @@ public static class CheckpointerConformance
     }
 
     /// <summary>
-    /// Pending writes MUST roundtrip when present.
+    ///     Pending writes MUST roundtrip when present.
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -154,13 +143,8 @@ public static class CheckpointerConformance
         var threadId = $"conformance-pending-{Guid.NewGuid():N}";
         var original = CreateSampleSnapshot(threadId, step: 4, status: GraphRunStatus.Running);
         await checkpointer.PutAsync(original, cancellationToken);
-        var loaded = await checkpointer.GetAsync(threadId, cancellationToken);
-
-        if (loaded is null)
-        {
-            throw new InvalidOperationException("Conformance pending writes: Get returned null after Put.");
-        }
-
+        var loaded = await checkpointer.GetAsync(threadId, cancellationToken) ??
+                     throw new InvalidOperationException("Conformance pending writes: Get returned null after Put.");
         if (loaded.PendingWrites.Count != original.PendingWrites.Count)
         {
             throw new InvalidOperationException(
@@ -176,7 +160,7 @@ public static class CheckpointerConformance
     }
 
     /// <summary>
-    /// Runs all mandatory conformance scenarios against <paramref name="checkpointer"/>.
+    ///     Runs all mandatory conformance scenarios against <paramref name="checkpointer" />.
     /// </summary>
     /// <param name="checkpointer">Provider under test.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
@@ -203,20 +187,20 @@ public static class CheckpointerConformance
             Status = status,
             ChannelValues = new Dictionary<string, object?>
             {
-                ["messages"] = new List<object?> { "a" },
+                ["messages"] = new List<object?> { "a" }
             },
             ChannelVersions = new Dictionary<string, long> { ["messages"] = 2 },
             VersionsSeen = new Dictionary<string, IReadOnlyDictionary<string, long>>
             {
-                ["agent"] = new Dictionary<string, long> { ["messages"] = 1 },
+                ["agent"] = new Dictionary<string, long> { ["messages"] = 1 }
             },
             PendingWrites =
             [
-                new PendingWrite { TaskId = "agent", ChannelName = "messages", Value = "x" },
+                new PendingWrite { TaskId = "agent", ChannelName = "messages", Value = "x" }
             ],
             LastNode = "agent",
             NextNodes = ["tools"],
-            InterruptPayload = null,
+            InterruptPayload = null
         };
     }
 

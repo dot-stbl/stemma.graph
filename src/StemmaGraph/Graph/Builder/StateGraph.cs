@@ -8,18 +8,20 @@ using StemmaGraph.Runtime.Exceptions;
 namespace StemmaGraph.Graph;
 
 /// <summary>
-/// Fluent builder for named channels, nodes, and edges. Compile produces an immutable runnable graph.
+///     Fluent builder for named channels, nodes, and edges. Compile produces an immutable runnable graph.
 /// </summary>
 public sealed class StateGraph
 {
     private readonly Dictionary<string, ChannelKind> channels = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, NodeHandler> nodes = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, List<string>> staticEdges = new(StringComparer.Ordinal);
+
     private readonly Dictionary<string, Func<GraphContext, IReadOnlyList<string>>> conditionalEdges =
         new(StringComparer.Ordinal);
 
+    private readonly Dictionary<string, NodeHandler> nodes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<string>> staticEdges = new(StringComparer.Ordinal);
+
     /// <summary>
-    /// Registers a named channel with the given merge kind.
+    ///     Registers a named channel with the given merge kind.
     /// </summary>
     /// <param name="name">Channel name.</param>
     /// <param name="kind">LastValue or Append.</param>
@@ -36,7 +38,7 @@ public sealed class StateGraph
     }
 
     /// <summary>
-    /// Registers a unique node handler.
+    ///     Registers a unique node handler.
     /// </summary>
     /// <param name="name">Node name (not START/END).</param>
     /// <param name="handler">Async node body.</param>
@@ -57,10 +59,10 @@ public sealed class StateGraph
     }
 
     /// <summary>
-    /// Registers a static edge from source (node or START) to target (node or END).
+    ///     Registers a static edge from source (node or START) to target (node or END).
     /// </summary>
-    /// <param name="source">Source node name or <see cref="GraphConstants.Start"/>.</param>
-    /// <param name="target">Target node name or <see cref="GraphConstants.End"/>.</param>
+    /// <param name="source">Source node name or <see cref="GraphConstants.Start" />.</param>
+    /// <param name="target">Target node name or <see cref="GraphConstants.End" />.</param>
     /// <returns>This builder for chaining.</returns>
     public StateGraph AddEdge(string source, string target)
     {
@@ -80,7 +82,7 @@ public sealed class StateGraph
     }
 
     /// <summary>
-    /// Registers a conditional edge that selects next node name(s) after <paramref name="source"/> completes.
+    ///     Registers a conditional edge that selects next node name(s) after <paramref name="source" /> completes.
     /// </summary>
     /// <param name="source">Source node name.</param>
     /// <param name="router">Routing function over the post-node context snapshot.</param>
@@ -97,7 +99,7 @@ public sealed class StateGraph
     }
 
     /// <summary>
-    /// Registers a conditional edge with a single next-node selector.
+    ///     Registers a conditional edge with a single next-node selector.
     /// </summary>
     /// <param name="source">Source node name.</param>
     /// <param name="router">Routing function returning one node name or END.</param>
@@ -114,9 +116,9 @@ public sealed class StateGraph
     }
 
     /// <summary>
-    /// Validates topology and returns an immutable compiled graph.
+    ///     Validates topology and returns an immutable compiled graph.
     /// </summary>
-    /// <param name="checkpointer">Checkpoint store (typically <see cref="InMemoryCheckpointer"/>).</param>
+    /// <param name="checkpointer">Checkpoint store (typically <see cref="InMemoryCheckpointer" />).</param>
     /// <param name="options">Optional compile options (recursion limit).</param>
     /// <returns>Immutable runnable graph.</returns>
     public CompiledGraph Compile(ICheckpointer checkpointer, CompileOptions? options = null)
@@ -128,8 +130,8 @@ public sealed class StateGraph
             new Dictionary<string, NodeHandler>(nodes, StringComparer.Ordinal),
             new Dictionary<string, ChannelKind>(channels, StringComparer.Ordinal),
             staticEdges.ToDictionary(
-                pair => pair.Key,
-                pair => (IReadOnlyList<string>)pair.Value.ToList(),
+                static pair => pair.Key,
+                static pair => (IReadOnlyList<string>)[.. pair.Value],
                 StringComparer.Ordinal),
             new Dictionary<string, Func<GraphContext, IReadOnlyList<string>>>(
                 conditionalEdges,
@@ -141,7 +143,7 @@ public sealed class StateGraph
 }
 
 /// <summary>
-/// Compile-time topology validation for <see cref="StateGraph"/>.
+///     Compile-time topology validation for <see cref="StateGraph" />.
 /// </summary>
 file static class StateGraphValidation
 {
@@ -165,16 +167,16 @@ file static class StateGraphValidation
 
         foreach (var (source, targets) in staticEdges)
         {
-            ValidateEndpoint(nodes, source, isSource: true);
+            ValidateEndpoint(nodes, source, true);
             foreach (var target in targets)
             {
-                ValidateEndpoint(nodes, target, isSource: false);
+                ValidateEndpoint(nodes, target, false);
             }
         }
 
         foreach (var source in conditionalEdges.Keys)
         {
-            ValidateEndpoint(nodes, source, isSource: true);
+            ValidateEndpoint(nodes, source, true);
         }
     }
 

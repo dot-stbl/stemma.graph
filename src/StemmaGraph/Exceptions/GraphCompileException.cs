@@ -4,17 +4,13 @@
 namespace StemmaGraph.Runtime.Exceptions;
 
 /// <summary>
-/// Topology validation failure raised during <see cref="Graph.StateGraph.Compile"/>.
+///     Topology validation failure raised during <see cref="Graph.StateGraph.Compile" />.
 /// </summary>
-public sealed class GraphCompileException : GraphException
+/// <remarks>
+///     Initializes a compile-time graph exception.
+/// </remarks>
+/// <param name="code">Stable error code.</param>
+/// <param name="message">Validation message.</param>
+public sealed class GraphCompileException(string code, string message) : GraphException(code, message)
 {
-    /// <summary>
-    /// Initializes a compile-time graph exception.
-    /// </summary>
-    /// <param name="code">Stable error code.</param>
-    /// <param name="message">Validation message.</param>
-    public GraphCompileException(string code, string message)
-        : base(code, message)
-    {
-    }
 }

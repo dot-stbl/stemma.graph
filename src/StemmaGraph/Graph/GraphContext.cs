@@ -4,40 +4,33 @@
 namespace StemmaGraph.Graph;
 
 /// <summary>
-/// Frozen superstep view passed to a node handler (pre-barrier channel values).
+///     Frozen superstep view passed to a node handler (pre-barrier channel values).
 /// </summary>
-public sealed class GraphContext
+/// <remarks>
+///     Initializes a graph context for one node task.
+/// </remarks>
+/// <param name="nodeName">Node being executed.</param>
+/// <param name="channelValues">Snapshot of channel values before this superstep's apply.</param>
+/// <param name="resumePayload">Resume command payload when continuing after interrupt.</param>
+public sealed class GraphContext(
+    string nodeName,
+    IReadOnlyDictionary<string, object?> channelValues,
+    object? resumePayload = null)
 {
-    private readonly IReadOnlyDictionary<string, object?> channelValues;
+    private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
     /// <summary>
-    /// Initializes a graph context for one node task.
+    ///     Name of the node currently executing.
     /// </summary>
-    /// <param name="nodeName">Node being executed.</param>
-    /// <param name="channelValues">Snapshot of channel values before this superstep's apply.</param>
-    /// <param name="resumePayload">Resume command payload when continuing after interrupt.</param>
-    public GraphContext(
-        string nodeName,
-        IReadOnlyDictionary<string, object?> channelValues,
-        object? resumePayload = null)
-    {
-        NodeName = nodeName;
-        this.channelValues = channelValues;
-        ResumePayload = resumePayload;
-    }
+    public string NodeName { get; } = nodeName;
 
     /// <summary>
-    /// Name of the node currently executing.
+    ///     Resume command payload when this invocation is a resume of an interrupted node.
     /// </summary>
-    public string NodeName { get; }
+    public object? ResumePayload { get; } = resumePayload;
 
     /// <summary>
-    /// Resume command payload when this invocation is a resume of an interrupted node.
-    /// </summary>
-    public object? ResumePayload { get; }
-
-    /// <summary>
-    /// Reads a channel value cast to <typeparamref name="T"/>, or default when missing/null.
+    ///     Reads a channel value cast to <typeparamref name="T" />, or default when missing/null.
     /// </summary>
     /// <typeparam name="T">Expected value type.</typeparam>
     /// <param name="channelName">Channel name.</param>
@@ -46,11 +39,13 @@ public sealed class GraphContext
     {
         return !channelValues.TryGetValue(channelName, out var value) || value is null
             ? default
-            : value is T typed ? typed : (T)value;
+            : value is T typed
+                ? typed
+                : (T)value;
     }
 
     /// <summary>
-    /// Returns the full frozen channel map for this superstep.
+    ///     Returns the full frozen channel map for this superstep.
     /// </summary>
     public IReadOnlyDictionary<string, object?> Snapshot()
     {

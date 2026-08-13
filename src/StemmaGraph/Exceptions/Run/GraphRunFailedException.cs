@@ -4,17 +4,14 @@
 namespace StemmaGraph.Runtime.Exceptions;
 
 /// <summary>
-/// Uncaught node exception or other superstep fault that failed the run.
+///     Uncaught node exception or other superstep fault that failed the run.
 /// </summary>
-public sealed class GraphRunFailedException : GraphException
+/// <remarks>
+///     Initializes a failed-run exception.
+/// </remarks>
+/// <param name="message">Human-readable description.</param>
+/// <param name="innerException">Node or apply failure.</param>
+public sealed class GraphRunFailedException(string message, Exception? innerException = null)
+    : GraphException("graph.run_failed", message, innerException)
 {
-    /// <summary>
-    /// Initializes a failed-run exception.
-    /// </summary>
-    /// <param name="message">Human-readable description.</param>
-    /// <param name="innerException">Node or apply failure.</param>
-    public GraphRunFailedException(string message, Exception? innerException = null)
-        : base("graph.run_failed", message, innerException)
-    {
-    }
 }

@@ -4,24 +4,19 @@
 namespace StemmaGraph.Runtime.Exceptions;
 
 /// <summary>
-/// Base type for graph runtime and compile failures with a stable machine code.
+///     Base type for graph runtime and compile failures with a stable machine code.
 /// </summary>
-public class GraphException : Exception
+/// <remarks>
+///     Initializes a graph exception.
+/// </remarks>
+/// <param name="code">Stable dot.case error code for host branching.</param>
+/// <param name="message">Safe human message.</param>
+/// <param name="innerException">Optional inner exception.</param>
+public class GraphException(string code, string message, Exception? innerException = null)
+    : Exception(message, innerException)
 {
     /// <summary>
-    /// Initializes a graph exception.
+    ///     Stable machine-readable error code (for example <c>graph.out_of_steps</c>).
     /// </summary>
-    /// <param name="code">Stable dot.case error code for host branching.</param>
-    /// <param name="message">Safe human message.</param>
-    /// <param name="innerException">Optional inner exception.</param>
-    public GraphException(string code, string message, Exception? innerException = null)
-        : base(message, innerException)
-    {
-        Code = code;
-    }
-
-    /// <summary>
-    /// Stable machine-readable error code (for example <c>graph.out_of_steps</c>).
-    /// </summary>
-    public string Code { get; }
+    public string Code { get; } = code;
 }

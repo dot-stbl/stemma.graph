@@ -4,21 +4,16 @@
 namespace StemmaGraph.Results;
 
 /// <summary>
-/// HITL pause: run status becomes interrupted and a checkpoint records the payload.
+///     HITL pause: run status becomes interrupted and a checkpoint records the payload.
 /// </summary>
-public sealed class InterruptNodeResult : NodeResult
+/// <remarks>
+///     Initializes an interrupt result.
+/// </remarks>
+/// <param name="payload">Serializable interrupt payload for the host / UI.</param>
+public sealed class InterruptNodeResult(object? payload) : NodeResult
 {
     /// <summary>
-    /// Initializes an interrupt result.
+    ///     Interrupt payload persisted on the checkpoint and returned to the host.
     /// </summary>
-    /// <param name="payload">Serializable interrupt payload for the host / UI.</param>
-    public InterruptNodeResult(object? payload)
-    {
-        Payload = payload;
-    }
-
-    /// <summary>
-    /// Interrupt payload persisted on the checkpoint and returned to the host.
-    /// </summary>
-    public object? Payload { get; }
+    public object? Payload { get; } = payload;
 }

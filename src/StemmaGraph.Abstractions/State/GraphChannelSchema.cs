@@ -6,33 +6,28 @@ using StemmaGraph.Channels;
 namespace StemmaGraph.State;
 
 /// <summary>
-/// Immutable channel map that can be applied to a graph builder (generated or hand-built).
+///     Immutable channel map that can be applied to a graph builder (generated or hand-built).
 /// </summary>
-public sealed class GraphChannelSchema
+/// <remarks>
+///     Initializes a schema from channel declarations.
+/// </remarks>
+/// <param name="channels">Ordered channel declarations.</param>
+public sealed class GraphChannelSchema(IReadOnlyList<GraphChannelDeclaration> channels)
 {
     /// <summary>
-    /// Initializes a schema from channel declarations.
+    ///     Channel declarations in registration order.
     /// </summary>
-    /// <param name="channels">Ordered channel declarations.</param>
-    public GraphChannelSchema(IReadOnlyList<GraphChannelDeclaration> channels)
-    {
-        Channels = channels;
-    }
+    public IReadOnlyList<GraphChannelDeclaration> Channels { get; } = channels;
 
     /// <summary>
-    /// Channel declarations in registration order.
-    /// </summary>
-    public IReadOnlyList<GraphChannelDeclaration> Channels { get; }
-
-    /// <summary>
-    /// Fluent builder that mirrors the shape source generation emits.
+    ///     Fluent builder that mirrors the shape source generation emits.
     /// </summary>
     public sealed class Builder
     {
         private readonly List<GraphChannelDeclaration> channels = [];
 
         /// <summary>
-        /// Adds a channel declaration.
+        ///     Adds a channel declaration.
         /// </summary>
         /// <param name="name">Channel name.</param>
         /// <param name="kind">Merge kind.</param>
@@ -44,12 +39,12 @@ public sealed class GraphChannelSchema
         }
 
         /// <summary>
-        /// Builds an immutable schema.
+        ///     Builds an immutable schema.
         /// </summary>
         /// <returns>Schema ready for <c>StateGraph.AddChannels</c>.</returns>
         public GraphChannelSchema Build()
         {
-            return new GraphChannelSchema(channels.ToArray());
+            return new GraphChannelSchema([.. channels]);
         }
     }
 }

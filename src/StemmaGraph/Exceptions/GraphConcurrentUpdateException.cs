@@ -4,16 +4,13 @@
 namespace StemmaGraph.Runtime.Exceptions;
 
 /// <summary>
-/// LastValue multi-writer violation within a single superstep.
+///     LastValue multi-writer violation within a single superstep.
 /// </summary>
-public sealed class GraphConcurrentUpdateException : GraphException
+/// <remarks>
+///     Initializes a concurrent-update failure.
+/// </remarks>
+/// <param name="message">Human-readable description.</param>
+public sealed class GraphConcurrentUpdateException(string message)
+    : GraphException("channel.concurrent_update", message)
 {
-    /// <summary>
-    /// Initializes a concurrent-update failure.
-    /// </summary>
-    /// <param name="message">Human-readable description.</param>
-    public GraphConcurrentUpdateException(string message)
-        : base("channel.concurrent_update", message)
-    {
-    }
 }

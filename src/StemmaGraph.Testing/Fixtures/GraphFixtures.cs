@@ -8,16 +8,16 @@ using StemmaGraph.Results;
 namespace StemmaGraph.Testing.Fixtures;
 
 /// <summary>
-/// Small reusable <see cref="StateGraph"/> topologies for runtime unit tests.
+///     Small reusable <see cref="StateGraph" /> topologies for runtime unit tests.
 /// </summary>
 public static class GraphFixtures
 {
     /// <summary>
-    /// START → single node → END with an Append channel.
+    ///     START → single node → END with an Append channel.
     /// </summary>
     /// <param name="channelName">Channel name (default <c>messages</c>).</param>
     /// <param name="nodeName">Node name (default <c>a</c>).</param>
-    /// <returns>Builder ready for <see cref="StateGraph.Compile"/>.</returns>
+    /// <returns>Builder ready for <see cref="StateGraph.Compile" />.</returns>
     public static StateGraph Linear(string channelName = "messages", string nodeName = "a")
     {
         return new StateGraph()
@@ -34,10 +34,10 @@ public static class GraphFixtures
     }
 
     /// <summary>
-    /// START → loop → loop (self-edge). Pair with a low <see cref="CompileOptions.RecursionLimit"/>.
+    ///     START → loop → loop (self-edge). Pair with a low <see cref="CompileOptions.RecursionLimit" />.
     /// </summary>
     /// <param name="nodeName">Loop node name (default <c>loop</c>).</param>
-    /// <returns>Builder ready for <see cref="StateGraph.Compile"/>.</returns>
+    /// <returns>Builder ready for <see cref="StateGraph.Compile" />.</returns>
     public static StateGraph Cycle(string nodeName = "loop")
     {
         return new StateGraph()
@@ -50,12 +50,12 @@ public static class GraphFixtures
     }
 
     /// <summary>
-    /// START → gate → END; gate interrupts when <see cref="GraphContext.ResumePayload"/> is null.
+    ///     START → gate → END; gate interrupts when <see cref="GraphContext.ResumePayload" /> is null.
     /// </summary>
     /// <param name="channelName">Append channel for post-resume write (default <c>messages</c>).</param>
     /// <param name="nodeName">Gate node name (default <c>gate</c>).</param>
     /// <param name="interruptPayload">Payload stored on the interrupted checkpoint.</param>
-    /// <returns>Builder ready for <see cref="StateGraph.Compile"/>.</returns>
+    /// <returns>Builder ready for <see cref="StateGraph.Compile" />.</returns>
     public static StateGraph Interrupt(
         string channelName = "messages",
         string nodeName = "gate",
@@ -78,12 +78,12 @@ public static class GraphFixtures
     }
 
     /// <summary>
-    /// START fans out to two nodes that both write Append and then END (multi-ready superstep).
+    ///     START fans out to two nodes that both write Append and then END (multi-ready superstep).
     /// </summary>
     /// <param name="channelName">Append channel (default <c>messages</c>).</param>
     /// <param name="leftName">Left node name (default <c>left</c>).</param>
     /// <param name="rightName">Right node name (default <c>right</c>).</param>
-    /// <returns>Builder ready for <see cref="StateGraph.Compile"/>.</returns>
+    /// <returns>Builder ready for <see cref="StateGraph.Compile" />.</returns>
     public static StateGraph MultiReady(
         string channelName = "messages",
         string leftName = "left",

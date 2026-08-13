@@ -6,7 +6,7 @@ using StemmaGraph.Streaming;
 namespace StemmaGraph.Testing.Streaming;
 
 /// <summary>
-/// Collects <see cref="StreamEvent"/> items from an async stream for offline assertions.
+///     Collects <see cref="StreamEvent" /> items from an async stream for offline assertions.
 /// </summary>
 public sealed class StreamCapture
 {
@@ -16,12 +16,12 @@ public sealed class StreamCapture
     }
 
     /// <summary>
-    /// Captured events in emission order.
+    ///     Captured events in emission order.
     /// </summary>
     public IReadOnlyList<StreamEvent> Events { get; }
 
     /// <summary>
-    /// Drains <paramref name="stream"/> into a capture bag.
+    ///     Drains <paramref name="stream" /> into a capture bag.
     /// </summary>
     /// <param name="stream">Graph stream (values, updates, or events).</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
