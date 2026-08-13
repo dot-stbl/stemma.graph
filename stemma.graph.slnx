@@ -15,6 +15,7 @@
     <Project Path="src/StemmaGraph.Abstractions/StemmaGraph.Abstractions.csproj" />
     <Project Path="src/StemmaGraph/StemmaGraph.csproj" />
     <Project Path="src/StemmaGraph.Testing/StemmaGraph.Testing.csproj" />
+    <Project Path="src/StemmaGraph.Generators/StemmaGraph.Generators.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
@@ -24,6 +25,7 @@
     <Project Path="tests/StemmaGraph.Unit/StemmaGraph.Unit.csproj" />
     <Project Path="tests/StemmaGraph.Abstractions.Unit/StemmaGraph.Abstractions.Unit.csproj" />
     <Project Path="tests/StemmaGraph.Testing.Unit/StemmaGraph.Testing.Unit.csproj" />
+    <Project Path="tests/StemmaGraph.Generators.Unit/StemmaGraph.Generators.Unit.csproj" />
     <Project Path="tests/StemmaGraph.Integration/StemmaGraph.Integration.csproj" />
   </Folder>
 </Solution>

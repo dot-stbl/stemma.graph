@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DebugRoslynSourceGenerator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\tests\\StemmaGraph.Generators.Unit\\StemmaGraph.Generators.Unit.csproj"
+    }
+  }
+}

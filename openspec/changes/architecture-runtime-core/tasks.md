@@ -32,9 +32,9 @@
 
 ## 5. Source-gen state (MVP skeleton)
 
-- [ ] 5.1 Generator project: `[GraphState]` → Schema + Update + ToWrites
+- [x] 5.1 Generator project: `[GraphState]` → Schema + Update + ToWrites
 - [ ] 5.2 Sample using generated state for ReAct-style loop
-- [ ] 5.3 Document fluent escape hatch without generator
+- [x] 5.3 Document fluent escape hatch without generator
 
 ## 6. StemmaGraph.Testing package
 
