@@ -1,0 +1,118 @@
+# CLAUDE.md — StemmaGraph agent & developer handbook
+
+> **AGENTS.md** — это короткий указатель на этот файл. Полные правила,
+> архитектура и процедуры — здесь. AGENTS.md содержит только legacy-тезисы
+> для совместимости с tooling, который ожидает именно его.
+
+## Что такое StemmaGraph
+
+Low-level orchestration framework для stateful-агентов в .NET. Концептуальный
+источник — [LangGraph](https://github.com/langchain-ai/langgraph) (MIT), но
+API .NET-native: generic state, типизированные редьюсеры, `IAsyncEnumerable`,
+`Microsoft.Extensions.AI`.
+
+**Не порт, не замена MAF.** Циклы + (опционально) checkpointing — то, что у MAF
+нет и что StemmaGraph может дать.
+
+## Текущий статус
+
+**Scaffolding.** Репо создано, конвенции зафиксированы, кода нет. Research по
+LangGraph internals в процессе (background agent → `stemma-research.md`).
+После research — детальная архитектура и MVP.
+
+**Не обсуждённое** (на момент создания скаффолда):
+
+- Будет ли checkpointing вообще (фича LangGraph — может не понадобиться)
+- Какие бэкенды для персистенции (если будет)
+- Каналы / редьюсеры — те же вопросы
+- Подграфы, time-travel, interrupts
+
+Скаффолд намеренно минимальный: один основной пакет, одна абстракция,
+минимальные тесты. Всё остальное добавляется после обсуждения архитектуры.
+
+## Tech stack
+
+| Слой | Технология |
+|------|------------|
+| Runtime | .NET 10 |
+| Тесты | xUnit + Shouldly + NSubstitute + Bogus |
+| AI integration *(planned)* | `Microsoft.Extensions.AI` (`IChatClient`) |
+| Streaming *(planned)* | `IAsyncEnumerable<T>` + `System.Threading.Channels` |
+| Публикация | NuGet через GitHub Actions OIDC trusted publishing |
+
+## Layout (текущий)
+
+```
+stemma.graph/
+├── src/
+│   ├── StemmaGraph/                  ← main runtime + builder (TBD)
+│   └── StemmaGraph.Abstractions/     ← interfaces only, zero deps
+├── samples/                          ← 01-HelloWorld (placeholder)
+├── tests/                            ← smoke tests
+├── .githooks/                        ← commit-msg strips AI attribution
+├── .github/workflows/                ← ci.yml + publish.yml
+└── stemma.graph.slnx
+```
+
+## Сборка и команды
+
+```bash
+# Build всего solution (warnings-as-errors)
+dotnet build stemma.graph.slnx
+
+# Tests
+dotnet test stemma.graph.slnx
+
+# Format gate (drift-check, --severity hidden для auto-fix)
+dotnet format stemma.graph.slnx --severity hidden
+```
+
+**Build gate:** 0 warnings, 0 errors. `TreatWarningsAsErrors=true` +
+`EnforceCodeStyleInBuild=true` в `Directory.Build.props` ловят всё
+автоматически.
+
+## Конвенции
+
+Style enforced автоматически — большая часть **не** записана в prose:
+
+- **`.editorconfig`** (repo root) — severity error/warning, плюс analyzers
+  (`Microsoft.CodeAnalysis.NetAnalyzers`, `Microsoft.VisualStudio.Threading.Analyzers`,
+  source-link).
+
+Quick reference (конвенции, которые build enforce'ит):
+
+- Match neighboring code style.
+- Block-bodied members only (no expression-bodied methods); explicit access modifiers.
+- **NO** underscore prefix for private fields; **NO** single-letter lambda parameters.
+- **ВСЕГДА** primary constructors + Pyramid Rule (short → long parameter ordering).
+- **Default** to `sealed class`, not `record` (records only for value objects / DTO).
+- Pattern matching: `is { }` / `is not { }` for null checks.
+- **NO** `.Result` / `.Wait()` / `.GetAwaiter().GetResult()`.
+- **NO** private business-logic methods — use services or `file static` helpers.
+- DI-регистрация: руками через installer-классы. Без reflection auto-reg.
+
+## NuGet-публикация
+
+GitHub Actions OIDC → nuget.org trusted publishing. **Без долгоживущих
+API-ключей.** Workflow: `.github/workflows/publish.yml` — триггер на тег
+`v*.*.*`, после успешного CI. Детали — в workflow.
+
+## Communication
+
+Русский — основной. Документация для пользователей (README, доки на сайте) —
+на английском, потому что OSS-аудитория международная.
+
+## Где что лежит
+
+- README.md — публичный обзор, quick start, roadmap.
+- CLAUDE.md — **этот файл**: внутренняя кухня, конвенции, workflow.
+- AGENTS.md — короткий указатель на CLAUDE.md для AI-агентов.
+- CONTRIBUTING.md — как контрибьютить (setup, build, tests, commit).
+- .agents/ — repo-local правила (когда появятся — сегодня пусто).
+
+## Связанное
+
+- [LangGraph research notes](file:///C:/Users/bradw/AppData/Local/Temp/opencode/stemma-research.md)
+  — research по LangGraph internals (background agent).
+- `.agents/rules/` в user-global — общие C#/process правила (приоритет ниже
+  repo-local).

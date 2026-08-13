@@ -1,0 +1,90 @@
+# .github/workflows/ci.yml
+#
+# PR gate for StemmaGraph: restore + build (analyzers + format) + test.
+#
+#   pr-dotnet — build whole solution + run unit tests
+#
+# Runner: ubuntu-latest (StemmaGraph is a pure .NET library, no native deps,
+# no self-hosted runner needed — unlike anlytra's k8s-deploy setup).
+#
+# Release flow lives in publish.yml — OIDC trusted publishing to nuget.org
+# on a v*.*.* tag (no long-lived API keys).
+
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "**/*.props"
+      - "**/*.targets"
+      - "stemma.graph.slnx"
+      - ".github/workflows/**"
+      - ".editorconfig"
+      - ".gitignore"
+      - ".gitattributes"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "**/*.props"
+      - "**/*.targets"
+      - "stemma.graph.slnx"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
+
+jobs:
+  # ── 1. pr-dotnet — BE gate on every PR to main ──────────────────
+  pr-dotnet:
+    name: pr-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: cache nuget
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-v1-${{ hashFiles('stemma.graph.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            nuget-v1-
+
+      - name: setup-dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: restore
+        run: dotnet restore stemma.graph.slnx --nologo
+
+      - name: build
+        # TreatWarningsAsErrors + EnforceCodeStyleInBuild in Directory.Build.props
+        # — format drift and analyzer warnings fail the build.
+        run: dotnet build stemma.graph.slnx -c Debug --nologo
+
+      - name: unit tests
+        run: |
+          # Skip integration tests that need Docker on CI (no Postgres testcontainer).
+          # Local devs run them with: dotnet test --filter "FullyQualifiedName~Integration"
+          dotnet test stemma.graph.slnx \
+            --filter "FullyQualifiedName!~Integration" \
+            --no-build \
+            --nologo \
+            --logger "console;verbosity=normal"

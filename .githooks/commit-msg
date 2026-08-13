@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Strip AI co-author / attribution trailers so they NEVER land in git history.
+# The human author (git user.*) is always kept — only AI attribution is removed,
+# whether it arrives as a name, a mailto/email domain, or a "generated/assisted
+# with AI" note, in any casing/spacing. Repo-wide via core.hooksPath -> .githooks.
+# (Fresh clones: run `git config core.hooksPath .githooks` once — see README.)
+msg_file="$1"
+[ -f "$msg_file" ] || exit 0
+
+# 1) Drop any Co-authored-by: line attributed to an AI — by model/vendor name,
+#    by AI email domain (mailto), or generic "ai".
+# 2) Drop generated/created/assisted/written "with|by <AI>" attribution lines and 🤖.
+grep -viE '^[[:space:]]*co-authored-by:[[:space:]].*(claude|opus|sonnet|haiku|anthropic|openai|chatgpt|gpt|copilot|cursor|codeium|gemini|mistral|llama|deepseek|qwen|minimax|z\.?ai|glm|llm|[[:space:]]ai[[:space:]<]|@anthropic\.|@openai\.|noreply@anthropic|users\.noreply.*(claude|opus|anthropic))' "$msg_file" \
+  | grep -viE '(generated|created|authored|assisted|written|co-created) (with|by) .*(claude|opus|sonnet|anthropic|openai|chatgpt|gpt|copilot|cursor|codeium|gemini|minimax|glm|[[:space:]]ai([[:space:]]|$))|🤖' \
+  > "$msg_file.stripped"
+
+mv "$msg_file.stripped" "$msg_file"
+exit 0

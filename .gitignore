@@ -1,0 +1,85 @@
+# =====================================================================
+# .gitignore — StemmaGraph (pure .NET library, no frontend)
+# =====================================================================
+# Base from anlytra/plexor/tessera convention. Adapted: dropped FE bits,
+# dropped Docker/deploy bits, kept all .NET + tooling + secrets coverage.
+
+# ── IDE / editor ──────────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+.idea/
+*.vsix
+*.suo
+*.user
+*.userosscache
+*.userprefs
+.vs/
+
+# ── Build output ───────────────────────────────────────────────────────
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+[Dd]ebugPS/
+[Rr]eleasePS/
+artifacts/
+
+# ── NuGet / packages ───────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+csx/
+
+# ── Coverage / test artifacts ──────────────────────────────────────────
+coverage/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+*.dotCover
+OpenCover/
+TestResult.xml
+*.lcov
+BenchmarkDotNet.Artifacts/
+
+# ── Misc / OS ──────────────────────────────────────────────────────────
+.DS_*
+.DS_Store
+Thumbs.db
+*.log
+
+# ── Local secrets — NEVER commit ───────────────────────────────────────
+**/appsettings.Development.Local.json
+**/*.Development.Local.json
+.env
+.env.local
+.env.*.local
+.secrets
+
+# ── Agent worktrees (one per parallel agent) ───────────────────────────
+.agents/worktree/
+.claude/worktrees/
+
+# ── Generated / vendored (we don't ship these yet) ────────────────────
+**/[Mm]igrations/
+# (StemmaGraph itself has no migrations; rule kept for future Postgres checkpointer
+#  should it ever use EF. Migrations belong to EF tooling.)

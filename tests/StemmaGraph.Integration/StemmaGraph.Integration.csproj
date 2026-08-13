@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>StemmaGraph.Integration</RootNamespace>
+    <Description>
+      Integration tests — real backends (Testcontainers, EF Core, etc.) for
+      any persistence / external dependency. Real scenarios land in
+      subsequent PRs alongside the runtime.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StemmaGraph\StemmaGraph.csproj" />
+    <ProjectReference Include="..\..\src\StemmaGraph.Abstractions\StemmaGraph.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.*" />
+    <PackageReference Include="Shouldly" Version="4.3.*" />
+    <PackageReference Include="NSubstitute" Version="5.3.*" />
+    <PackageReference Include="Bogus" Version="35.6.*" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# Pre-commit hook — currently a no-op.
+#
+# Format/Build gate is enforced inside `dotnet build stemma.graph.slnx`
+# (TreatWarningsAsErrors + EnforceCodeStyleInBuild + VerifyFormatOnBuild),
+# not here. This hook exists so the .githooks path is shared with commit-msg
+# and `git config core.hooksPath .githooks` covers everything in one go.
+#
+# When we add package-aware pre-commit checks (e.g. "did you update
+# PublicAPI.Unshipped.txt for any added public type?"), they go here.
+exit 0

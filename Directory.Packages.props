@@ -1,0 +1,29 @@
+<Project>
+
+  <!--
+    Central Package Management: pin versions once, reference everywhere.
+    CPM is OFF by default for this repo (each csproj declares its versions
+    explicitly, like the stemma convention).
+
+    When we turn CPM on later, fill in the version lines below and remove
+    the explicit Version= attributes from every csproj.
+
+    Categories below are a planning aid only — none of these elements are
+    active while the block is commented out.
+  -->
+
+  <!--
+    <PropertyGroup>
+      <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+      <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    </PropertyGroup>
+
+    <ItemGroup>
+      runtime / AI:         Microsoft.Extensions.AI, Microsoft.Extensions.DependencyInjection.Abstractions
+      test stack:           xunit, xunit.runner.visualstudio, Microsoft.NET.Test.Sdk,
+                            Shouldly, NSubstitute, Bogus, coverlet.collector
+      integration (later):  Testcontainers packages when persistence lands
+    </ItemGroup>
+  -->
+
+</Project>

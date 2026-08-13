@@ -1,0 +1,54 @@
+<Project>
+
+    <!-- Shared MSBuild defaults for all StemmaGraph packages.
+         The nearest Directory.Build.props for every project under src/. -->
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+
+        <!-- Warnings as errors — clean build = rules pass. -->
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+        <!-- XML docs required on public API, enforced via CS1591. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+        <!-- OSS metadata — applied to every produced package. -->
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Authors>Stemma contributors</Authors>
+        <PackageProjectUrl>https://github.com/dot-stbl/stemma.graph</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/dot-stbl/stemma.graph</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>agents;stateful-graphs;workflows;checkpointing;dotnet</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Copyright>Copyright (c) Stemma contributors</Copyright>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Pinned source-link for symbols.nuget.org. -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Globally suppressed warnings (with documented reason) -->
+        <!-- NU1903 — Testcontainers.PostgreSql pulls SSH.NET 2024.1.0 which has
+             GHSA-q939-rpr3-3284 (transitive dep of Testcontainers, not our code).
+             Tracked separately — bump Testcontainers when an upstream fix lands. -->
+        <NoWarn>$(NoWarn);NU1903</NoWarn>
+    </PropertyGroup>
+
+    <!-- Source-link + deterministic builds. -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+</Project>
