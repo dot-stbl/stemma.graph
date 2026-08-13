@@ -42,6 +42,17 @@
         <NoWarn>$(NoWarn);NU1903</NoWarn>
     </PropertyGroup>
 
+    <!-- Native AOT tier: core runtime libraries only.
+         Full-framework packages (Checkpoints.*, UI, MicrosoftAi, Testing) stay
+         on the regular .NET runtime — do not opt them into IsAotCompatible. -->
+    <PropertyGroup
+        Condition="'$(MSBuildProjectName)' == 'StemmaGraph'
+                   or '$(MSBuildProjectName)' == 'StemmaGraph.Abstractions'
+                   or '$(MSBuildProjectName)' == 'StemmaGraph.DependencyInjection'">
+        <IsAotCompatible>true</IsAotCompatible>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    </PropertyGroup>
+
     <!-- Source-link + deterministic builds. -->
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">

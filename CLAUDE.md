@@ -16,18 +16,14 @@ API .NET-native: generic state, типизированные редьюсеры,
 
 ## Текущий статус
 
-**Architecture locked; runtime not implemented.** Scaffold packages only.
-Canonical design: OpenSpec change
-[`openspec/changes/architecture-runtime-core/`](openspec/changes/architecture-runtime-core/)
-(`openspec validate architecture-runtime-core --strict`). Decisions:
-[`.agents/decisions.md`](.agents/decisions.md) (D-001…D-021). Roadmap + GitHub
-milestone `v0.1 · MVP runtime` (epic #1).
+**MVP runtime on main** (Pregel + InMemory + Testing + samples + DI package).
+Canonical design: OpenSpec
+[`openspec/changes/architecture-runtime-core/`](openspec/changes/architecture-runtime-core/).
+Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-022).
 
-**MVP 0.1 (honest Pregel):** channels, C-shape checkpoint + InMemory, HITL
-`NodeResult`, multi-mode stream, Both hosting, Testing package. **Not in 0.1:**
-Send/subgraphs ship, EF/S3/File, UI (#13), MicrosoftAi.
-
-LangGraph research notes (optional): temp `langgraph-explained.md` / clone.
+**Two tiers (D-022):**
+- **AOT core:** `StemmaGraph` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/03-AotSmoke`
+- **Full .NET / ASP.NET:** Checkpoints.*, UI, MicrosoftAi — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -49,7 +45,7 @@ stemma.graph/
 │   ├── StemmaGraph.DependencyInjection/    ← AddStemmaGraph
 │   ├── StemmaGraph.Testing/
 │   └── StemmaGraph.Generators/
-├── samples/                          ← 01-HelloWorld, 02-InterruptResume
+├── samples/                          ← 01-HelloWorld, 02-InterruptResume, 03-AotSmoke
 ├── tests/
 ├── assets/                           ← banner + NuGet icons
 ├── openspec/

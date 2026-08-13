@@ -55,8 +55,12 @@ Not a 1:1 LangGraph port — .NET-native API.
 | `StemmaGraph.Checkpoints.*` | EF / S3 / File *(later)* |
 | `StemmaGraph.MicrosoftAi` / `StemmaGraph.UI.*` | *(later)* |
 
-Shipped on main: Abstractions, runtime, Testing, Generators, samples.
+Shipped on main: Abstractions, runtime, DependencyInjection, Testing, Generators, samples.
 NuGet icons (`Directory.Build.props`): **i1** core · **i4** checkpoint providers · **i5** rest.
+
+**Native AOT (core tier):** `StemmaGraph` + Abstractions + DependencyInjection are
+`IsAotCompatible`. Smoke: `samples/03-AotSmoke` (`PublishAot`).  
+**Full .NET tier:** Checkpoints / UI / MicrosoftAi — ASP.NET-style hosts; not AOT.
 
 ## Roadmap
 

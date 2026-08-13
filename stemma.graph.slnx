@@ -21,6 +21,7 @@
   <Folder Name="/samples/">
     <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
     <Project Path="samples/02-InterruptResume/02-InterruptResume.csproj" />
+    <Project Path="samples/03-AotSmoke/03-AotSmoke.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/StemmaGraph.Unit/StemmaGraph.Unit.csproj" />

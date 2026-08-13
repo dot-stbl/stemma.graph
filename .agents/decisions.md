@@ -67,9 +67,12 @@ openspec validate, expanded path filters. Release: tag `v*.*.*` → pack → nug
 ### D-010 — Пакеты (target map)
 
 ```
+# AOT core tier
 StemmaGraph.Abstractions
 StemmaGraph                         # runtime + InMemory (no ME.DI reference)
 StemmaGraph.DependencyInjection     # AddStemmaGraph for IServiceCollection
+
+# Full .NET / ASP.NET tier (not AOT-claimed)
 StemmaGraph.Testing                 # doubles + conformance (pack carefully)
 StemmaGraph.Checkpoints.EntityFrameworkCore   # later
 StemmaGraph.Checkpoints.S3                    # later
@@ -136,6 +139,20 @@ local artifacts store (not required in repo for 0.1).
 Change: `openspec/changes/architecture-runtime-core/` (proposal, design, 12 specs,
 tasks). Validate: `openspec validate architecture-runtime-core --strict`.
 
+### D-022 — Two runtime tiers: **AOT core** vs **full .NET host packages**
+
+**Decision:** Split the product surface by publish model — no core rewrite.
+
+| Tier | Packages | Target |
+|------|----------|--------|
+| **AOT core** | `StemmaGraph`, `StemmaGraph.Abstractions`, `StemmaGraph.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/03-AotSmoke` (`PublishAot`) |
+| **Full runtime** | `StemmaGraph.Checkpoints.*`, `StemmaGraph.UI.*`, `StemmaGraph.MicrosoftAi`, Testing, generators | Regular .NET / ASP.NET; may use reflection, EF, browsers, etc. **Do not** claim AOT |
+
+**AOT path (supported):** fluent `StateGraph` + InMemory (+ optional thin DI).  
+**Full path (product hosts):** ASP.NET, EF/S3 checkpointers, UI console, LLM adapters — depend on core, run on complete CLR.
+
+Checkpoint packages that need JSON must use STJ source-gen (or non-reflection serde) **if** they ever want AOT; until then they stay full-runtime only.
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
@@ -144,6 +161,7 @@ tasks). Validate: `openspec validate architecture-runtime-core --strict`.
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
 6. **UI host** — `MapStemmaUI()` static assets vs Razor (decide at UI implement).
+7. **AOT CI** — optional `dotnet publish` smoke on schedule vs every PR (slow).
 
 ## GitHub tracking
 
