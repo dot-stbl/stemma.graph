@@ -1,108 +1,52 @@
 # Decisions — принятые решения по StemmaGraph
 
-> Хронологический лог решений, принятых в сессии 2026-08-13. Каждое решение
-> фиксируется здесь **до** того, как превращается в код. Решения, требующие
-> обоснования, дополняются ADR (см. `.agents/adr/`).
+> Хронологический лог решений. Каждое решение фиксируется здесь **до** того,
+> как превращается в код. Канон требований: OpenSpec change
+> [`architecture-runtime-core`](../openspec/changes/architecture-runtime-core/).
+> ADR — в `.agents/adr/` для нетривиальных обоснований.
 
 ## Решения
 
 ### D-001 — Имя бренда: **Stemma** (лат. «гирлянда, родословная»)
 
-**Контекст:** нужен короткий бренд для семейства OSS-продуктов по .NET-агентам.
-
-**Решение:** `Stemma`.
-
-**Почему:** метафора «линия состояний через чекпойнты, как родословная через
-поколения» — точно описывает stateful-граф с time-travel (если он будет).
-Стиль совпадает с другими проектами владельца в `stbl/`: `tessera`, `plexor`,
-`anlytra` — короткая латынь / изобретённое слово, мягкое окончание.
-
-**Альтернативы, рассмотренные:** AgentFlow, Mesh, Plexus, Helix, Forge,
-Nexor, Nexix, Copula, Catena. Отвергнуты как generic / занятые / не попадающие
-в стиль `stbl/`.
+**Решение:** `Stemma`. Метафора линии состояний через чекпойнты.
 
 ### D-002 — Имя первого продукта: **StemmaGraph**
 
-**Контекст:** первый продукт — граф-рантайм для .NET-агентов (аналог
-LangGraph).
-
-**Решение:** `StemmaGraph` (конкатенация бренд + продукт).
-
-**Почему:** зеркало LangChain Inc (`LangChain` / `LangGraph` / `LangSmith`).
-Конкатенация выбрана сознательно, отходя от типичной .NET-конвенции
-`Stemma.Graph.*` — ради близости к источнику вдохновения и удобства
-произношения.
+**Решение:** `StemmaGraph` (конкатенация, зеркало LangGraph).
 
 ### D-003 — GitHub-репо: `dot-stbl/stemma.graph`
 
-**Контекст:** где публиковать код.
-
-**Решение:** репозиторий `dot-stbl/stemma.graph` под оргой `dot-stbl` —
-личный GitHub владельца. Бренд Stemma при этом остаётся независимым
-(домен, NuGet-префикс, branding — своё).
-
-**Почему:** `dot-stbl` уже содержит публичные OSS-проекты владельца
-(`regent`, `tessera`, `plexor`) — логичная посадка для ещё одного OSS.
+**Решение:** `dot-stbl/stemma.graph`; бренд Stemma независим.
 
 ### D-004 — NuGet package ids: `StemmaGraph.*`
 
-**Контекст:** какие имена давать NuGet-пакетам.
-
-**Решение:** `StemmaGraph`, `StemmaGraph.Abstractions`, `StemmaGraph.*`
-(конкатенация, не `Stemma.Graph.*` через точку).
-
-**Почему:** см. D-002 — консистентно с брендом. Отходим от типичной .NET-конвенции
-(`MassTransit`, `Aspire`, `Polly` — через точку) сознательно. Namespace
-зеркалит package id: `StemmaGraph.*`.
+**Решение:** `StemmaGraph`, `StemmaGraph.Abstractions`, … (не `Stemma.Graph.*`).
 
 ### D-005 — Подход: **не порт LangGraph**, .NET-native переосмысление
 
-**Контекст:** что забираем из LangGraph, что переделываем.
+**Решение:** концепции (граф, cycles, channels, checkpoint, interrupt, stream);
+API — generics, `IAsyncEnumerable`, без TypedDict-рефлексии hot path.
 
-**Решение:**
-- **Забираем концепции:** граф как first-class, циклы, conditional edges,
-  checkpointing (опционально), channels/reducers (опционально), interrupts
-  (опционально), state lineage.
-- **Не переносим 1:1:** Pydantic → `record` с `init` + `required`;
-  TypedDict → `StateGraph<TState>` где `TState : class`; `asyncio.Queue` →
-  `System.Threading.Channels`; `async generator` → `IAsyncEnumerable<T>`.
-- **Главное отличие:** .NET-native generic state с типобезопасностью на
-  этапе компиляции, а не runtime-проверкой через TypedDict.
+### D-006 — MVP scope: **honest Pregel + InMemory C-checkpoint** *(supersedes scaffold note)*
 
-**Почему:** иначе получится обёртка над Python-семантикой, а не идиоматичный
-.NET-фреймворк.
+**Было (scaffold):** MVP без checkpointing.
 
-### D-006 — MVP scope: минимальный, **без checkpointing / persistence**
+**Решение (2026-08-13, architecture pass):** MVP 0.1 = full Pregel superstep
+(all ready nodes, barrier, versions) + channels (LastValue, Append) +
+**C-shape checkpoint** + **InMemory provider in core** + HITL (`NodeResult`) +
+multi-mode stream + source-gen skeleton + `StemmaGraph.Testing`.
 
-**Контекст:** что входит в первый релиз.
+**Не в 0.1:** Send execution, subgraphs, EF/S3/File packages, UI, MicrosoftAi.
 
-**Решение:** MVP = `StateGraph<TState>` + in-memory execution + один sample.
-Без checkpointing, без персистенции, без подграфов, без MAF-интеграции.
+**Почему изменили:** product harness / backend agents без durable pause/resume
+и multi-writer merge — не library. Sequential-only B откладывал C-shape и
+ломал forward-compat.
 
-**Почему:** checkpointing — самая сложная и спорная часть LangGraph
-(расходует усилия на дизайн, ошибки дорогие). Сначала доказать, что
-runtime + fluent builder работают, потом добавлять слои.
+### D-007 — MAF / Microsoft.Extensions.AI: через `IChatClient`
 
-**Open question:** какая персистенция в принципе нужна? Если да —
-EF Core (один DbContext + миграции, всё в основном пакете) или выделенный
-абстрактный checkpointer с бэкендами (как у LangGraph)? Решается после
-research по LangGraph internals.
-
-### D-007 — MAF / Microsoft.Extensions.AI: интеграция через `IChatClient`
-
-**Контекст:** какой AI-абстракцией пользоваться.
-
-**Решение:** `Microsoft.Extensions.AI.IChatClient` — единая точка для любого
-провайдера. StemmaGraph не делает свой LLM-слой; узлам доступен `IChatClient`
-через DI.
-
-**Почему:** `IChatClient` — Microsoft-blessed абстракция, держит весь
-спектр провайдеров (OpenAI, Azure, Ollama, Anthropic и т.д.). Не плодим
-своих интерфейсов.
-
-**Open question:** форма пакета для интеграции — отдельный
-`StemmaGraph.MicrosoftAi` (как `MassTransit.AzureServiceBus`) или
-часть основного `StemmaGraph`? Решается после MVP.
+**Решение:** не свой LLM SDK. Пакет интеграции — **отдельный**
+`StemmaGraph.MicrosoftAi` (post-0.1), не в core.
 
 ### D-008 — Технологический стек
 
@@ -110,59 +54,103 @@ research по LangGraph internals.
 |------|------------|
 | Runtime | .NET 10 |
 | Тесты | xUnit + Shouldly + NSubstitute + Bogus |
-| AI integration | `Microsoft.Extensions.AI` (см. D-007) |
-| Streaming | `IAsyncEnumerable<T>` + `System.Threading.Channels` |
-| Публикация | NuGet через GitHub Actions OIDC trusted publishing (без долгоживущих API-ключей) |
+| AI (later) | `Microsoft.Extensions.AI` |
+| Streaming | `IAsyncEnumerable<T>` |
+| Bench (planned) | BenchmarkDotNet |
+| Публикация | NuGet OIDC trusted publishing |
 
 ### D-009 — CI/CD
 
-- **PR gate:** `dotnet build stemma.graph.slnx -c Debug` (warnings-as-errors)
-  + `dotnet test --filter "FullyQualifiedName!~Integration"`.
-- **Release:** push тега `v*.*.*` → pack → push в nuget.org через OIDC
-  trusted publishing.
-- **Runner:** `ubuntu-latest` (не нужен self-hosted — чистый .NET).
+PR: build (warnings-as-errors) + unit (skip Integration). Planned: pack smoke,
+openspec validate, expanded path filters. Release: tag `v*.*.*` → pack → nuget.org.
 
-### D-010 — Пакеты на старте: **только два**
+### D-010 — Пакеты (target map)
 
-**Контекст:** какие NuGet-пакеты реально создавать на этапе скаффолда.
+```
+StemmaGraph.Abstractions
+StemmaGraph                         # runtime + InMemory checkpointer
+StemmaGraph.Testing                 # doubles + conformance (pack carefully)
+StemmaGraph.Checkpoints.EntityFrameworkCore   # later
+StemmaGraph.Checkpoints.S3                    # later
+StemmaGraph.Checkpoints.File                  # later
+StemmaGraph.MicrosoftAi                       # later
+StemmaGraph.UI.*                              # later (#13)
+```
 
-**Решение:** `StemmaGraph` (runtime) + `StemmaGraph.Abstractions` (interfaces).
-Всё остальное (checkpointers, MAF-bridge) добавляется **после** архитектурного
-обсуждения и research по LangGraph internals.
+Scaffold ships only Abstractions + StemmaGraph markers until apply.
 
-**Почему:** была попытка сделать `.Checkpoints.Memory/.Sqlite/.Postgres` и
-`.MicrosoftAi` сразу — отвергнута владельцем как преждевременная
-(checkpoints — фича LangGraph, может не понадобиться; пакетная форма —
-архитектурное решение, не обсуждено).
+### D-011 — Docs site: `dot-stbl/stemma-docs`
 
-### D-011 — Документация и docs-сайт
+Отдельный репо; движок/домен — после MVP.
 
-**Контекст:** у владельца есть домен и хостинг; хочет полноценный docs-сайт
-для StemmaGraph, а не просто GitHub Pages.
+### D-012 — Execution: **full Pregel (C)**
 
-**Решение:** отдельный репозиторий `dot-stbl/stemma-docs` (чистый деплой).
-Движок, хостинг, конкретный домен — обсуждается после MVP.
+All ready tasks per superstep → barrier → `apply_writes` with channel versions /
+`versions_seen`. Not sequential-only B.
 
-## Open questions (на момент 2026-08-13)
+### D-013 — State: **channels + reducers**
 
-1. **Persistence:** нужна ли вообще? Если да — EF Core (один подход) или
-   абстрактный `ICheckpointer<T>` + бэкенды (как у LangGraph)?
-2. **Channels + reducers:** берём концепцию из LangGraph или .NET-native
-   подход (например, типобезопасные редьюсеры через `IReducer<TState, TUpdate>`)?
-3. **Subgraphs:** в каком виде? Вложенные `CompiledGraph` или композиция через
-   `AddSubgraph(...)`?
-4. **MAF integration:** отдельный пакет `StemmaGraph.MicrosoftAi` или часть
-   основного `StemmaGraph`?
-5. **Docs site:** движок (VitePress / Docusaurus / Astro Starlight), хостинг
-   (Vercel / Cloudflare / GitHub Pages), конкретный домен.
-6. **Public API tracking:** `Microsoft.CodeAnalysis.PublicApiAnalyzers` +
-   `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` — добавлять после
-   появления первой публичной поверхности.
+Named channels; LastValue (single writer/step); Append/binop multi-writer.
+Typed `TState` is a view. DX: **source-gen primary** + fluent canon + reflection
+fallback at compile-graph (not hot path).
+
+### D-014 — Checkpoint: **full C-shape** + pluggable providers
+
+Snapshot: channel values, versions, versions_seen, pending writes, step, status,
+interrupt. InMemory in core; EF/S3/File separate packages. Storage ≠ “files on
+disk only”.
+
+### D-015 — HITL: **NodeResult**, not control-flow exceptions
+
+`Continue(writes)` / `Interrupt(payload)`; `ResumeAsync(threadId, Command)`.
+
+### D-016 — Streaming: multi-mode primary API
+
+`values` / `updates` / `events`; `InvokeAsync` drains to terminal.
+
+### D-017 — Hosting: **Both**
+
+Standalone `CompiledGraph<T>` + DI registration of the same instance / runner.
+
+### D-018 — Send / subgraphs: designed, not MVP-shipped
+
+Specs reserve PUSH/Send and subgraph composition; implement post-0.1.
+
+### D-019 — Testing: **`StemmaGraph.Testing`** + conformance
+
+Recording/fault-injecting checkpointer, stream capture, fixtures, InMemory
+conformance suite in CI. Quality-engineering: unit scenario matrix, BenchmarkDotNet
+(non-gating PR), CI pack/openspec.
+
+### D-020 — UI: separate package, post-0.1
+
+`StemmaGraph.UI` — run inspector, HITL queue, topology (MD3). Core must not
+reference UI. Epic: github.com/dot-stbl/stemma.graph/issues/13. Mockups:
+local artifacts store (not required in repo for 0.1).
+
+### D-021 — Architecture source of truth: OpenSpec
+
+Change: `openspec/changes/architecture-runtime-core/` (proposal, design, 12 specs,
+tasks). Validate: `openspec validate architecture-runtime-core --strict`.
+
+## Open questions (remaining)
+
+1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
+2. **Checkpoint serde** — JSON versioning, polymorphic channel values.
+3. **Token-level LLM streaming** — graph stream mode vs node-local (MicrosoftAi).
+4. **Docs site** engine/hosting/domain.
+5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
+6. **UI host** — `MapStemmaUI()` static assets vs Razor (decide at UI implement).
+
+## GitHub tracking
+
+Milestone: `v0.1 · MVP runtime`. Epic #1; docs #2; abstractions #3; runtime #4;
+source-gen #5; Testing #6; samples #7; deferred #8; gap specs #9; benches #10;
+CI #11; unit matrix #12; UI epic #13.
 
 ## Связанное
 
-- [`.agents/roadmap.md`](./roadmap.md) — что делаем дальше.
-- [`.agents/conventions.md`](./conventions.md) — где живут конвенции.
-- [`../CLAUDE.md`](../CLAUDE.md) — handbook.
-- [`../AGENTS.md`](../AGENTS.md) — указатель для AI-агентов.
-- Изначальная сессия обсуждения (notes): `stemma-notes.md` в temp-папке.
+- [roadmap.md](./roadmap.md)
+- [conventions.md](./conventions.md)
+- [`../openspec/changes/architecture-runtime-core/`](../openspec/changes/architecture-runtime-core/)
+- [`../CLAUDE.md`](../CLAUDE.md)

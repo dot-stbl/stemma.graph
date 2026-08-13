@@ -16,19 +16,18 @@ API .NET-native: generic state, типизированные редьюсеры,
 
 ## Текущий статус
 
-**Scaffolding.** Репо создано, конвенции зафиксированы, кода нет. Research по
-LangGraph internals в процессе (background agent → `stemma-research.md`).
-После research — детальная архитектура и MVP.
+**Architecture locked; runtime not implemented.** Scaffold packages only.
+Canonical design: OpenSpec change
+[`openspec/changes/architecture-runtime-core/`](openspec/changes/architecture-runtime-core/)
+(`openspec validate architecture-runtime-core --strict`). Decisions:
+[`.agents/decisions.md`](.agents/decisions.md) (D-001…D-021). Roadmap + GitHub
+milestone `v0.1 · MVP runtime` (epic #1).
 
-**Не обсуждённое** (на момент создания скаффолда):
+**MVP 0.1 (honest Pregel):** channels, C-shape checkpoint + InMemory, HITL
+`NodeResult`, multi-mode stream, Both hosting, Testing package. **Not in 0.1:**
+Send/subgraphs ship, EF/S3/File, UI (#13), MicrosoftAi.
 
-- Будет ли checkpointing вообще (фича LangGraph — может не понадобиться)
-- Какие бэкенды для персистенции (если будет)
-- Каналы / редьюсеры — те же вопросы
-- Подграфы, time-travel, interrupts
-
-Скаффолд намеренно минимальный: один основной пакет, одна абстракция,
-минимальные тесты. Всё остальное добавляется после обсуждения архитектуры.
+LangGraph research notes (optional): temp `langgraph-explained.md` / clone.
 
 ## Tech stack
 

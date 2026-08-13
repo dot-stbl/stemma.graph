@@ -3,9 +3,9 @@
 > Stateful, cyclic, durable agent graphs for .NET — inspired by LangGraph,
 > redesigned for the .NET runtime.
 
-**Status: scaffolding.** Repo skeleton only — no runtime code yet. See
-[CLAUDE.md](CLAUDE.md) for the architecture discussion and [Roadmap](#roadmap)
-below.
+**Status: architecture locked, runtime not implemented.** Design lives in
+OpenSpec [`openspec/changes/architecture-runtime-core/`](openspec/changes/architecture-runtime-core/).
+See [CLAUDE.md](CLAUDE.md) and [.agents/roadmap.md](.agents/roadmap.md).
 
 ---
 
@@ -18,22 +18,15 @@ and StemmaGraph runs it with:
 
 - **Cyclic execution** — agents that loop until a condition is met (the
   killer feature missing from most .NET agent frameworks)
-- **Durable checkpointing** *(under discussion)* — every step persisted,
-  resumable from any checkpoint, time-travel debugging
-- **Typed state** — `record`/`class` state, generic constraints, no runtime
-  validation
-- **Channels + reducers** *(under discussion)* — parallel node updates
-  don't clobber each other
-- **Streaming** — `IAsyncEnumerable<StateUpdate>` for values / updates /
-  events
-- **Human-in-the-loop** *(under discussion)* — interrupts that pause and
-  resume via `Command`
-- **`Microsoft.Extensions.AI` integration** *(planned)* — works with any
-  provider through the `IChatClient` abstraction
+- **Durable checkpointing** — C-shape snapshots; InMemory in core; EF/S3/File as packages later
+- **Typed state + channels/reducers** — LastValue / Append; source-gen + fluent DX
+- **Pregel supersteps** — all ready nodes, barrier, multi-writer merge
+- **Streaming** — `IAsyncEnumerable` for values / updates / events
+- **Human-in-the-loop** — `NodeResult` interrupt + `ResumeAsync` / `Command`
+- **`Microsoft.Extensions.AI`** *(post-0.1 package)* — `IChatClient`, not in core
+- **UI console** *(post-0.1, #13)* — run inspector, HITL queue, topology (MD3)
 
-Items marked *under discussion* depend on what survives the architecture pass
-over LangGraph internals. We're not committing to a 1:1 port — features that
-make sense for .NET stay, features that don't get cut.
+Not a 1:1 LangGraph port — .NET-native API.
 
 ## What it is **not**
 
@@ -48,21 +41,23 @@ make sense for .NET stay, features that don't get cut.
 
 ## Packages
 
-**TBD.** Architecture pass and architecture discussion come first. We know:
+| Package | Role |
+|---------|------|
+| `StemmaGraph.Abstractions` | contracts (channels, checkpoint, NodeResult, …) |
+| `StemmaGraph` | runtime + InMemory checkpointer |
+| `StemmaGraph.Testing` | test doubles + conformance *(0.1)* |
+| `StemmaGraph.Checkpoints.*` | EF / S3 / File *(later)* |
+| `StemmaGraph.MicrosoftAi` / `StemmaGraph.UI.*` | *(later)* |
 
-- There will be a main `StemmaGraph` package (runtime + builder API).
-- There will be an `StemmaGraph.Abstractions` package (interfaces only, zero
-  transitive dependencies — like `MassTransit.Abstractions`).
-
-What else exists depends on what survives the research pass. The current
-skeleton intentionally has only those two.
+Scaffold currently has Abstractions + StemmaGraph markers only.
 
 ## Roadmap
 
-- [ ] **Architecture pass** — review LangGraph internals, decide what
-      survives the .NET rewrite (cycles? checkpointing? channels? all? some?)
-- [ ] **MVP** — runtime + StateGraph + 1 sample (in-memory only)
-- [ ] Later — persistence, MAF integration, subgraphs, visualizer, v1.0
+- [x] **Architecture** — OpenSpec `architecture-runtime-core`
+- [ ] **MVP 0.1** — honest Pregel + InMemory + Testing + samples ([epic #1](https://github.com/dot-stbl/stemma.graph/issues/1))
+- [ ] Later — providers, Send/subgraphs, MicrosoftAi, UI, v1.0
+
+Details: [.agents/roadmap.md](.agents/roadmap.md).
 
 ## Inspiration
 

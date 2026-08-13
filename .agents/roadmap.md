@@ -1,97 +1,79 @@
 # Roadmap — что делаем дальше
 
-> Активная карта работ по StemmaGraph. Обновляется по мере выполнения.
-> Источник истины для порядка задач.
+> Активная карта работ. Канон требований: OpenSpec
+> `openspec/changes/architecture-runtime-core/`. Issues: milestone
+> `v0.1 · MVP runtime` on `dot-stbl/stemma.graph`.
 
 ## Текущий статус (2026-08-13)
 
-**Scaffolding готов.** Initial commit `0ecf278` на `main`. Конвенции
-зафиксированы. Документация в `.agents/decisions.md`. Research по LangGraph
-internals запущен (background agent).
+| | |
+|---|---|
+| Scaffold | ✅ solution, packages markers, CI/publish workflows |
+| Architecture | ✅ OpenSpec `architecture-runtime-core` (strict valid) |
+| Decisions | ✅ D-001…D-021 in [decisions.md](./decisions.md) |
+| Runtime code | ❌ not started |
+| UI mockups | ✅ local MD3 HTML (artifacts); package later (#13) |
 
-**В работе:**
-- Research по LangGraph internals → `.agents/research/langgraph-internals.md`
-  (когда вернётся).
+## Ближайшие шаги (v0.1)
 
-## Ближайшие шаги
+Порядок apply (можно parallel worktrees где независимо):
 
-### 1. Research → `.agents/research/`
+| Order | Issue | Work |
+|------:|-------|------|
+| 1 | #2 | docs align (this file + decisions — in progress) |
+| 2 | #3 | `StemmaGraph.Abstractions` contracts |
+| 3 | #4 | Pregel runtime + InMemory + HITL + stream |
+| 4 | #5 | source-gen `[GraphState]` |
+| 5 | #6 | `StemmaGraph.Testing` + conformance |
+| 6 | #12 | unit scenario matrix |
+| 7 | #10 / #11 | benches + CI hardening (can overlap late) |
+| 8 | #7 | samples + ship gate |
 
-- Прочитать LangGraph source (Pregel, Channels, StateGraph, Checkpointing,
-  Interrupts, Subgraphs, Streaming).
-- Извлечь что стоит заимствовать, что переделать, где болит.
-- Готово → переход к шагу 2.
+**#9** (gap specs) — largely done in OpenSpec; close after owner skim.
 
-### 2. Архитектурный проход
+### MVP 0.1 includes
 
-- Решить, что из LangGraph переносится (см. [decisions.md D-005](./decisions.md#d-005--подход-не-порт-langgraph-net-native-переосмысление)).
-- Зафиксировать ответы на [open questions](./decisions.md#open-questions-на-момент-2026-08-13):
-  - persistence: EF Core или абстрактный checkpointer?
-  - channels/reducers: какая форма для .NET?
-  - subgraphs: в каком виде?
-  - MAF integration: отдельный пакет или часть основного?
-- Возможно — отдельный ADR для каждого неочевидного решения.
+- [ ] Pregel: all ready, barrier, apply_writes, versions
+- [ ] Channels: LastValue, Append
+- [ ] Topology: nodes, edges, conditional, compile validation
+- [ ] C-shape checkpoint + InMemory provider
+- [ ] NodeResult interrupt/resume
+- [ ] Stream values/updates/events + InvokeAsync
+- [ ] Hosting Both (fluent + DI)
+- [ ] Source-gen skeleton
+- [ ] StemmaGraph.Testing + InMemory conformance in CI
+- [ ] Unit scenario matrix + samples (ReAct + HITL)
+- [ ] PublicAPI Unshipped; packable core only
 
-### 3. MVP
+### MVP 0.1 excludes
 
-Цель первого релиза: `StemmaGraph` 0.1.0 с минимальным runtime.
+- Send execution, subgraphs (designed only)
+- EF / S3 / File checkpointer packages
+- `StemmaGraph.MicrosoftAi`
+- `StemmaGraph.UI` (#13)
+- OTel-deep, time-travel UX
 
-**Что входит:**
+## После 0.1
 
-- [ ] `StateGraph<TState>` — fluent builder API
-- [ ] `CompiledGraph` с `InvokeAsync` / `StreamAsync`
-- [ ] Conditional edges + циклы
-- [ ] In-memory execution (без checkpointing)
-- [ ] Один рабочий sample (`samples/01-HelloWorld` — реальный, не canary)
-- [ ] Smoke-тесты → реальные unit-тесты на ядро
-- [ ] PublicAPI tracking (`PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`)
-- [ ] Публикация 0.1.0 в NuGet
-
-**Что НЕ входит:**
-
-- Checkpointing (см. D-006)
-- Subgraphs
-- MAF / Microsoft.Extensions.AI интеграция
-- Визуализатор
-
-### 4. После MVP
-
-**v0.2 — persistence (когда решение принято):**
-- Либо EF Core-подход (миграции + DbContext), либо `ICheckpointer<T>` +
-  бэкенды (если решим идти путём LangGraph).
-- SQLite в первую очередь, Postgres — если нужно.
-
-**v0.3 — MAF / Microsoft.Extensions.AI:**
-- Решить форму пакета (см. open question #4).
-- Пример с реальным провайдером (OpenAI / Ollama / Azure).
-
-**v0.4 — subgraphs:**
-- Форма (вложенные `CompiledGraph` или `AddSubgraph(...)`).
-- Propagated state через `IStateMerger<T>`.
-
-**v0.5 — interrupts / HITL:**
-- `Interrupt()` в узлах.
-- `Command` для resume.
-
-**v0.6 — observability:**
-- OpenTelemetry activity source per node.
-- Channel/reducer events.
-- Integration с существующими `.NET` OTel-инструментами.
-
-**v1.0:**
-- Стабильный API (semver).
-- Полная документация на docs-сайте.
-- ≥5 samples.
-- Performance baseline.
+| Track | Issues / notes |
+|-------|----------------|
+| Persistence providers | #8 → EF first, then S3/File |
+| Send + subgraphs | #8 + send-subgraphs spec |
+| MicrosoftAi | #8 |
+| UI console | #13 (inspector, HITL, topology, MD3) |
+| Observability | OTel per node |
+| Docs site | D-011 |
+| v1.0 | semver freeze, ≥5 samples, perf baselines |
 
 ## Не в планах
 
-- Свой LLM SDK (используем `Microsoft.Extensions.AI`).
-- Замена Microsoft Agent Framework (MAF и StemmaGraph комплементарны).
-- Python-порт (целевая аудитория — .NET-комьюнити).
+- Свой LLM SDK
+- Замена MAF
+- Python-порт
+- LangSmith/CLI/Studio clone
 
 ## Связанное
 
-- [decisions.md](./decisions.md) — принятые решения + open questions.
-- [conventions.md](./conventions.md) — где живут конвенции.
-- [`../CLAUDE.md`](../CLAUDE.md) — handbook.
+- [decisions.md](./decisions.md)
+- [OpenSpec change](../openspec/changes/architecture-runtime-core/)
+- Epic: https://github.com/dot-stbl/stemma.graph/issues/1

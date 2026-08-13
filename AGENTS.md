@@ -14,8 +14,9 @@ dotnet test  stemma.graph.slnx   # xUnit + Shouldly + NSubstitute + Bogus
 
 ## Current status
 
-Scaffolding only — no runtime code yet. Architecture decisions live in
-[.agents/decisions.md](.agents/decisions.md). Roadmap in
-[.agents/roadmap.md](.agents/roadmap.md). Conventions pointer in
-[.agents/conventions.md](.agents/conventions.md). Research on LangGraph
-internals in progress (see `stemma-research.md` in temp dir).
+Architecture locked in OpenSpec
+`openspec/changes/architecture-runtime-core/` (no runtime code yet).
+Decisions: [.agents/decisions.md](.agents/decisions.md). Roadmap:
+[.agents/roadmap.md](.agents/roadmap.md). Conventions:
+[.agents/conventions.md](.agents/conventions.md). GitHub epic #1 /
+milestone `v0.1 · MVP runtime`.
