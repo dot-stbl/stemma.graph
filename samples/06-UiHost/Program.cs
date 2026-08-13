@@ -31,7 +31,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddVolutaUI(session);
 
 var app = builder.Build();
-app.MapGet("/", static () => Results.Redirect("/voluta/"));
+app.MapGet("/", static () => Results.Redirect("/voluta"));
 app.MapVolutaUI(static options => options.PathPrefix = "/voluta");
 
 await SeedInterruptedThreadAsync(session);

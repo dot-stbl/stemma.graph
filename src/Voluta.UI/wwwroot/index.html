@@ -3,76 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voluta · ops console</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <title>voluta · ops</title>
+  <!-- base href injected at serve time so /voluta (no slash) still loads assets -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="top">
-    <div class="brand">
-      <span class="brand-mark material-symbols-outlined">account_tree</span>
-      <div>
-        <strong>Voluta</strong>
-        <div class="muted" style="font-size:12px;font-weight:400">ops console</div>
+  <div class="frame">
+    <header class="top">
+      <div class="brand">
+        <div class="wordmark">voluta</div>
+        <div class="rubric">ops console</div>
       </div>
-    </div>
-    <nav class="tabs">
-      <button type="button" data-tab="inspector" class="active">
-        <span class="material-symbols-outlined">troubleshoot</span> Run inspector
-      </button>
-      <button type="button" data-tab="hitl">
-        <span class="material-symbols-outlined">front_hand</span> HITL queue
-      </button>
-      <button type="button" data-tab="topology">
-        <span class="material-symbols-outlined">hub</span> Topology
-      </button>
-    </nav>
-  </header>
+      <nav class="tabs" role="tablist">
+        <button type="button" data-tab="inspector" class="active" role="tab">inspector</button>
+        <button type="button" data-tab="hitl" role="tab">hitl</button>
+        <button type="button" data-tab="topology" role="tab">topology</button>
+      </nav>
+      <div class="top-meta mono muted">thread · checkpoint · stream</div>
+    </header>
 
-  <main>
-    <section id="panel-inspector" class="panel active">
-      <div class="row">
-        <label>Thread id
-          <input id="threadId" placeholder="ui-host-hitl-1" value="ui-host-hitl-1" />
-        </label>
-        <button type="button" id="loadThread" class="primary">Load checkpoint</button>
-        <button type="button" id="startStream" class="ghost">SSE stream</button>
-        <button type="button" id="stopStream" class="ghost" disabled>Stop SSE</button>
-      </div>
-      <div class="grid-2">
-        <div class="card" id="inspectorMeta">
-          <div class="muted">Load a thread to inspect the latest C-shape checkpoint.</div>
+    <main>
+      <section id="panel-inspector" class="panel active">
+        <div class="section-label">run inspector</div>
+        <div class="row">
+          <label>thread id
+            <input id="threadId" class="mono" placeholder="ui-host-hitl-1" value="ui-host-hitl-1" spellcheck="false" />
+          </label>
+          <button type="button" id="loadThread" class="primary">load</button>
+          <button type="button" id="startStream" class="ghost">sse</button>
+          <button type="button" id="stopStream" class="ghost" disabled>stop</button>
         </div>
-        <div class="card">
-          <strong>Live stream</strong>
-          <div class="muted" style="margin:0.35rem 0 0.5rem">
-            GET /api/threads/{id}/stream — mode=checkpoint | resume | invoke
+        <div class="grid-2">
+          <div class="card" id="inspectorMeta">
+            <div class="muted">load a thread to inspect the latest c-shape checkpoint.</div>
           </div>
-          <div id="streamLog" class="stream-log"></div>
+          <div class="card">
+            <div class="section-label tight">live stream</div>
+            <div class="muted tiny">
+              get /api/threads/{id}/stream · mode=checkpoint | resume | invoke
+            </div>
+            <div id="streamLog" class="stream-log mono"></div>
+          </div>
         </div>
-      </div>
-      <pre id="inspectorOut" class="card" style="margin-top:1rem">—</pre>
-    </section>
+        <pre id="inspectorOut" class="card mono dump">—</pre>
+      </section>
 
-    <section id="panel-hitl" class="panel">
-      <div class="row">
-        <button type="button" id="refreshHitl" class="primary">Refresh interrupted</button>
-      </div>
-      <div id="hitlList" class="list"></div>
-    </section>
+      <section id="panel-hitl" class="panel">
+        <div class="section-label">hitl queue</div>
+        <div class="row">
+          <button type="button" id="refreshHitl" class="primary">refresh</button>
+        </div>
+        <div id="hitlList" class="list"></div>
+      </section>
 
-    <section id="panel-topology" class="panel">
-      <div class="row">
-        <button type="button" id="loadTopology" class="primary">Load topology</button>
-      </div>
-      <div id="topologyView" class="card">
-        <div class="muted">Compiled graph metadata (nodes, edges, channels).</div>
-      </div>
-      <pre id="topologyOut" class="card" style="margin-top:1rem;display:none"></pre>
-    </section>
-  </main>
+      <section id="panel-topology" class="panel">
+        <div class="section-label">topology</div>
+        <div class="row">
+          <button type="button" id="loadTopology" class="primary">load</button>
+        </div>
+        <div id="topologyView" class="card">
+          <div class="muted">compiled graph metadata (nodes, edges, channels).</div>
+        </div>
+        <pre id="topologyOut" class="card mono dump" hidden></pre>
+      </section>
+    </main>
 
+    <footer class="foot">
+      <span class="muted">by ▪stbl</span>
+      <span class="muted mono" id="pathHint"></span>
+    </footer>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>

@@ -54,14 +54,15 @@ public static class VolutaUiEndpointRouteBuilderExtensions
     {
         var prefix = VolutaUiRouteHelpers.NormalizePrefix(options.PathPrefix);
 
-        // Single shell route only — MapGet(prefix) and MapGet(prefix+"/") both match
-        // /voluta and /voluta/ and throw AmbiguousMatchException.
+        // Single shell route — do not also MapGet(prefix+"/") (AmbiguousMatch with /voluta).
+        // Inject <base href="{prefix}/"> so relative styles.css/app.js resolve under the prefix
+        // when the browser URL is /voluta without a trailing slash.
         _ = endpoints.MapGet(
             prefix,
-            () => Results.Content(VolutaUiAssets.IndexHtml, "text/html; charset=utf-8"));
+            () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
         _ = endpoints.MapGet(
             $"{prefix}/index.html",
-            () => Results.Content(VolutaUiAssets.IndexHtml, "text/html; charset=utf-8"));
+            () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
         _ = endpoints.MapGet(
             $"{prefix}/styles.css",
             () => Results.Content(VolutaUiAssets.StylesCss, "text/css; charset=utf-8"));

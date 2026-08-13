@@ -1,7 +1,17 @@
 (() => {
-  const base = location.pathname.replace(/\/?(index\.html)?$/, "") || "/voluta";
+  // Prefer <base href> (injected at serve time). Fallback: path without trailing file.
+  const baseEl = document.querySelector("base");
+  const base = (baseEl && baseEl.getAttribute("href")
+    ? baseEl.getAttribute("href").replace(/\/$/, "")
+    : location.pathname.replace(/\/?(index\.html)?$/, "")) || "/voluta";
+
   const api = (path) => base + path;
   let eventSource = null;
+
+  const pathHint = document.getElementById("pathHint");
+  if (pathHint) {
+    pathHint.textContent = base;
+  }
 
   document.querySelectorAll(".tabs button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -31,25 +41,25 @@
 
   function renderCheckpointMeta(data) {
     const channels = Object.entries(data.channelValues || {})
-      .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`)
+      .map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd class="mono">${escapeHtml(v)}</dd>`)
       .join("") || `<dt>—</dt><dd class="muted">no channels</dd>`;
     const versions = Object.entries(data.channelVersions || {})
       .map(([k, v]) => `${escapeHtml(k)}@${escapeHtml(v)}`)
       .join(", ") || "—";
 
     document.getElementById("inspectorMeta").innerHTML = `
-      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap">
         ${statusPill(data.status)}
         <span class="mono muted">step ${escapeHtml(data.step)}</span>
       </div>
       <dl class="kv">
-        <dt>thread</dt><dd>${escapeHtml(data.threadId)}</dd>
-        <dt>last node</dt><dd>${escapeHtml(data.lastNode ?? "—")}</dd>
-        <dt>next</dt><dd>${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
-        <dt>interrupt</dt><dd>${escapeHtml(data.interruptPayload ?? "—")}</dd>
-        <dt>versions</dt><dd>${versions}</dd>
+        <dt>thread</dt><dd class="mono">${escapeHtml(data.threadId)}</dd>
+        <dt>last node</dt><dd class="mono">${escapeHtml(data.lastNode ?? "—")}</dd>
+        <dt>next</dt><dd class="mono">${escapeHtml((data.nextNodes || []).join(", ") || "—")}</dd>
+        <dt>interrupt</dt><dd class="mono">${escapeHtml(data.interruptPayload ?? "—")}</dd>
+        <dt>versions</dt><dd class="mono">${versions}</dd>
       </dl>
-      <div style="margin-top:0.75rem"><strong>Channels</strong></div>
+      <div class="section-label tight" style="margin-top:0.85rem">channels</div>
       <dl class="kv" style="margin-top:0.35rem">${channels}</dl>
     `;
   }
@@ -76,14 +86,14 @@
     const id = document.getElementById("threadId").value.trim();
     const out = document.getElementById("inspectorOut");
     if (!id) {
-      out.textContent = "Enter a thread id.";
+      out.textContent = "enter a thread id.";
       return;
     }
     const res = await fetch(api("/api/threads/" + encodeURIComponent(id)));
     if (!res.ok) {
       out.textContent = await res.text();
       document.getElementById("inspectorMeta").innerHTML =
-        `<div class="muted">Not found or error (${res.status}).</div>`;
+        `<div class="muted">not found or error (${res.status}).</div>`;
       return;
     }
     const data = await res.json();
@@ -94,7 +104,7 @@
   document.getElementById("startStream").onclick = () => {
     const id = document.getElementById("threadId").value.trim();
     if (!id) {
-      appendStreamLine("Enter a thread id first.");
+      appendStreamLine("enter a thread id first.");
       return;
     }
     stopStream();
@@ -142,7 +152,7 @@
     const items = await res.json();
     if (!items.length) {
       list.innerHTML =
-        '<div class="card muted">No interrupted threads tracked in this process. Run the sample seed or invoke a thread.</div>';
+        '<div class="card muted">no interrupted threads tracked in this process. run the sample seed or invoke a thread.</div>';
       return;
     }
     for (const item of items) {
@@ -152,13 +162,13 @@
         <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
           <strong class="mono">${escapeHtml(item.threadId)}</strong>
           ${statusPill("Interrupted")}
-          <span class="muted">step ${escapeHtml(item.step)} · ${escapeHtml(item.lastNode ?? "-")}</span>
+          <span class="muted mono">step ${escapeHtml(item.step)} · ${escapeHtml(item.lastNode ?? "-")}</span>
         </div>
         <div class="muted mono">${escapeHtml(item.interruptPayload ?? "")}</div>
         <div class="hitl-actions">
-          <button type="button" class="primary" data-action="approve">Approve</button>
-          <button type="button" class="danger" data-action="reject">Reject</button>
-          <button type="button" class="ghost" data-action="stream">SSE resume</button>
+          <button type="button" class="primary" data-action="approve">approve</button>
+          <button type="button" class="danger" data-action="reject">reject</button>
+          <button type="button" class="ghost" data-action="stream">sse resume</button>
         </div>`;
 
       card.querySelector('[data-action="approve"]').onclick = async () => {
@@ -174,7 +184,7 @@
         document.querySelector('[data-tab="inspector"]').click();
         stopStream();
         document.getElementById("streamLog").innerHTML = "";
-        appendStreamLine("SSE resume…");
+        appendStreamLine("sse resume…");
         const url = api(
           "/api/threads/" +
             encodeURIComponent(item.threadId) +
@@ -233,12 +243,15 @@
       .map(([k, v]) => `<span class="chip">${escapeHtml(k)} · ${escapeHtml(v)}</span>`)
       .join("");
     view.innerHTML = `
-      <div><strong>Nodes</strong><div class="topo-nodes">${nodes || "—"}</div></div>
-      <div style="margin-top:1rem"><strong>Edges</strong><div class="topo-edges">${edges || "—"}</div></div>
-      <div style="margin-top:1rem"><strong>Channels</strong><div class="topo-nodes">${channels || "—"}</div></div>
-      <div class="muted" style="margin-top:1rem">recursionLimit=${escapeHtml(data.recursionLimit)}</div>
+      <div class="section-label tight">nodes</div>
+      <div class="topo-nodes">${nodes || "—"}</div>
+      <div class="section-label tight" style="margin-top:1rem">edges</div>
+      <div class="topo-edges">${edges || "—"}</div>
+      <div class="section-label tight" style="margin-top:1rem">channels</div>
+      <div class="topo-nodes">${channels || "—"}</div>
+      <div class="muted tiny" style="margin-top:1rem">recursionLimit=${escapeHtml(data.recursionLimit)}</div>
     `;
-    out.style.display = "block";
+    out.hidden = false;
     out.textContent = JSON.stringify(data, null, 2);
   };
 })();
