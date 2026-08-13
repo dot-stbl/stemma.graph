@@ -78,7 +78,9 @@ jobs:
 
       - name: pack
         # Pack each project individually so we get a clean .nupkg per package.
-        # Skip samples + tests projects (they are not Shipped).
+        # Only src/ libraries are packable (samples/tests set IsPackable=false).
+        # When StemmaGraph.Testing is added under src/, set IsPackable=false on
+        # that csproj (or exclude it here) so test helpers never ship to nuget.org.
         run: |
           set -euo pipefail
           for proj in $(find src -name "*.csproj" -not -path "*/samples/*" -not -path "*/tests/*"); do

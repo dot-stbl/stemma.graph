@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
     <RootNamespace>StemmaGraph.Samples.HelloWorld</RootNamespace>
     <Description>
       01-HelloWorld: minimal console canary. Real end-to-end sample lands in

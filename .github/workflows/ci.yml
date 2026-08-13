@@ -1,8 +1,8 @@
 # .github/workflows/ci.yml
 #
-# PR gate for StemmaGraph: restore + build (analyzers + format) + test.
+# PR gate for StemmaGraph: restore + build (analyzers + format) + test + pack smoke.
 #
-#   pr-dotnet — build whole solution + run unit tests
+#   pr-dotnet — build whole solution + run unit tests + pack library projects
 #
 # Runner: ubuntu-latest (StemmaGraph is a pure .NET library, no native deps,
 # no self-hosted runner needed — unlike anlytra's k8s-deploy setup).
@@ -18,6 +18,11 @@ on:
       - main
     paths:
       - "src/**"
+      - "tests/**"
+      - "openspec/**"
+      - "benchmarks/**"
+      - "samples/**"
+      - "**/*.csproj"
       - "**/*.props"
       - "**/*.targets"
       - "stemma.graph.slnx"
@@ -30,6 +35,11 @@ on:
       - main
     paths:
       - "src/**"
+      - "tests/**"
+      - "openspec/**"
+      - "benchmarks/**"
+      - "samples/**"
+      - "**/*.csproj"
       - "**/*.props"
       - "**/*.targets"
       - "stemma.graph.slnx"
@@ -88,3 +98,35 @@ jobs:
             --no-build \
             --nologo \
             --logger "console;verbosity=normal"
+
+      - name: pack smoke
+        # Pack packable src libraries only — no push. Catches packaging breaks
+        # before a release tag (quality-engineering: CI pack smoke).
+        run: |
+          set -euo pipefail
+          pack_out="${{ runner.temp }}/pack-smoke"
+          mkdir -p "$pack_out"
+          for proj in $(find src -name "*.csproj"); do
+            echo "── packing $proj ──"
+            dotnet pack "$proj" -c Debug \
+              --no-build \
+              --output "$pack_out"
+          done
+          ls -la "$pack_out"
+          # At least one nupkg must be produced (src libraries are packable).
+          test -n "$(find "$pack_out" -name '*.nupkg' | head -1)"
+
+      - name: openspec validate
+        # Soft gate: validate OpenSpec change when CLI is available.
+        # continue-on-error so a missing/renamed npm package never blocks the PR gate.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if ! command -v npx >/dev/null 2>&1; then
+            echo "::warning::npx not available — skipping openspec validate"
+            exit 0
+          fi
+          # Prefer project-local change id used in this repo.
+          npx -y @fission-ai/openspec validate architecture-runtime-core --strict \
+            || npx -y openspec validate architecture-runtime-core --strict \
+            || echo "::warning::openspec CLI not available or validate failed — not failing CI"
