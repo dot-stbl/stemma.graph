@@ -12,11 +12,6 @@ internal static class VolutaUiAssets
     public static string AppJs { get; } = VolutaUiAssetReader.Read("wwwroot.app.js");
 
     /// <summary>
-    ///     Package icon (mosaic brand mark) as PNG bytes.
-    /// </summary>
-    public static byte[] BrandPng { get; } = VolutaUiAssetReader.ReadBytes("wwwroot.brand.png");
-
-    /// <summary>
     ///     HTML shell with a <c>&lt;base href&gt;</c> so relative asset URLs resolve under the UI prefix
     ///     even when the browser path is <c>/voluta</c> (no trailing slash).
     /// </summary>
@@ -39,28 +34,15 @@ file static class VolutaUiAssetReader
 {
     public static string Read(string relativeName)
     {
-        using var stream = Open(relativeName);
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
-
-    public static byte[] ReadBytes(string relativeName)
-    {
-        using var stream = Open(relativeName);
-        using var memory = new MemoryStream();
-        stream.CopyTo(memory);
-        return memory.ToArray();
-    }
-
-    private static Stream Open(string relativeName)
-    {
         var assembly = typeof(VolutaUiAssets).Assembly;
         var resourceName = assembly
             .GetManifestResourceNames()
             .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"Embedded UI resource not found ending with: {relativeName}");
 
-        return assembly.GetManifestResourceStream(resourceName)
-               ?? throw new InvalidOperationException($"Embedded UI resource stream null: {resourceName}");
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+                           ?? throw new InvalidOperationException($"Embedded UI resource stream null: {resourceName}");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }

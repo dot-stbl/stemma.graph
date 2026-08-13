@@ -284,6 +284,7 @@
     if (cy || !window.cytoscape) {
       return cy;
     }
+    // Architecture-diagram style: monochrome boxes, orthogonal edges (not “toy” bubbles).
     cy = cytoscape({
       container: document.getElementById("cy"),
       style: [
@@ -293,67 +294,71 @@
             label: "data(label)",
             "text-valign": "center",
             "text-halign": "center",
-            "font-size": 11,
+            "font-size": 12,
             "font-family": "ui-monospace, Cascadia Code, Consolas, monospace",
-            color: "#fafafa",
-            "background-color": "#18181b",
+            "font-weight": 500,
+            color: "#e4e4e7",
+            "background-color": "#111113",
+            "background-opacity": 1,
             "border-width": 1,
-            "border-color": "#3f3f46",
+            "border-color": "#52525b",
+            "border-opacity": 1,
             width: "label",
-            height: "label",
-            padding: "12px",
-            shape: "round-rectangle",
+            height: 36,
+            padding: "10px 16px",
+            shape: "rectangle",
+            "text-max-width": 160,
+            "text-wrap": "none",
           },
         },
         {
-          selector: "node.start",
+          selector: "node.start, node.terminal",
           style: {
-            "background-color": "#1c3a7a",
-            "border-color": "#a9c9ff",
-            color: "#a9c9ff",
-            shape: "ellipse",
-          },
-        },
-        {
-          selector: "node.terminal",
-          style: {
-            "background-color": "#052e16",
-            "border-color": "#4ade80",
-            color: "#4ade80",
-            shape: "ellipse",
+            "background-color": "#09090b",
+            "border-color": "#71717a",
+            "border-style": "dashed",
+            color: "#a1a1aa",
+            shape: "rectangle",
+            height: 30,
+            "font-size": 11,
           },
         },
         {
           selector: "node:selected",
           style: {
-            "border-width": 2,
+            "border-width": 1.5,
             "border-color": "#a9c9ff",
-            "background-color": "#1c3a7a",
+            "border-style": "solid",
+            color: "#fafafa",
           },
         },
         {
           selector: "edge",
           style: {
-            width: 1.5,
-            "line-color": "#3f3f46",
-            "target-arrow-color": "#3f3f46",
+            width: 1,
+            "line-color": "#52525b",
+            "target-arrow-color": "#52525b",
             "target-arrow-shape": "triangle",
-            "arrow-scale": 0.9,
-            "curve-style": "bezier",
+            "arrow-scale": 0.75,
+            "curve-style": "taxi",
+            "taxi-direction": "auto",
+            "taxi-turn": 16,
             label: "data(label)",
             "font-size": 10,
             "font-family": "ui-monospace, Consolas, monospace",
             color: "#71717a",
-            "text-rotation": "autorotate",
-            "text-margin-y": -10,
+            "text-background-color": "#09090b",
+            "text-background-opacity": 1,
+            "text-background-padding": 2,
+            "text-margin-y": -6,
           },
         },
         {
           selector: "edge:selected",
           style: {
-            "line-color": "#a9c9ff",
-            "target-arrow-color": "#a9c9ff",
-            width: 2,
+            "line-color": "#a1a1aa",
+            "target-arrow-color": "#a1a1aa",
+            width: 1.5,
           },
         },
       ],
@@ -480,15 +485,16 @@
     const layoutName = window.cytoscapeDagre ? "dagre" : "breadthfirst";
     host.layout({
       name: layoutName,
-      rankDir: "LR",
-      nodeSep: 36,
-      edgeSep: 16,
-      rankSep: 56,
+      rankDir: "TB",
+      nodeSep: 28,
+      edgeSep: 12,
+      rankSep: 48,
       animate: false,
-      padding: 40,
+      padding: 48,
       directed: true,
+      spacingFactor: 1.05,
     }).run();
-    host.fit(undefined, 48);
+    host.fit(undefined, 56);
     renderChannels(data);
     document.getElementById("topologyOut").textContent = JSON.stringify(data, null, 2);
   }

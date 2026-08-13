@@ -69,9 +69,6 @@ public static class VolutaUiEndpointRouteBuilderExtensions
         endpoints.MapGet(
             $"{prefix}/app.js",
             () => Results.Content(VolutaUiAssets.AppJs, "text/javascript; charset=utf-8"));
-        endpoints.MapGet(
-            $"{prefix}/brand.png",
-            () => Results.File(VolutaUiAssets.BrandPng, "image/png"));
 
         endpoints.MapGet(
             $"{prefix}/api/topology",

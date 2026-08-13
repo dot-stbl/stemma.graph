@@ -73,38 +73,25 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .rail-brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 14px 16px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 14px 14px;
   text-decoration: none;
   color: inherit;
   border-bottom: 1px solid var(--line);
 }
 
-.rail-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 5px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  box-shadow: 0 0 0 1px var(--line);
-  flex-shrink: 0;
-}
-
-.rail-brand-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.15;
-}
 .rail-name {
   font-weight: 600;
-  font-size: 14px;
-  letter-spacing: -0.02em;
+  font-size: 15px;
+  letter-spacing: -0.03em;
+  font-family: var(--mono);
+  text-transform: lowercase;
 }
 .rail-ver {
   font-size: 11px;
   color: var(--text-3);
+  font-family: var(--mono);
 }
 
 .rail-nav {
@@ -134,14 +121,9 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   color: var(--text);
 }
 .rail-item.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.rail-ico {
-  width: 1.1em;
-  text-align: center;
-  opacity: 0.85;
-  font-size: 12px;
+  background: var(--hover);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .rail-count {
   margin-left: auto;
@@ -539,12 +521,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   width: 100%;
   height: 100%;
   min-height: 320px;
-  background:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-color: var(--bg);
-  opacity: 1;
+  background: var(--bg);
 }
 .graph-side {
   display: flex;

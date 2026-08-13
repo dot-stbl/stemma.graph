@@ -4,33 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Voluta</title>
-  <link rel="icon" href="brand.png" type="image/png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
     <aside class="rail" aria-label="Primary">
       <a class="rail-brand" href="./" title="Voluta">
-        <img src="brand.png" width="28" height="28" alt="" class="rail-icon" />
-        <div class="rail-brand-text">
-          <span class="rail-name">Voluta</span>
-          <span class="rail-ver">console</span>
-        </div>
+        <span class="rail-name">voluta</span>
+        <span class="rail-ver">console</span>
       </a>
 
       <nav class="rail-nav" role="tablist" aria-label="Views">
         <button type="button" class="rail-item active" data-tab="inspector" role="tab" aria-selected="true">
-          <span class="rail-ico" aria-hidden="true">◎</span>
-          <span>Inspector</span>
+          Inspector
         </button>
         <button type="button" class="rail-item" data-tab="hitl" role="tab" aria-selected="false">
-          <span class="rail-ico" aria-hidden="true">◑</span>
-          <span>Interrupts</span>
+          Interrupts
           <span class="rail-count" id="hitlCount" hidden>0</span>
         </button>
         <button type="button" class="rail-item" data-tab="topology" role="tab" aria-selected="false">
-          <span class="rail-ico" aria-hidden="true">⧉</span>
-          <span>Graph</span>
+          Graph
         </button>
       </nav>
 
