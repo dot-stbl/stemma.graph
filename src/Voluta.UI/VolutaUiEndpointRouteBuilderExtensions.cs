@@ -54,9 +54,10 @@ public static class VolutaUiEndpointRouteBuilderExtensions
     {
         var prefix = VolutaUiRouteHelpers.NormalizePrefix(options.PathPrefix);
 
-        _ = endpoints.MapGet(prefix, () => Results.Redirect($"{prefix}/"));
+        // Single shell route only — MapGet(prefix) and MapGet(prefix+"/") both match
+        // /voluta and /voluta/ and throw AmbiguousMatchException.
         _ = endpoints.MapGet(
-            $"{prefix}/",
+            prefix,
             () => Results.Content(VolutaUiAssets.IndexHtml, "text/html; charset=utf-8"));
         _ = endpoints.MapGet(
             $"{prefix}/index.html",
