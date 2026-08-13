@@ -1,95 +1,181 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Voluta · ops</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler-vendors.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <header class="container-fluid top">
-    <div class="brand">
-      <strong>Voluta</strong>
-      <small>ops console</small>
-    </div>
-    <nav class="tabs">
-      <ul>
-        <li><button type="button" data-tab="inspector" class="active secondary">Inspector</button></li>
-        <li><button type="button" data-tab="hitl" class="secondary outline">HITL</button></li>
-        <li><button type="button" data-tab="topology" class="secondary outline">Topology</button></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main class="container-fluid">
-    <section id="panel-inspector" class="panel active">
-      <hgroup>
-        <h2>Run inspector</h2>
-        <p>Load a C-shape checkpoint or attach an SSE stream.</p>
-      </hgroup>
-      <div class="toolbar">
-        <label>
-          Thread id
-          <input id="threadId" type="text" placeholder="ui-host-hitl-1" value="ui-host-hitl-1" spellcheck="false" autocomplete="off" />
-        </label>
-        <div class="actions">
-          <button type="button" id="loadThread">Load</button>
-          <button type="button" id="startStream" class="secondary">SSE</button>
-          <button type="button" id="stopStream" class="secondary outline" disabled>Stop</button>
+<body class="layout-fluid">
+  <div class="page">
+    <header class="navbar navbar-expand-md d-print-none border-bottom">
+      <div class="container-xl">
+        <h1 class="navbar-brand navbar-brand-autodark mb-0">
+          <span class="brand-mark">V</span>
+          <span>Voluta</span>
+          <span class="text-secondary fw-normal ms-2 d-none d-sm-inline">ops console</span>
+        </h1>
+        <div class="navbar-nav flex-row order-md-last align-items-center gap-2">
+          <span class="badge bg-azure-lt text-azure text-uppercase" id="pathHint">/voluta</span>
         </div>
       </div>
-      <div class="grid">
-        <article id="inspectorMeta">
-          <p class="muted">Load a thread to inspect the latest checkpoint.</p>
-        </article>
-        <article>
-          <header>
-            <strong>Live stream</strong>
-            <small class="muted">GET …/stream · mode=checkpoint | resume | invoke</small>
-          </header>
-          <div id="streamLog" class="stream-log"></div>
-        </article>
-      </div>
-      <article>
-        <header><strong>Raw checkpoint</strong></header>
-        <pre id="inspectorOut" class="dump">—</pre>
-      </article>
-    </section>
+    </header>
 
-    <section id="panel-hitl" class="panel">
-      <hgroup>
-        <h2>HITL queue</h2>
-        <p>Interrupted threads tracked in this process.</p>
-      </hgroup>
-      <div class="toolbar">
-        <button type="button" id="refreshHitl">Refresh</button>
+    <div class="page-wrapper">
+      <div class="page-header d-print-none">
+        <div class="container-xl">
+          <ul class="nav nav-bordered" role="tablist">
+            <li class="nav-item">
+              <button type="button" class="nav-link active" data-tab="inspector">Inspector</button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-link" data-tab="hitl">HITL queue</button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-link" data-tab="topology">Topology</button>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div id="hitlList" class="list"></div>
-    </section>
 
-    <section id="panel-topology" class="panel">
-      <hgroup>
-        <h2>Topology</h2>
-        <p>Compiled graph metadata.</p>
-      </hgroup>
-      <div class="toolbar">
-        <button type="button" id="loadTopology">Load</button>
+      <div class="page-body">
+        <div class="container-xl">
+          <!-- Inspector -->
+          <section id="panel-inspector" class="panel active">
+            <div class="row row-cards mb-3">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                      <div class="col-md">
+                        <label class="form-label" for="threadId">Thread id</label>
+                        <input id="threadId" class="form-control font-monospace" type="text"
+                               value="ui-host-hitl-1" placeholder="ui-host-hitl-1" spellcheck="false" autocomplete="off" />
+                      </div>
+                      <div class="col-md-auto btn-list">
+                        <button type="button" id="loadThread" class="btn btn-primary">Load checkpoint</button>
+                        <button type="button" id="startStream" class="btn btn-outline-azure">SSE stream</button>
+                        <button type="button" id="stopStream" class="btn btn-outline-secondary" disabled>Stop</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row row-cards">
+              <div class="col-lg-5">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h3 class="card-title">Checkpoint</h3>
+                  </div>
+                  <div class="card-body" id="inspectorMeta">
+                    <p class="text-secondary mb-0">Load a thread to inspect the latest C-shape checkpoint.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-7">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h3 class="card-title">Live stream</h3>
+                    <div class="card-actions">
+                      <span class="text-secondary small">…/stream?mode=checkpoint|resume|invoke</span>
+                    </div>
+                  </div>
+                  <div class="card-body p-0">
+                    <div id="streamLog" class="stream-log font-monospace"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Raw JSON</h3>
+                  </div>
+                  <div class="card-body p-0">
+                    <pre id="inspectorOut" class="dump font-monospace mb-0">—</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- HITL -->
+          <section id="panel-hitl" class="panel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h2 class="page-title mb-1">HITL queue</h2>
+                <div class="text-secondary">Interrupted threads tracked in this process (Human-In-The-Loop).</div>
+              </div>
+              <button type="button" id="refreshHitl" class="btn btn-primary">Refresh</button>
+            </div>
+            <div id="hitlList" class="row row-cards"></div>
+          </section>
+
+          <!-- Topology -->
+          <section id="panel-topology" class="panel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h2 class="page-title mb-1">Topology</h2>
+                <div class="text-secondary">Compiled graph · Cytoscape + dagre layout (read-only).</div>
+              </div>
+              <div class="btn-list">
+                <button type="button" id="loadTopology" class="btn btn-primary">Load / fit</button>
+                <button type="button" id="fitTopology" class="btn btn-outline-secondary">Fit</button>
+              </div>
+            </div>
+            <div class="row row-cards">
+              <div class="col-lg-8">
+                <div class="card">
+                  <div class="card-body p-0">
+                    <div id="cy" class="cy-host" aria-label="Graph canvas"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="card mb-3">
+                  <div class="card-header">
+                    <h3 class="card-title">Selection</h3>
+                  </div>
+                  <div class="card-body" id="topoSelection">
+                    <p class="text-secondary mb-0">Click a node or edge on the graph.</p>
+                  </div>
+                </div>
+                <div class="card mb-3">
+                  <div class="card-header">
+                    <h3 class="card-title">Channels</h3>
+                  </div>
+                  <div class="card-body" id="topoChannels">
+                    <p class="text-secondary mb-0">—</p>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Raw</h3>
+                  </div>
+                  <div class="card-body p-0">
+                    <pre id="topologyOut" class="dump font-monospace mb-0">—</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
-      <article id="topologyView">
-        <p class="muted">Nodes, edges, and channels.</p>
-      </article>
-      <article id="topologyRaw" hidden>
-        <header><strong>Raw</strong></header>
-        <pre id="topologyOut" class="dump"></pre>
-      </article>
-    </section>
-  </main>
 
-  <footer class="container-fluid foot">
-    <small class="muted">Voluta UI</small>
-    <small class="muted mono" id="pathHint"></small>
-  </footer>
+      <footer class="footer footer-transparent d-print-none">
+        <div class="container-xl">
+          <div class="text-secondary">Voluta UI · Tabler + Cytoscape</div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
