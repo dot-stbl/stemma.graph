@@ -2,11 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
-    <RootNamespace>StemmaGraph.Samples.HelloWorld</RootNamespace>
+    <RootNamespace>StemmaGraph.Samples.InterruptResume</RootNamespace>
     <IsPackable>false</IsPackable>
     <Description>
-      01-HelloWorld: simulated ReAct loop (agent ⇄ tools) streaming channel updates.
+      02-InterruptResume: HITL interrupt once, then ResumeAsync with Command approve.
     </Description>
   </PropertyGroup>
 
