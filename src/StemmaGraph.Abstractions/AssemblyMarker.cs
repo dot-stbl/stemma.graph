@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
 //
-// Marker for the StemmaGraph.Abstractions assembly. Real interfaces will
-// land in subsequent PRs as the MVP runtime is implemented. See
-// https://github.com/dot-stbl/stemma.graph — CLAUDE.md for the architecture
-// overview and the MVP roadmap.
+// Marker for the StemmaGraph.Abstractions assembly.
 
 namespace StemmaGraph;
 
 /// <summary>
-/// Marker interface for the StemmaGraph.Abstractions assembly. Real contracts
-/// (IStateGraph, ICompiledGraph, ICheckpointer, IReducer, …) land in
-/// subsequent PRs.
+/// Marker interface for the StemmaGraph.Abstractions assembly.
+/// Public contracts live under <c>StemmaGraph.Channels</c>, <c>StemmaGraph.Results</c>,
+/// <c>StemmaGraph.Checkpoint</c>, <c>StemmaGraph.Streaming</c>, and <c>StemmaGraph.Runtime</c>.
 /// </summary>
 public interface IAssemblyMarker;
