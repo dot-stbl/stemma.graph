@@ -14,9 +14,11 @@ dotnet test  stemma.graph.slnx   # xUnit + Shouldly + NSubstitute + Bogus
 
 ## Current status
 
-Architecture locked in OpenSpec
-`openspec/changes/architecture-runtime-core/` (no runtime code yet).
+**Runtime + post-MVP packages on `main`.** Specs live in
+[`openspec/specs/`](openspec/specs/) (12 capabilities). Architecture change
+archived as
+`openspec/changes/archive/2026-08-14-architecture-runtime-core/`.
 Decisions: [.agents/decisions.md](.agents/decisions.md). Roadmap:
 [.agents/roadmap.md](.agents/roadmap.md). Conventions:
 [.agents/conventions.md](.agents/conventions.md). GitHub epic #1 /
-milestone `v0.1 · MVP runtime`.
+milestone `v0.1 · MVP runtime` (NuGet tag still open).

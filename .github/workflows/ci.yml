@@ -117,7 +117,7 @@ jobs:
           test -n "$(find "$pack_out" -name '*.nupkg' | head -1)"
 
       - name: openspec validate
-        # Soft gate: validate OpenSpec change when CLI is available.
+        # Soft gate: validate main specs when CLI is available.
         # continue-on-error so a missing/renamed npm package never blocks the PR gate.
         continue-on-error: true
         run: |
@@ -126,7 +126,7 @@ jobs:
             echo "::warning::npx not available — skipping openspec validate"
             exit 0
           fi
-          # Prefer project-local change id used in this repo.
-          npx -y @fission-ai/openspec validate architecture-runtime-core --strict \
-            || npx -y openspec validate architecture-runtime-core --strict \
+          # Main specs live under openspec/specs/ (architecture-runtime-core archived).
+          npx -y @fission-ai/openspec validate --specs --strict \
+            || npx -y openspec validate --specs --strict \
             || echo "::warning::openspec CLI not available or validate failed — not failing CI"

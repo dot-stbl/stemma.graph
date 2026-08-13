@@ -1,28 +1,46 @@
 # Roadmap — что делаем дальше
 
-> Активная карта работ. Канон: OpenSpec
-> `openspec/changes/architecture-runtime-core/`.
+> Активная карта работ. **Канон поведения:** main OpenSpec
+> [`openspec/specs/`](../openspec/specs/). Planning history:
+> [`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](../openspec/changes/archive/2026-08-14-architecture-runtime-core/).
 
-## Текущий статус (2026-08-13)
+## Текущий статус (2026-08-14)
 
 | | |
 |---|---|
-| Architecture | ✅ OpenSpec `architecture-runtime-core` |
-| MVP runtime | ✅ Pregel + InMemory + HITL + stream + source-gen + Testing |
+| Architecture specs | ✅ archived → `openspec/specs/*` (12 capabilities) |
+| MVP runtime | ✅ Pregel + InMemory + HITL + stream + DI + Testing + Generators |
+| Samples | ✅ 01 ReAct · 02 HITL · 03 AOT · 04 ReviewBot · 05 DocQ |
 | Benchmarks | ✅ `benchmarks/StemmaGraph.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
 | File checkpointer | ✅ `StemmaGraph.Checkpoints.File` |
-| MicrosoftAi | ✅ thin helpers |
+| MicrosoftAi | ✅ thin `IChatClient` helpers |
 | UI | ✅ `StemmaGraph.UI` + `MapStemmaUI` (inspector / HITL / topology) |
-| EF / S3 | ❌ later |
+| EF / S3 checkpointers | ❌ later |
 | NuGet 0.1 tag | ❌ PublicAPI review + publish |
+| Arch tests (package isolation) | ❌ later |
+
+## Shipped package map
+
+| Package | Role | Tier |
+|---------|------|------|
+| `StemmaGraph.Abstractions` | contracts | AOT |
+| `StemmaGraph` | runtime + InMemory + Subgraph | AOT |
+| `StemmaGraph.DependencyInjection` | `AddStemmaGraph` | AOT |
+| `StemmaGraph.Testing` | doubles + conformance | full |
+| `StemmaGraph.Generators` | `[GraphState]` | full (analyzer) |
+| `StemmaGraph.Checkpoints.File` | JSON file store | full |
+| `StemmaGraph.MicrosoftAi` | MEAI helpers | full |
+| `StemmaGraph.UI` | ops console | full (ASP.NET) |
 
 ## Ближайшие шаги
 
-1. PublicAPI review + `v0.1.0` tag / NuGet (when you care)
-2. EF checkpointer (if needed)
-3. UI polish (live stream SSE, multi-thread browser)
-4. Docs site (D-011)
+1. **PublicAPI Unshipped + `v0.1.0` NuGet tag** (owner call)
+2. CI: path filters for `openspec/**` / `benchmarks/**`; optional pack smoke
+3. Architecture tests: Abstractions isolation, core ↛ UI/EF
+4. EF checkpointer (if product needs it)
+5. UI polish: live stream SSE, multi-thread discovery
+6. Docs site (D-011)
 
 ## Не в планах
 
@@ -31,4 +49,5 @@
 ## Связанное
 
 - [decisions.md](./decisions.md)
+- [conventions.md](./conventions.md)
 - Epic #1 · UI #13 · backlog #8

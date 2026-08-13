@@ -1,8 +1,9 @@
 # Decisions — принятые решения по StemmaGraph
 
 > Хронологический лог решений. Каждое решение фиксируется здесь **до** того,
-> как превращается в код. Канон требований: OpenSpec change
-> [`architecture-runtime-core`](../openspec/changes/architecture-runtime-core/).
+> как превращается в код. Канон требований: main OpenSpec
+> [`openspec/specs/`](../openspec/specs/). Planning archive:
+> [`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](../openspec/changes/archive/2026-08-14-architecture-runtime-core/).
 > ADR — в `.agents/adr/` для нетривиальных обоснований.
 
 ## Решения
@@ -134,10 +135,12 @@ conformance suite in CI. Quality-engineering: unit scenario matrix, BenchmarkDot
 reference UI. Epic: github.com/dot-stbl/stemma.graph/issues/13. Mockups:
 local artifacts store (not required in repo for 0.1).
 
-### D-021 — Architecture source of truth: OpenSpec
+### D-021 — Architecture source of truth: OpenSpec **main specs**
 
-Change: `openspec/changes/architecture-runtime-core/` (proposal, design, 12 specs,
-tasks). Validate: `openspec validate architecture-runtime-core --strict`.
+**Update (2026-08-14):** Change `architecture-runtime-core` **archived** as
+`openspec/changes/archive/2026-08-14-architecture-runtime-core/`. Canonical
+behavior lives in **`openspec/specs/<capability>/spec.md`** (12 capabilities).
+Validate: `openspec validate --specs --strict`.
 
 ### D-022 — Two runtime tiers: **AOT core** vs **full .NET host packages**
 
@@ -146,32 +149,51 @@ tasks). Validate: `openspec validate architecture-runtime-core --strict`.
 | Tier | Packages | Target |
 |------|----------|--------|
 | **AOT core** | `StemmaGraph`, `StemmaGraph.Abstractions`, `StemmaGraph.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/03-AotSmoke` (`PublishAot`) |
-| **Full runtime** | `StemmaGraph.Checkpoints.*`, `StemmaGraph.UI.*`, `StemmaGraph.MicrosoftAi`, Testing, generators | Regular .NET / ASP.NET; may use reflection, EF, browsers, etc. **Do not** claim AOT |
+| **Full runtime** | `StemmaGraph.Checkpoints.File`, `StemmaGraph.UI`, `StemmaGraph.MicrosoftAi`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
 
 **AOT path (supported):** fluent `StateGraph` + InMemory (+ optional thin DI).  
-**Full path (product hosts):** ASP.NET, EF/S3 checkpointers, UI console, LLM adapters — depend on core, run on complete CLR.
+**Full path (product hosts):** ASP.NET, file/EF checkpointers, UI console, LLM adapters — depend on core, run on complete CLR.
 
 Checkpoint packages that need JSON must use STJ source-gen (or non-reflection serde) **if** they ever want AOT; until then they stay full-runtime only.
+
+### D-023 — Post-MVP packages shipped on main (before NuGet 0.1)
+
+**Decision (2026-08-14):** After MVP runtime, ship on `main` without waiting for
+the NuGet tag:
+
+| Item | Package / API |
+|------|----------------|
+| Send fan-out | `Send`, `NodeResult.ContinueWithSends`, `PendingSends`, engine PUSH tasks |
+| Subgraph helper | `Subgraph.AsNode` |
+| Topology export | `CompiledGraph.Describe()` → `GraphDescription` |
+| File checkpointer | `StemmaGraph.Checkpoints.File` |
+| MicrosoftAi | `StemmaGraph.MicrosoftAi` (`ChatClientNode`) |
+| UI | `StemmaGraph.UI` (`AddStemmaUI` / `MapStemmaUI`) |
+| Harness samples | `04-ReviewBot`, `05-DocQ` + `StemmaGraph.Samples.Shared` |
+| Benchmarks | `benchmarks/StemmaGraph.Benchmarks` |
+
+Still deferred: EF/S3 checkpointers, PublicAPI ship gate, NuGet `v0.1.0`, arch tests.
 
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
-2. **Checkpoint serde** — JSON versioning, polymorphic channel values.
+2. **Checkpoint serde** — JSON versioning, polymorphic channel values (File package is best-effort JSON).
 3. **Token-level LLM streaming** — graph stream mode vs node-local (MicrosoftAi).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
-6. **UI host** — `MapStemmaUI()` static assets vs Razor (decide at UI implement).
+6. **UI next** — live SSE stream, multi-thread discovery beyond process-tracked ids.
 7. **AOT CI** — optional `dotnet publish` smoke on schedule vs every PR (slow).
+8. **0.1 NuGet** — PublicAPI Unshipped review before first tag.
 
 ## GitHub tracking
 
-Milestone: `v0.1 · MVP runtime`. Epic #1; docs #2; abstractions #3; runtime #4;
-source-gen #5; Testing #6; samples #7; deferred #8; gap specs #9; benches #10;
-CI #11; unit matrix #12; UI epic #13.
+Milestone: `v0.1 · MVP runtime`. Epic #1; benches #10 closed; UI epic #13 (first cut);
+backlog #8 (partial — Send/File/AI/UI done; EF/S3 open).
 
 ## Связанное
 
 - [roadmap.md](./roadmap.md)
 - [conventions.md](./conventions.md)
-- [`../openspec/changes/architecture-runtime-core/`](../openspec/changes/architecture-runtime-core/)
+- [`../openspec/specs/`](../openspec/specs/)
+- [`../openspec/changes/archive/2026-08-14-architecture-runtime-core/`](../openspec/changes/archive/2026-08-14-architecture-runtime-core/)
 - [`../CLAUDE.md`](../CLAUDE.md)

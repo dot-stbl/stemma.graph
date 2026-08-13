@@ -16,14 +16,19 @@ API .NET-native: generic state, типизированные редьюсеры,
 
 ## Текущий статус
 
-**MVP runtime on main** (Pregel + InMemory + Testing + samples + DI package).
-Canonical design: OpenSpec
-[`openspec/changes/architecture-runtime-core/`](openspec/changes/architecture-runtime-core/).
-Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-022).
+**Shipped on `main`:** Pregel runtime, InMemory + File checkpointers, Send fan-out,
+`Subgraph.AsNode`, topology export, Testing, Generators, MicrosoftAi helpers,
+`MapStemmaUI`, samples 01–05, BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
+
+**Specs (source of truth):** main OpenSpec under
+[`openspec/specs/`](openspec/specs/) (12 capabilities). Planning change archived:
+[`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](openspec/changes/archive/2026-08-14-architecture-runtime-core/).
+Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-023).
+Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
 - **AOT core:** `StemmaGraph` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/03-AotSmoke`
-- **Full .NET / ASP.NET:** Checkpoints.*, UI, MicrosoftAi — regular CLR, not AOT-claimed
+- **Full .NET / ASP.NET:** Checkpoints.File, UI, MicrosoftAi, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -31,8 +36,9 @@ Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-022).
 |------|------------|
 | Runtime | .NET 10 |
 | Тесты | xUnit + Shouldly + NSubstitute + Bogus |
-| AI integration *(planned)* | `Microsoft.Extensions.AI` (`IChatClient`) |
-| Streaming *(planned)* | `IAsyncEnumerable<T>` + `System.Threading.Channels` |
+| Streaming | `IAsyncEnumerable<T>` (values / updates / events) |
+| AI helpers | `Microsoft.Extensions.AI` (`IChatClient`) via `StemmaGraph.MicrosoftAi` |
+| Benches | BenchmarkDotNet (`benchmarks/`) |
 | Публикация | NuGet через GitHub Actions OIDC trusted publishing |
 
 ## Layout (текущий)
@@ -40,15 +46,20 @@ Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-022).
 ```
 stemma.graph/
 ├── src/
-│   ├── StemmaGraph.Abstractions/           ← contracts, zero deps
-│   ├── StemmaGraph/                        ← runtime + InMemory (no DI ref)
-│   ├── StemmaGraph.DependencyInjection/    ← AddStemmaGraph
-│   ├── StemmaGraph.Testing/
-│   └── StemmaGraph.Generators/
-├── samples/                          ← 01-HelloWorld, 02-InterruptResume, 03-AotSmoke
+│   ├── StemmaGraph.Abstractions/            ← contracts (zero package deps)
+│   ├── StemmaGraph/                         ← runtime + InMemory + Subgraph
+│   ├── StemmaGraph.DependencyInjection/     ← AddStemmaGraph
+│   ├── StemmaGraph.Testing/                 ← doubles + conformance
+│   ├── StemmaGraph.Generators/              ← [GraphState] source-gen
+│   ├── StemmaGraph.Checkpoints.File/        ← JSON file checkpointer
+│   ├── StemmaGraph.MicrosoftAi/             ← IChatClient helpers
+│   └── StemmaGraph.UI/                      ← MapStemmaUI ops console
+├── samples/     ← 01 HelloWorld · 02 HITL · 03 AotSmoke · 04 ReviewBot · 05 DocQ
+├── benchmarks/  ← StemmaGraph.Benchmarks
 ├── tests/
-├── assets/                           ← banner + NuGet icons
 ├── openspec/
+│   ├── specs/   ← main capability specs (canonical)
+│   └── changes/archive/…
 └── stemma.graph.slnx
 ```
 

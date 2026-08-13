@@ -28,10 +28,11 @@ Our design bets:
 ```
 
 > [!IMPORTANT]
-> **Pre-release.** The MVP runtime is on `main` — Pregel engine, in-memory checkpointer, source
-> generator, testing package, five samples, BenchmarkDotNet baselines. **Nothing is on NuGet
-> yet**; the 0.1 tag is the next milestone ([epic #1](https://github.com/dot-stbl/stemma.graph/issues/1)).
-> Until then, reference the projects from source — see [Quick Start](#quick-start).
+> **Pre-release.** On `main`: Pregel engine, InMemory + File checkpointers, Send / subgraph helpers,
+> source generator, Testing, MicrosoftAi helpers, `MapStemmaUI`, five samples, BenchmarkDotNet.
+> **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
+> ([epic #1](https://github.com/dot-stbl/stemma.graph/issues/1)). Until then, reference projects
+> from source — see [Quick Start](#quick-start).
 
 ## See it in action
 
@@ -285,8 +286,10 @@ then evaluate edges to decide who runs next. Two consequences worth internalizin
 - A conditional edge is evaluated *after* the merge, on committed state, so routing decisions can't
   race with the writes they depend on.
 
-Design notes and decision records live in
-[`openspec/changes/architecture-runtime-core/`](https://github.com/dot-stbl/stemma.graph/tree/main/openspec/changes/architecture-runtime-core).
+Behavior contracts live in
+[`openspec/specs/`](https://github.com/dot-stbl/stemma.graph/tree/main/openspec/specs)
+(12 capabilities). Planning history:
+[`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](https://github.com/dot-stbl/stemma.graph/tree/main/openspec/changes/archive/2026-08-14-architecture-runtime-core).
 
 ## How it compares
 
@@ -312,17 +315,19 @@ what?". Those three questions are the entire library.
 
 | Package | Role | Status |
 |---|---|---|
-| `StemmaGraph.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, streaming | on `main` |
-| `StemmaGraph` | Pregel runtime + in-memory checkpointer | on `main` |
+| `StemmaGraph.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | on `main` |
+| `StemmaGraph` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | on `main` |
 | `StemmaGraph.DependencyInjection` | `AddStemmaGraph` for `IServiceCollection` | on `main` |
 | `StemmaGraph.Generators` | `[GraphState]` source generator | on `main` |
 | `StemmaGraph.Testing` | Test doubles + checkpointer conformance suite | on `main` |
-| `StemmaGraph.Checkpoints.*` | EF Core / S3 / file-system providers | planned |
-| `StemmaGraph.MicrosoftAi` | `IChatClient` glue for `Microsoft.Extensions.AI` | planned |
+| `StemmaGraph.Checkpoints.File` | JSON file-system checkpointer | on `main` |
+| `StemmaGraph.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
+| `StemmaGraph.UI` | Ops console: `MapStemmaUI` (inspector / HITL / topology) | on `main` |
+| `StemmaGraph.Checkpoints.EF` / S3 | Extra durable providers | planned |
 
 **Native AOT** applies to the core tier only — `StemmaGraph`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/03-AotSmoke`.
-Checkpoint providers, UI, and AI integration will be regular-CLR packages; they will not claim AOT.
+File checkpoints, UI, and MicrosoftAi are regular-CLR packages and do not claim AOT.
 
 ## Samples
 
@@ -339,12 +344,10 @@ Checkpoint providers, UI, and AI integration will be regular-CLR packages; they 
 Stated plainly so you can judge the fit:
 
 - **No published packages.** Source references only until the 0.1 tag.
-- **No `Send` fan-out or subgraphs.** `Send` exists as a contract; the engine does not schedule it.
-- **No durable checkpoint provider.** `InMemoryCheckpointer` only — a restart loses the thread.
-  `ICheckpointer` is small on purpose if you want to implement one now.
-- **No LLM integration in the box.** Nodes are your code; wiring `IChatClient` is on you until
-  `StemmaGraph.MicrosoftAi` lands.
-- **No UI.** A run inspector and HITL queue are on the roadmap, not in the repo.
+- **No EF / S3 checkpointers.** File + InMemory ship on `main`; EF/S3 still planned.
+- **UI is a first cut.** `MapStemmaUI` covers checkpoint inspect, HITL resume, topology —
+  not live SSE stream or multi-host thread discovery.
+- **PublicAPI ship gate open.** Surface can still move before `v0.1.0`.
 
 ## Development
 
