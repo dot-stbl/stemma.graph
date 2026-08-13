@@ -25,10 +25,15 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>agents;stateful-graphs;workflows;checkpointing;dotnet</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageIcon>package-icon.png</PackageIcon>
         <Copyright>Copyright (c) Stemma contributors</Copyright>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Package icons: i1 = core runtime, i4 = checkpoint providers, i5 = everything else. -->
+        <StemmaGraphPackageIconPath>$(MSBuildThisFileDirectory)assets\icon-i5.png</StemmaGraphPackageIconPath>
+        <StemmaGraphPackageIconPath Condition="'$(MSBuildProjectName)' == 'StemmaGraph'">$(MSBuildThisFileDirectory)assets\icon-i1.png</StemmaGraphPackageIconPath>
+        <StemmaGraphPackageIconPath Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Checkpoints'))">$(MSBuildThisFileDirectory)assets\icon-i4.png</StemmaGraphPackageIconPath>
+        <PackageIcon>$([System.IO.Path]::GetFileName('$(StemmaGraphPackageIconPath)'))</PackageIcon>
 
         <!-- Globally suppressed warnings (with documented reason) -->
         <!-- NU1903 — Testcontainers.PostgreSql pulls SSH.NET 2024.1.0 which has
@@ -51,11 +56,11 @@
 
     <!-- NuGet package assets (icon + readme) for all packable library projects. -->
     <ItemGroup Condition="'$(IsPackable)' != 'false'">
-        <None Include="$(MSBuildThisFileDirectory)assets\package-icon.png"
+        <None Include="$(StemmaGraphPackageIconPath)"
               Pack="true"
-              PackagePath="package-icon.png"
+              PackagePath="$(PackageIcon)"
               Visible="false"
-              Condition="Exists('$(MSBuildThisFileDirectory)assets\package-icon.png')" />
+              Condition="Exists('$(StemmaGraphPackageIconPath)')" />
         <None Include="$(MSBuildThisFileDirectory)README.md"
               Pack="true"
               PackagePath="README.md"

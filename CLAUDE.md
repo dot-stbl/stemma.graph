@@ -115,10 +115,11 @@ API-ключей.** Workflow: `.github/workflows/publish.yml` — триггер
 - .gitignore / .gitattributes — git hygiene.
 - .githooks/ — commit-msg (AI attribution strip), pre-commit (no-op).
 - assets/ — графика:
-  - `banner.png` (2400×600) — README header, dither-brutalism; не ресайзить.
-  - `package-icon.png` — NuGet icon (из `icon-i5.png`); `PackageIcon` в
-    `Directory.Build.props`.
-  - `icon-i1.png` / `icon-i4.png` / `icon-i5.png` — варианты иконок.
+  - `banner.png` (2400×600) — README header; не ресайзить.
+  - NuGet icons (wired in `Directory.Build.props`):
+    - `icon-i1.png` — **StemmaGraph** (core runtime)
+    - `icon-i4.png` — **StemmaGraph.Checkpoints.*** (providers)
+    - `icon-i5.png` — Abstractions / Testing / Generators / everything else
 - .github/workflows/ — CI + publish.
 - stemma.graph.slnx — solution.
 

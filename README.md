@@ -55,7 +55,7 @@ Not a 1:1 LangGraph port — .NET-native API.
 | `StemmaGraph.MicrosoftAi` / `StemmaGraph.UI.*` | *(later)* |
 
 Shipped on main: Abstractions, runtime, Testing, Generators, samples.
-NuGet package icon: `assets/package-icon.png` (wired via `Directory.Build.props`).
+NuGet icons (`Directory.Build.props`): **i1** core · **i4** checkpoint providers · **i5** rest.
 
 ## Roadmap
 
