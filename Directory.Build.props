@@ -73,9 +73,11 @@
                    and ('$(MSBuildProjectName)' == 'Voluta'
                         or '$(MSBuildProjectName)' == 'Voluta.Abstractions'
                         or '$(MSBuildProjectName)' == 'Voluta.DependencyInjection'
-                        or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
-                        or '$(MSBuildProjectName)' == 'Voluta.MicrosoftAi'
-                        or '$(MSBuildProjectName)' == 'Voluta.UI')">
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
+                         or '$(MSBuildProjectName)' == 'Voluta.MicrosoftAi'
+                         or '$(MSBuildProjectName)' == 'Voluta.UI')">
         <VolutaEnablePublicApi>true</VolutaEnablePublicApi>
     </PropertyGroup>
 
