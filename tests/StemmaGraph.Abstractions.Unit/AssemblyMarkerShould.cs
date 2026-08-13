@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) Stemma contributors
-//
-// Smoke-test for the Abstractions test project. Real interface-contract
-// tests land in subsequent PRs.
 
 using Shouldly;
 using Xunit;
@@ -14,7 +11,7 @@ public sealed class AssemblyMarkerShould
     [Fact(DisplayName = "When the assembly loads, then IAssemblyMarker is discoverable")]
     public void ExposeMarkerInterface()
     {
-        typeof(IAssemblyMarker).ShouldNotBeNull();
+        _ = typeof(IAssemblyMarker).ShouldNotBeNull();
         typeof(IAssemblyMarker).IsInterface.ShouldBeTrue();
     }
 }
