@@ -320,7 +320,7 @@ if (terminal.Kind == StreamEventKind.Interrupt)
 
     terminal = await graph.ResumeInvokeAsync(
         threadId,
-        new Command { Kind = "approve", Payload = "ok" });
+        Command.Approve("ok"));
 }
 
 var snapshot = await checkpointer.GetAsync(threadId);

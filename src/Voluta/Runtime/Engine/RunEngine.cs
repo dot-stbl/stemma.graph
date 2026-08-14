@@ -11,6 +11,7 @@ using Voluta.Runtime.Engine.Support;
 using Voluta.Runtime.Engine.Tasks;
 
 // GraphConstants lives in root Voluta namespace.
+// CommandTaxonomy lives in Voluta.Runtime (parent of this namespace).
 
 namespace Voluta.Runtime.Engine;
 
@@ -88,6 +89,8 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken = default)
     {
+        Runtime.CommandTaxonomy.EnsureValid(command);
+
         var checkpoint = await checkpointer.GetAsync(threadId, cancellationToken) ??
                          throw new GraphInvalidResumeException(
                              $"No checkpoint found for thread '{threadId}'.");

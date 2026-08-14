@@ -113,11 +113,7 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                 VolutaUiSession session,
                 CancellationToken cancellationToken) =>
             {
-                var command = new Command
-                {
-                    Kind = body?.Kind ?? "approve",
-                    Payload = body?.Payload,
-                };
+                var command = VolutaUiResumeCommand.Resolve(body?.Kind, body?.Payload);
                 var terminal = await session.ResumeAsync(threadId, command, cancellationToken);
                 return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
             });
@@ -158,6 +154,25 @@ file static class VolutaUiRouteHelpers
 }
 
 /// <summary>
+///     Maps UI resume request kind/payload onto the closed HITL Command taxonomy.
+/// </summary>
+file static class VolutaUiResumeCommand
+{
+    public static Command Resolve(string? kind, object? payload)
+    {
+        var resolvedKind = string.IsNullOrWhiteSpace(kind) ? Command.Kinds.Approve : kind;
+        return resolvedKind switch
+        {
+            Command.Kinds.Approve => Command.Approve(payload),
+            Command.Kinds.Reject => Command.Reject(payload),
+            Command.Kinds.Update => throw new ArgumentException(
+                "UI resume does not accept kind 'update' without channel Values; use the host SDK Command.Update(...)."),
+            _ => new Command { Kind = resolvedKind, Payload = payload },
+        };
+    }
+}
+
+/// <summary>
 ///     SSE stream endpoint handler for live graph events.
 /// </summary>
 file static class VolutaUiStreamEndpoint
@@ -177,7 +192,7 @@ file static class VolutaUiStreamEndpoint
         {
             stream = session.StreamResumeAsync(
                 threadId,
-                new Command { Kind = kind, Payload = payload },
+                VolutaUiResumeCommand.Resolve(kind, payload),
                 cancellationToken);
         }
         else if (string.Equals(mode, "invoke", StringComparison.OrdinalIgnoreCase))
@@ -208,7 +223,7 @@ file static class VolutaUiStreamEndpoint
                     StringComparison.Ordinal)
                 ? session.StreamResumeAsync(
                     threadId,
-                    new Command { Kind = kind, Payload = payload ?? "ok" },
+                    VolutaUiResumeCommand.Resolve(kind, payload ?? "ok"),
                     cancellationToken)
                 : CheckpointAsStream.FromSnapshotAsync(snapshot);
         }

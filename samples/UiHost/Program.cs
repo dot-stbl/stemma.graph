@@ -109,11 +109,7 @@ static async Task SeedDemoThreadsAsync(VolutaUiSession session, ILogger logger)
     await DrainAsync(
         session.StreamResumeAsync(
             "audit-blocked",
-            new Command
-            {
-                Kind = "reject",
-                Payload = "reject: policy — no bulk PII purge without DPO",
-            }));
+            Command.Reject("reject: policy — no bulk PII purge without DPO")));
 
     logger.LogInformation(
         "Seeded threads: payment-hitl (interrupt), deploy-hitl (interrupt), research-done (Done), audit-blocked (Done/blocked)");

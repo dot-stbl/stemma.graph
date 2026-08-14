@@ -30,7 +30,7 @@ public sealed class FileCheckpointerRuntimeShould
             var resumedGraph = BuildInterruptGraph(reloaded);
             var terminal = await resumedGraph.ResumeInvokeAsync(
                 "file-hitl-1",
-                new Command { Kind = "approve", Payload = "ok" });
+                Command.Approve("ok"));
 
             terminal.Kind.ShouldBe(StreamEventKind.End);
             var snapshot = await reloaded.GetAsync("file-hitl-1");

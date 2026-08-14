@@ -7,7 +7,7 @@
 //   START → gate → END
 //
 // First visit to `gate` interrupts with a payload. The host prints the
-// interrupt, then ResumeAsync(Command { Kind = "approve" }) continues the run.
+// interrupt, then ResumeAsync(Command.Approve(...)) continues the run.
 
 using Voluta;
 using Voluta.Abstractions.Channels;
@@ -53,10 +53,10 @@ if (interrupted?.Status != GraphRunStatus.Interrupted)
     return 1;
 }
 
-CliUi.Section("resume · Command.Kind = approve");
+CliUi.Section("resume · Command.Approve");
 await foreach (var item in graph.ResumeAsync(
                    ThreadId,
-                   new Command { Kind = "approve", Payload = "ok" },
+                   Command.Approve("ok"),
                    StreamMode.Events))
 {
     CliUi.StreamEvent(item);
