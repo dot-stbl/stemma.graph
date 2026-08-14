@@ -1,1 +1,24 @@
 #nullable enable
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.ChannelConcurrentUpdate = "channel.concurrent_update" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointCorruptPayload = "checkpoint.corrupt_payload" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointGetFailed = "checkpoint.get_failed" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointListFailed = "checkpoint.list_failed" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointPutFailed = "checkpoint.put_failed" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointUnsupportedFormatVersion = "checkpoint.unsupported_format_version" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CheckpointUnsupportedValueType = "checkpoint.unsupported_value_type" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CommandInvalidKind = "command.invalid_kind" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.CommandInvalidPayload = "command.invalid_payload" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphDuplicateChannel = "graph.duplicate_channel" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphDuplicateConditional = "graph.duplicate_conditional" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphDuplicateNode = "graph.duplicate_node" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphInvalidChannel = "graph.invalid_channel" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphInvalidEdge = "graph.invalid_edge" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphInvalidNode = "graph.invalid_node" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphInvalidResume = "graph.invalid_resume" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphMissingStart = "graph.missing_start" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphNoNodes = "graph.no_nodes" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphOutOfSteps = "graph.out_of_steps" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphRunFailed = "graph.run_failed" -> string!
+const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphUnknownEndpoint = "graph.unknown_endpoint" -> string!
+static Voluta.Abstractions.Diagnostics.VolutaErrorCodes.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Diagnostics.VolutaErrorCodes

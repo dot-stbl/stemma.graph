@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Diagnostics;
+
 namespace Voluta.Exceptions.Run;
 
 /// <summary>
@@ -9,6 +11,6 @@ namespace Voluta.Exceptions.Run;
 /// <param name="message">Human-readable description.</param>
 /// <param name="innerException">Node or apply failure.</param>
 public sealed class GraphRunFailedException(string message, Exception? innerException = null)
-    : GraphException("graph.run_failed", message, innerException)
+    : GraphException(VolutaErrorCodes.GraphRunFailed, message, innerException)
 {
 }

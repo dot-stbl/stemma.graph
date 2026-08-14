@@ -470,7 +470,52 @@ EF value conversion — the checkpointer itself does not call `JsonSerializer`.
 Every provider is exercised by `CheckpointerConformance.RunAllAsync` in `Voluta.Testing`
 (InMemory, File, EF SQLite + EF InMemory, S3 with a fake client).
 
+Full code + EventId catalog and host HTTP mapping sample:
+[Error codes & EventIds](#error-codes--eventids).
+
 </details>
+
+## Error codes & EventIds
+
+Voluta does **not** ship an ASP.NET package. Exceptions carry a stable `Code` (dot.case);
+hosts map codes to HTTP/gRPC/worker outcomes themselves. Catalog types:
+
+| Type | Package | Role |
+|------|---------|------|
+| `VolutaErrorCodes` | `Voluta.Abstractions` | Stable code strings |
+| `VolutaEventIds` | `Voluta` | MEL `EventId` (id + name = code) |
+| `VolutaExceptionLogging.GetEventId(...)` | `Voluta` | Code / exception → EventId |
+
+Log full exception + `Code` + EventId; never put secrets or PII in `Message`.
+
+```csharp
+catch (GraphException exception)
+{
+    logger.LogError(
+        VolutaExceptionLogging.GetEventId(exception),
+        exception,
+        "Graph failed with {ErrorCode}",
+        exception.Code);
+    // host maps exception.Code → ProblemDetails / status
+}
+```
+
+### Code → suggested HTTP status (host sample)
+
+| Code | Typical status | Notes |
+|------|----------------|-------|
+| `graph.invalid_*` / `graph.duplicate_*` / `graph.no_nodes` / `graph.missing_start` / `graph.unknown_endpoint` | **400** | Compile-time topology errors |
+| `graph.invalid_resume` | **409** | Resume when thread is not interrupted |
+| `graph.out_of_steps` | **422** or **400** | Recursion limit; product choice |
+| `graph.run_failed` | **500** | Uncaught node/superstep fault |
+| `channel.concurrent_update` | **409** | LastValue multi-writer in one superstep |
+| `checkpoint.put_failed` / `get_failed` / `list_failed` / `corrupt_payload` | **502** / **500** | Store / IO / corrupt payload |
+| `checkpoint.unsupported_format_version` | **409** or **500** | Wire newer than this package |
+| `checkpoint.unsupported_value_type` | **400** | Reserved (serde #31) |
+| `command.invalid_kind` / `command.invalid_payload` | **400** | Reserved (command taxonomy #32) |
+
+`Get` miss stays `null` — not an exception. Interrupt control flow stays
+`NodeResult.Interrupt` (not exceptions).
 
 ## How a superstep works
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Voluta.Abstractions.Checkpoint;
+using Voluta.Abstractions.Diagnostics;
 
 namespace Voluta.Checkpoints.EntityFrameworkCore;
 
@@ -59,7 +60,7 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.put_failed",
+                VolutaErrorCodes.CheckpointPutFailed,
                 $"Failed to put checkpoint for thread '{snapshot.ThreadId}' step {snapshot.Step}.",
                 exception);
         }
@@ -85,7 +86,7 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.get_failed",
+                VolutaErrorCodes.CheckpointGetFailed,
                 $"Failed to get checkpoint for thread '{threadId}'.",
                 exception);
         }
@@ -110,7 +111,7 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.list_failed",
+                VolutaErrorCodes.CheckpointListFailed,
                 $"Failed to list checkpoints for thread '{threadId}'.",
                 exception);
         }

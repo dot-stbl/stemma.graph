@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Diagnostics;
+
 namespace Voluta.Exceptions.Run;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Voluta.Exceptions.Run;
 ///     Initializes an invalid-resume failure.
 /// </remarks>
 /// <param name="message">Human-readable description.</param>
-public sealed class GraphInvalidResumeException(string message) : GraphException("graph.invalid_resume", message)
+public sealed class GraphInvalidResumeException(string message)
+    : GraphException(VolutaErrorCodes.GraphInvalidResume, message)
 {
 }

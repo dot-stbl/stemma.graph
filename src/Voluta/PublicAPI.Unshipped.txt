@@ -1,1 +1,28 @@
 #nullable enable
+static readonly Voluta.Diagnostics.VolutaEventIds.ChannelConcurrentUpdate -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointCorruptPayload -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointGetFailed -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointListFailed -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointPutFailed -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointUnsupportedFormatVersion -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointUnsupportedValueType -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CommandInvalidKind -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.CommandInvalidPayload -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphDuplicateChannel -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphDuplicateConditional -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphDuplicateNode -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidChannel -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidEdge -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidNode -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidResume -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphMissingStart -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphNoNodes -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphOutOfSteps -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphRunFailed -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphUnknownEndpoint -> Microsoft.Extensions.Logging.EventId
+static Voluta.Diagnostics.VolutaEventIds.All.get -> System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.Logging.EventId>!
+static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(string! code) -> Microsoft.Extensions.Logging.EventId
+static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Abstractions.Checkpoint.CheckpointStoreException! exception) -> Microsoft.Extensions.Logging.EventId
+static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Exceptions.GraphException! exception) -> Microsoft.Extensions.Logging.EventId
+Voluta.Diagnostics.VolutaEventIds
+Voluta.Diagnostics.VolutaExceptionLogging

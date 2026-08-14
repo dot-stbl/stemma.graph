@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Diagnostics;
+
 namespace Voluta.Exceptions.Run;
 
 /// <summary>
@@ -9,7 +11,7 @@ namespace Voluta.Exceptions.Run;
 /// <param name="limit">Configured recursion limit.</param>
 /// <param name="step">Superstep index that exceeded the limit.</param>
 public sealed class GraphOutOfStepsException(int limit, long step) : GraphException(
-    "graph.out_of_steps",
+    VolutaErrorCodes.GraphOutOfSteps,
     $"Run exceeded recursion limit of {limit} supersteps (at step {step}).")
 {
     /// <summary>

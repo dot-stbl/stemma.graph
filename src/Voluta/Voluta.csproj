@@ -12,6 +12,8 @@
   <ItemGroup>
     <!-- Runtime depends on abstractions only — DI lives in Voluta.DependencyInjection. -->
     <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+    <!-- EventId catalog for host logging (no full MEL pipeline). -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.*" />
   </ItemGroup>
 
 </Project>
