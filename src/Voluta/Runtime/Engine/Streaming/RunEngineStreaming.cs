@@ -61,7 +61,7 @@ internal static class RunEngineStreaming
     {
         return new StreamEvent
         {
-            Mode = mode == StreamMode.Events ? StreamMode.Events : mode,
+            Mode = NormalizeTerminalMode(mode),
             Kind = kind,
             Step = step,
             State = mode == StreamMode.Values
@@ -69,5 +69,32 @@ internal static class RunEngineStreaming
                 : null,
             Payload = payload
         };
+    }
+
+    /// <summary>
+    ///     Whether the selected stream mode should surface Start/End lifecycle markers.
+    /// </summary>
+    public static bool EmitsLifecycle(StreamMode mode)
+    {
+        return mode is StreamMode.Events or StreamMode.Messages;
+    }
+
+    /// <summary>
+    ///     Whether node-written Custom / Messages items are forwarded to the consumer.
+    ///     Values and Updates hosts also receive them so tokens work without switching modes.
+    /// </summary>
+    public static bool ForwardsNodeStreamItems(StreamMode mode)
+    {
+        return mode is StreamMode.Values
+            or StreamMode.Updates
+            or StreamMode.Events
+            or StreamMode.Messages;
+    }
+
+    private static StreamMode NormalizeTerminalMode(StreamMode mode)
+    {
+        return mode is StreamMode.Events or StreamMode.Messages
+            ? mode
+            : mode;
     }
 }

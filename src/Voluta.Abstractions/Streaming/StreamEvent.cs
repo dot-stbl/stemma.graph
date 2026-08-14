@@ -3,7 +3,7 @@ using Voluta.Abstractions.Channels;
 namespace Voluta.Abstractions.Streaming;
 
 /// <summary>
-///     Single item in a multi-mode graph stream (values, updates, or lifecycle events).
+///     Single item in a multi-mode graph stream (values, updates, lifecycle, custom, or messages).
 /// </summary>
 public sealed class StreamEvent
 {

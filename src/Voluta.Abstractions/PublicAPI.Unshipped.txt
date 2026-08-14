@@ -77,3 +77,10 @@ static Voluta.Abstractions.Runtime.Command.RejectResumes(System.Collections.Gene
 static Voluta.Abstractions.Runtime.Command.UpdateResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes) -> Voluta.Abstractions.Runtime.Command!
 Voluta.Abstractions.Runtime.Command.Resumes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
 Voluta.Abstractions.Runtime.Command.Resumes.init -> void
+
+Voluta.Abstractions.Streaming.IStreamWriter
+Voluta.Abstractions.Streaming.IStreamWriter.WriteCustomAsync(object? payload, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Voluta.Abstractions.Streaming.IStreamWriter.WriteMessageAsync(string! text, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Voluta.Abstractions.Streaming.StreamEventKind.Custom = 8 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamEventKind.Messages = 9 -> Voluta.Abstractions.Streaming.StreamEventKind
+Voluta.Abstractions.Streaming.StreamMode.Messages = 3 -> Voluta.Abstractions.Streaming.StreamMode

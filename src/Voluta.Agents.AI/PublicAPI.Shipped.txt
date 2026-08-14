@@ -1,8 +1,7 @@
 #nullable enable
 static Voluta.Agents.AI.AgentGraphNode.Create(Microsoft.Agents.AI.AIAgent! agent, string! outputChannel, string? inputChannel = null) -> Voluta.Agents.AI.AgentGraphNode!
 static Voluta.Agents.AI.AgentNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, Microsoft.Agents.AI.AIAgent! agent, string! outputChannel, string? inputChannel = null) -> Voluta.Graph.Builder.StateGraph!
-static Voluta.Agents.AI.ChatClientGraphNode.Create(string! outputChannel, System.Func<Voluta.Graph.GraphContext!, System.Collections.Generic.IEnumerable<Microsoft.Extensions.AI.ChatMessage!>!>! messagesFactory, Microsoft.Extensions.AI.IChatClient? chatClient = null) -> Voluta.Agents.AI.ChatClientGraphNode!
-static Voluta.Agents.AI.ChatClientNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, System.Collections.Generic.IEnumerable<Microsoft.Extensions.AI.ChatMessage!>!>! messages, Microsoft.Extensions.AI.IChatClient? chatClient = null) -> Voluta.Graph.Builder.StateGraph!
+
 Voluta.Agents.AI.AgentGraphNode
 Voluta.Agents.AI.AgentGraphNode.AgentGraphNode(Microsoft.Agents.AI.AIAgent! agent, Voluta.Agents.AI.AgentNodeOptions! options) -> void
 Voluta.Agents.AI.AgentGraphNode.InvokeAsync(Voluta.Graph.GraphContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Results.NodeResult!>!

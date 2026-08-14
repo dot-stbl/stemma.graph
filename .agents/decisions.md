@@ -321,11 +321,28 @@ No `Voluta.AspNetCore`. Metric names `voluta.*` dot.case; tags
 `node.name` / `run.status` / `error.type` / `provider.name`; never raw
 `thread.id`. Issue #36.
 
+### D-031 — Custom stream events + MEAI token bridge (node-local writer)
+
+**Decision (2026-08-14):** Token-level LLM streaming is **node-local** via
+`GraphContext.Stream` (`IStreamWriter`), not a separate LangGraph-style debug
+multiplex. Additive kinds: `StreamEventKind.Custom` (progress / structured
+payloads) and `StreamEventKind.Messages` (token fragments). Additive mode:
+`StreamMode.Messages` = lifecycle Start/End + custom/messages only (no
+Values/Updates dumps). **All** modes (Values/Updates/Events/Messages) forward
+node-written Custom/Messages so hosts keep their current mode and still see
+tokens. Runtime injects a channel-backed writer per node task; bare
+`GraphContext` construction uses a no-op writer. MEAI bridge:
+`ChatClientNodeOptions.Stream` / `ChatClientGraphNode.Create(..., stream: true)`
+calls `GetStreamingResponseAsync` and `WriteMessageAsync` per non-empty
+`ChatResponseUpdate.Text`, then writes full text to the output channel.
+UI SSE already serializes `StreamEvent` — no separate wire protocol for v1.
+Issue #39.
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
 2. **Checkpoint serde** — wire versioning D-029 + value allow-list D-030 closed for v1; host pluggable converters still open.
-3. **Token-level LLM streaming** — graph stream mode vs node-local (Agents.AI).
+3. ~~**Token-level LLM streaming**~~ — closed D-031 (node-local `IStreamWriter` + Messages kind/mode).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
 6. **UI next** — multi-thread discovery beyond process-tracked ids; richer inspector.
