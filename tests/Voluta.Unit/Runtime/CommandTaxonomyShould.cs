@@ -211,6 +211,83 @@ public sealed class CommandTaxonomyShould
         exception.Code.ShouldBe("hitl.invalid_command");
     }
 
+    [Fact(DisplayName = "Given Approve with null payload, when EnsureValid is called, then succeeds")]
+    public void AcceptApproveWithNullPayload()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(Command.Approve()));
+    }
+
+    [Fact(DisplayName = "Given Reject with null reason, when EnsureValid is called, then succeeds")]
+    public void AcceptRejectWithNullPayload()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(Command.Reject()));
+    }
+
+    [Theory(DisplayName = "Given case-variant kind, when IsKnownKind is called, then returns false")]
+    [InlineData("APPROVE")]
+    [InlineData("Approve")]
+    [InlineData("REJECT")]
+    [InlineData("Update")]
+    [InlineData("")]
+    [InlineData("continue")]
+    public void RejectCaseVariantsAsUnknownKinds(string kind)
+    {
+        Command.IsKnownKind(kind).ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given interrupted thread resumed to Done, when Resume again, then throws invalid_resume")]
+    public async Task DoubleResumeAfterDoneFails()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = BuildGateGraph(checkpointer, static context => context.ResumePayload is null
+            ? NodeResult.Interrupt("wait")
+            : NodeResult.Continue(new ChannelWrite("messages", "once")));
+
+        await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-double", StreamMode = StreamMode.Events });
+
+        var first = await graph.ResumeInvokeAsync("tax-double", Command.Approve("ok"));
+        first.Kind.ShouldBe(StreamEventKind.End);
+
+        var exception = await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
+        {
+            await graph.ResumeInvokeAsync("tax-double", Command.Approve("again"));
+        });
+
+        exception.Code.ShouldBe("graph.invalid_resume");
+        var done = await checkpointer.GetAsync("tax-double");
+        done!.Status.ShouldBe(GraphRunStatus.Done);
+    }
+
+    [Fact(DisplayName = "Given Failed thread, when Resume with Approve, then throws invalid_resume not invalid_command")]
+    public async Task ResumeFailedThreadWithApproveIsInvalidResume()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = new StateGraph()
+            .AddNode(
+                "boom",
+                static (_, _) => throw new InvalidOperationException("boom"))
+            .AddEdge(GraphConstants.Start, "boom")
+            .AddEdge("boom", GraphConstants.End)
+            .Compile(checkpointer);
+
+        await Should.ThrowAsync<GraphRunFailedException>(async () =>
+        {
+            await graph.InvokeAsync([], new RunOptions { ThreadId = "tax-failed" });
+        });
+
+        var exception = await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
+        {
+            await graph.ResumeInvokeAsync("tax-failed", Command.Approve("ok"));
+        });
+
+        exception.Code.ShouldBe("graph.invalid_resume");
+        exception.ShouldNotBeOfType<GraphInvalidCommandException>();
+        var latest = await checkpointer.GetAsync("tax-failed");
+        latest!.Status.ShouldBe(GraphRunStatus.Failed);
+    }
+
     private static CompiledGraph BuildGateGraph(
         InMemoryCheckpointer checkpointer,
         Func<GraphContext, NodeResult> gate)

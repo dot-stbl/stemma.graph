@@ -4,6 +4,7 @@ using Voluta.Abstractions.Results;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
 using Voluta.Checkpoint;
+using Voluta.Exceptions;
 using Voluta.Exceptions.Run;
 using Voluta.Graph.Builder;
 using Voluta.Graph.Options;
@@ -161,5 +162,95 @@ public sealed class FailureCheckpointPolicyShould
         });
 
         resumeException.Message.ShouldContain("not interrupted");
+    }
+
+    [Fact(DisplayName =
+        "Given concurrent LastValue multi-write, when Invoke fails, then Get is Failed with empty last-good channels")]
+    public async Task ConcurrentLastValueFailureMarksFailedWithLastGood()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = new StateGraph()
+            .AddChannel("status", ChannelKind.LastValue)
+            .AddChannel("messages", ChannelKind.Append)
+            .AddNode(
+                "seed",
+                static (_, _) => Task.FromResult<NodeResult>(
+                    NodeResult.Continue(new ChannelWrite("messages", "before-conflict"))))
+            .AddNode(
+                "left",
+                static (_, _) => Task.FromResult<NodeResult>(
+                    NodeResult.Continue(new ChannelWrite("status", "L"))))
+            .AddNode(
+                "right",
+                static (_, _) => Task.FromResult<NodeResult>(
+                    NodeResult.Continue(new ChannelWrite("status", "R"))))
+            .AddEdge(GraphConstants.Start, "seed")
+            .AddEdge("seed", "left")
+            .AddEdge("seed", "right")
+            .AddEdge("left", GraphConstants.End)
+            .AddEdge("right", GraphConstants.End)
+            .Compile(checkpointer);
+
+        await Should.ThrowAsync<GraphConcurrentUpdateException>(async () =>
+        {
+            await graph.InvokeAsync(
+                [],
+                new RunOptions { ThreadId = "fail-lv-1", StreamMode = StreamMode.Events });
+        });
+
+        var latest = await checkpointer.GetAsync("fail-lv-1");
+        latest.ShouldNotBeNull();
+        latest!.Status.ShouldBe(GraphRunStatus.Failed);
+        latest.ChannelValues["status"].ShouldBeNull();
+        var messages = latest.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
+        messages.ShouldContain("before-conflict");
+
+        var history = await checkpointer.ListAsync("fail-lv-1");
+        history.ShouldContain(snapshot => snapshot.Status == GraphRunStatus.Running);
+        history.Last().Status.ShouldBe(GraphRunStatus.Failed);
+    }
+
+    [Fact(DisplayName =
+        "Given cancelled mid-run after first node, when stream stops, then checkpoint keeps last-good Running not Failed")]
+    public async Task CancelMidRunDoesNotMarkFailed()
+    {
+        using var cts = new CancellationTokenSource();
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = new StateGraph()
+            .AddChannel("messages", ChannelKind.Append)
+            .AddNode(
+                "first",
+                static (_, _) => Task.FromResult<NodeResult>(
+                    NodeResult.Continue(new ChannelWrite("messages", "first-ok"))))
+            .AddNode(
+                "second",
+                async (_, cancellationToken) =>
+                {
+                    await cts.CancelAsync();
+                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    return NodeResult.Continue(new ChannelWrite("messages", "second-ok"));
+                })
+            .AddEdge(GraphConstants.Start, "first")
+            .AddEdge("first", "second")
+            .AddEdge("second", GraphConstants.End)
+            .Compile(checkpointer);
+
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (var _ in graph.StreamAsync(
+                               [],
+                               new RunOptions { ThreadId = "fail-cancel-1", StreamMode = StreamMode.Events },
+                               cts.Token))
+            {
+            }
+        });
+
+        var latest = await checkpointer.GetAsync("fail-cancel-1");
+        latest.ShouldNotBeNull();
+        latest!.Status.ShouldNotBe(GraphRunStatus.Failed);
+        latest.Status.ShouldNotBe(GraphRunStatus.Done);
+        var messages = latest.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
+        messages.ShouldContain("first-ok");
+        messages.ShouldNotContain("second-ok");
     }
 }

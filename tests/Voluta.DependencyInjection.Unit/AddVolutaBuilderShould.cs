@@ -43,9 +43,27 @@ public sealed class AddVolutaBuilderShould
     {
         var services = new ServiceCollection();
 
-        Should.Throw<InvalidOperationException>(() =>
+        var exception = Should.Throw<InvalidOperationException>(() =>
             services.AddVoluta(voluta =>
                 voluta.Graph((_, checkpointer) => LinearGraphFixture.Create())));
+
+        exception.Message.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Fact(DisplayName = "Given Graph factory that ignores checkpointer without Use*, when AddVoluta runs, then still throws")]
+    public void ThrowWhenCheckpointerParameterPresentWithoutUse()
+    {
+        var services = new ServiceCollection();
+
+        Should.Throw<InvalidOperationException>(() =>
+            services.AddVoluta(voluta =>
+                voluta.Graph((_, _) => new StateGraph()
+                    .AddNode(
+                        "a",
+                        static (_, _) => Task.FromResult<NodeResult>(NodeResult.Continue()))
+                    .AddEdge(GraphConstants.Start, "a")
+                    .AddEdge("a", GraphConstants.End)
+                    .Compile(new InMemoryCheckpointer()))));
     }
 
     [Fact(DisplayName = "Given only Checkpoints.UseInMemory, when resolved, then ICheckpointer is registered without graph")]
