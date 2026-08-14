@@ -108,3 +108,29 @@ session operations. Full contract: `openspec/specs/studio-host/spec.md`.
 #### Scenario: Studio sample host
 - **WHEN** a host registers `MapStudioApi` with a bound `VolutaUiSession`
 - **THEN** clients can list threads and read topology over HTTP without the Razor UI shell
+### Requirement: Optional Hosting package for wake bus workers
+Consumers MUST be able to host long HITL / multi-minute turns outside an HTTP request via an optional `Voluta.Hosting` package that exposes a wake-bus abstraction, an in-memory bus implementation, a thread runner, and a `BackgroundService` drain loop — without Hangfire/Quartz and without durable queue SDKs in core packages.
+
+#### Scenario: Enqueue start wake and park on interrupt
+- **WHEN** a host registers `AddVolutaWorkerHosting`, enqueues a start wake for a thread that interrupts, and the worker drains the bus
+- **THEN** the worker records a parked disposition and the shared checkpointer holds the interrupted snapshot
+
+#### Scenario: Resume wake continues to completion
+- **WHEN** a parked thread receives a resume wake with an approve command
+- **THEN** the worker resumes the same thread id and records a completed disposition when the graph ends
+
+#### Scenario: In-memory bus is the default single-process implementation
+- **WHEN** a host calls `AddVolutaWorkerHosting` without replacing the bus
+- **THEN** `IThreadWakeBus` resolves to `InMemoryThreadWakeBus` and producers can enqueue start/resume wakes
+
+#### Scenario: Concurrent wake for same thread on one instance is skipped
+- **WHEN** a second wake for an already in-flight thread id is enqueued on the same worker instance
+- **THEN** the worker skips the concurrent wake and does not run a second overlapping turn for that id
+
+#### Scenario: Multi-instance checkpointer is source of truth
+- **WHEN** documentation and package remarks describe multi-process scale-out
+- **THEN** they state that the durable checkpointer is the source of truth, wakes are hints, and hosts must partition or lease by thread id (in-memory bus is single-process only)
+
+#### Scenario: Core packages stay free of hosting worker types
+- **WHEN** a consumer references only `Voluta` and `Voluta.Abstractions`
+- **THEN** no `Microsoft.Extensions.Hosting` dependency or `IThreadWakeBus` types are required

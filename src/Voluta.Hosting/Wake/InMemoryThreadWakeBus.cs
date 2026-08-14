@@ -1,12 +1,13 @@
 using System.Threading.Channels;
 
-namespace Voluta.Samples.WorkerHost;
+namespace Voluta.Hosting.Wake;
 
 /// <summary>
-///     In-process wake bus: producers enqueue work; the worker drains it.
-///     Swap for a durable queue (NATS, SQS, Service Bus) in production — same shape.
+///     In-process wake bus backed by an unbounded <see cref="Channel{T}" />.
+///     Suitable for single-process hosts and samples; swap for a durable queue
+///     in multi-instance production.
 /// </summary>
-public sealed class ThreadWakeChannel
+public sealed class InMemoryThreadWakeBus : IThreadWakeBus
 {
     private readonly Channel<ThreadWake> channel = Channel.CreateUnbounded<ThreadWake>(
         new UnboundedChannelOptions
@@ -16,24 +17,21 @@ public sealed class ThreadWakeChannel
             AllowSynchronousContinuations = false,
         });
 
-    /// <summary>
-    ///     Enqueues a wake. Completes when the item is accepted by the channel.
-    /// </summary>
+    /// <inheritdoc />
     public ValueTask EnqueueAsync(ThreadWake wake, CancellationToken cancellationToken = default)
     {
         return channel.Writer.WriteAsync(wake, cancellationToken);
     }
 
-    /// <summary>
-    ///     Async stream of wakes until the writer is completed or cancellation.
-    /// </summary>
+    /// <inheritdoc />
     public IAsyncEnumerable<ThreadWake> ReadAllAsync(CancellationToken cancellationToken = default)
     {
         return channel.Reader.ReadAllAsync(cancellationToken);
     }
 
     /// <summary>
-    ///     Signals no further wakes (host shutdown after demo).
+    ///     Signals no further wakes (host shutdown after a finite demo or drain).
+    ///     Durable bus implementations typically do not need an equivalent.
     /// </summary>
     public void Complete()
     {

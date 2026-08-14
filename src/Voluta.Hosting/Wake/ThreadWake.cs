@@ -1,10 +1,10 @@
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Runtime;
 
-namespace Voluta.Samples.WorkerHost;
+namespace Voluta.Hosting.Wake;
 
 /// <summary>
-///     Wake signal for the worker: start a new thread or resume an interrupted one.
+///     Wake signal for a worker: start a new thread or resume an interrupted one.
 /// </summary>
 public sealed class ThreadWake
 {
@@ -26,6 +26,8 @@ public sealed class ThreadWake
     /// <summary>
     ///     Builds a wake that starts a new graph run.
     /// </summary>
+    /// <param name="threadId">Checkpoint / conversation id.</param>
+    /// <param name="input">Initial channel writes.</param>
     public static ThreadWake Start(string threadId, params ChannelWrite[] input)
     {
         return new ThreadWake
@@ -38,6 +40,8 @@ public sealed class ThreadWake
     /// <summary>
     ///     Builds a wake that resumes an interrupted thread.
     /// </summary>
+    /// <param name="threadId">Checkpoint / conversation id.</param>
+    /// <param name="command">HITL resume command.</param>
     public static ThreadWake Resume(string threadId, Command command)
     {
         return new ThreadWake

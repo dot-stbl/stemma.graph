@@ -41,6 +41,7 @@
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible store | full |
 | `Voluta.Agents.AI` | MAF + MEAI as `IGraphNode` | full |
 | `Voluta.UI` | ops console | full (ASP.NET) |
+| `Voluta.Hosting` | wake bus + `GraphWorkerService` presets | full (worker host) |
 
 ## Ближайшие шаги
 
