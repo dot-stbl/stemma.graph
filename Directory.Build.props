@@ -43,7 +43,7 @@
     </PropertyGroup>
 
     <!-- Native AOT tier: core runtime libraries only.
-         Full-framework packages (Checkpoints.*, UI, MicrosoftAi, Testing) stay
+         Full-framework packages (Checkpoints.*, UI, Agents.AI, Testing) stay
          on the regular .NET runtime — do not opt them into IsAotCompatible. -->
     <PropertyGroup
         Condition="'$(MSBuildProjectName)' == 'Voluta'
@@ -76,7 +76,6 @@
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
-                         or '$(MSBuildProjectName)' == 'Voluta.MicrosoftAi'
                          or '$(MSBuildProjectName)' == 'Voluta.Agents.AI'
                          or '$(MSBuildProjectName)' == 'Voluta.UI')">
         <VolutaEnablePublicApi>true</VolutaEnablePublicApi>

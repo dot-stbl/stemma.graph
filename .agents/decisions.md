@@ -155,7 +155,7 @@ Validate: `openspec validate --specs --strict`.
 | Tier | Packages | Target |
 |------|----------|--------|
 | **AOT core** | `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection` | `IsAotCompatible` + trim analyzer; smoke `samples/AotSmoke` (`PublishAot`) |
-| **Full runtime** | `Voluta.Checkpoints.File`, `Voluta.UI`, `Voluta.MicrosoftAi`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
+| **Full runtime** | `Voluta.Checkpoints.File`, `Voluta.UI`, `Voluta.Agents.AI`, Testing, Generators | Regular .NET / ASP.NET; may use reflection, JSON, browsers, etc. **Do not** claim AOT |
 
 **AOT path (supported):** fluent `StateGraph` + InMemory (+ optional thin DI).  
 **Full path (product hosts):** ASP.NET, file/EF checkpointers, UI console, LLM adapters — depend on core, run on complete CLR.
@@ -173,7 +173,7 @@ the NuGet tag:
 | Subgraph helper | `Subgraph.AsNode` |
 | Topology export | `CompiledGraph.Describe()` → `GraphDescription` |
 | File checkpointer | `Voluta.Checkpoints.File` |
-| MicrosoftAi | `Voluta.MicrosoftAi` (`ChatClientNode`) |
+| Agents.AI | `Voluta.Agents.AI` (MAF + MEAI nodes; replaces MicrosoftAi) |
 | UI | `Voluta.UI` Razor RCL (`AddVolutaUI` / `MapVolutaUI` + SSE) — see D-025 |
 | Harness samples | `ReviewBot`, `DocQ`, `MarketingAgent` + `MockAdMcp` + `Voluta.Samples.Shared`; UI host `UiHost` |
 | Benchmarks | `benchmarks/Voluta.Benchmarks` |
@@ -238,7 +238,7 @@ auth, full graph canvas editor.
 `Microsoft.CodeAnalysis.PublicApiAnalyzers` + `PublicAPI.Shipped.txt` /
 `PublicAPI.Unshipped.txt` (wired in `Directory.Build.props` for
 `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection`,
-`Voluta.Checkpoints.File`, `Voluta.MicrosoftAi`, `Voluta.UI`).
+`Voluta.Checkpoints.File`, `Voluta.Agents.AI`, `Voluta.UI`).
 
 - **Shipped** empty until first NuGet tag — all current surface is **Unshipped**.
 - After `v0.1.0` publish: move Unshipped → Shipped; further API changes must
@@ -270,7 +270,7 @@ Both pass `CheckpointerConformance.RunAllAsync`. PublicAPI ship gate enabled. Sa
 | Core A | `CompileOptions.Services` → `GraphContext.Services` / `GetRequiredService<T>()` |
 | Core B | `IGraphNode`, `StateGraph.AddNode<T>()`, `AddNode(IGraphNode)`, `AddNode(sp => IGraphNode)` |
 | Package C | **`Voluta.Agents.AI`** — `AgentGraphNode` / `ChatClientGraphNode` + static `AgentNodes` / `ChatClientNodes` (not `this StateGraph` extensions) |
-| Legacy | `Voluta.MicrosoftAi.ChatClientNode` static helpers remain until samples migrate |
+| Removed | **`Voluta.MicrosoftAi`** — static `ChatClientNode` helpers deleted; one AI package only |
 
 Host pattern: `Compile(checkpointer, new CompileOptions { Services = sp })` inside `AddVoluta` graph factory. MAF package deps: `Microsoft.Agents.AI.Abstractions` 1.17 + `Microsoft.Extensions.AI.Abstractions` 10.9. Core stays AOT and AI-free.
 
@@ -278,7 +278,7 @@ Host pattern: `Compile(checkpointer, new CompileOptions { Services = sp })` insi
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
 2. **Checkpoint serde** — JSON versioning, polymorphic channel values (File package is best-effort JSON).
-3. **Token-level LLM streaming** — graph stream mode vs node-local (MicrosoftAi).
+3. **Token-level LLM streaming** — graph stream mode vs node-local (Agents.AI).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
 6. **UI next** — multi-thread discovery beyond process-tracked ids; richer inspector.

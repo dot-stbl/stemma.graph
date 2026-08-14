@@ -18,7 +18,7 @@ API .NET-native: generic state, типизированные редьюсеры,
 
 **Shipped on `main`:** Pregel runtime, checkpointers (InMemory · File · EF Core · S3) with
 `AddVolutaCheckpoints` / `Use*`, Send fan-out, `Subgraph.AsNode`, topology export, Testing,
-Generators, MicrosoftAi helpers, `MapVolutaUI`, samples (incl. MarketingAgent + MockAdMcp),
+Generators, Agents.AI (MEAI/MAF), `MapVolutaUI`, samples (incl. MarketingAgent + MockAdMcp),
 BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
 
 **Specs (source of truth):** main OpenSpec under
@@ -29,7 +29,7 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
 - **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/AotSmoke`
-- **Full .NET / ASP.NET:** Checkpoints.File / EF / S3, UI, MicrosoftAi, Testing, Generators — regular CLR, not AOT-claimed
+- **Full .NET / ASP.NET:** Checkpoints.File / EF / S3, UI, Agents.AI, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -38,7 +38,7 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 | Runtime | .NET 10 |
 | Тесты | xUnit + Shouldly + NSubstitute + Bogus |
 | Streaming | `IAsyncEnumerable<T>` (values / updates / events) |
-| AI helpers | MEAI/MAF via `Voluta.Agents.AI` (`IGraphNode`); legacy `Voluta.MicrosoftAi` |
+| AI helpers | MEAI/MAF via `Voluta.Agents.AI` (`IGraphNode`) |
 | Benches | BenchmarkDotNet (`benchmarks/`) |
 | Публикация | NuGet через GitHub Actions OIDC trusted publishing |
 
@@ -55,7 +55,6 @@ voluta/
 │   ├── Voluta.Checkpoints.File/        ← UseFile
 │   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
-│   ├── Voluta.MicrosoftAi/             ← legacy IChatClient static helpers
 │   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
 │   └── Voluta.UI/                      ← MapVolutaUI ops console
 ├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost

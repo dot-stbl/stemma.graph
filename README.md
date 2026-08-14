@@ -26,7 +26,7 @@ can pause a thread for days, then resume in another process.
 
 > [!IMPORTANT]
 > **Pre-release.** On `main`: Pregel engine, checkpointers (InMemory · File · EF Core · S3),
-> Send / subgraph helpers, source generator, Testing, MicrosoftAi helpers, `MapVolutaUI`,
+> Send / subgraph helpers, source generator, Testing, Agents.AI (MEAI/MAF), `MapVolutaUI`,
 > samples, BenchmarkDotNet. **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
 > ([epic #1](https://github.com/dot-stbl/voluta/issues/1)). Until then, reference projects
 > from source — see [Quick Start](#quick-start).
@@ -394,9 +394,6 @@ ChatClientNodes.Add(
 
 // 3) Microsoft Agent Framework AIAgent as a node
 AgentNodes.Add(graph, "research", agent, outputChannel: "draft", inputChannel: "question");
-
-// Legacy thin helpers still in Voluta.MicrosoftAi:
-// ChatClientNode.CompleteTextAsync / CompleteToChannelAsync
 ```
 
 ## Host DI — `AddVoluta`
@@ -525,13 +522,12 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
 | `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
-| `Voluta.MicrosoftAi` | Legacy static `IChatClient` helpers | [`src/Voluta.MicrosoftAi`](src/Voluta.MicrosoftAi/) |
 | `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
-Checkpoint providers (File / EF / S3), UI, and MicrosoftAi are regular-CLR packages and do not
+Checkpoint providers (File / EF / S3), UI, and Agents.AI are regular-CLR packages and do not
 claim AOT.
 
 ## Samples

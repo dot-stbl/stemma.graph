@@ -24,6 +24,6 @@ The project sets `PublishAot=true` by default for this sample only.
 | AOT core (this sample) | Full .NET runtime packages |
 |------------------------|----------------------------|
 | `Voluta` + Abstractions | `Voluta.Checkpoints.*` (EF/S3/File) |
-| InMemory checkpointer | `Voluta.UI.*`, MicrosoftAi |
+| InMemory checkpointer | `Voluta.UI.*`, Agents.AI |
 | Optional: DependencyInjection | ASP.NET hosts, reflection-heavy adapters |
 | Fluent graph only | Dynamic plugin load |

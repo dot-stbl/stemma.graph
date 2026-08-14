@@ -11,8 +11,7 @@
 | `Voluta` | `StateGraph`, `CompiledGraph`, `GraphContext`, **new** `IGraphNode` / DI | **Yes** after this PR |
 | `Voluta.DependencyInjection` | `AddVoluta` / `VolutaBuilder` | **Yes** |
 | `Voluta.Checkpoints.*` | File / EF / S3 + `Use*` | **Yes** (EF entity public — intentional D-027) |
-| `Voluta.MicrosoftAi` | `ChatClientNode` static only | **Yes** (legacy; prefer Agents.AI) |
-| `Voluta.Agents.AI` | `AgentGraphNode`, `ChatClientGraphNode`, helpers | **Yes** (new this PR) |
+| `Voluta.Agents.AI` | `AgentGraphNode`, `ChatClientGraphNode`, helpers | **Yes** (replaces removed `Voluta.MicrosoftAi`) |
 | `Voluta.UI` | `MapVolutaUI`, session DTOs | **Yes** for 0.1 ops console |
 
 **Not gated:** `Voluta.Testing`, `Voluta.Generators`.
@@ -36,7 +35,6 @@
 1. Consider `internal` for EF `CheckpointRecordConfiguration` if consumers never need it.
 2. Confirm UI DTOs (`ResumeRequest`, summaries) are intentional public wire types.
 3. Plan migration of samples from `IChatCompletionClient` → MEAI + Agents.AI (post-0.1 OK).
-4. Deprecate `Voluta.MicrosoftAi` in 0.2 docs once samples move.
 
 ## Freeze steps
 
