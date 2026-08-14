@@ -73,25 +73,47 @@ UIs, support tools, and tests.
 
 ## Providers
 
-| Provider | Package | Registration |
-|----------|---------|--------------|
-| In-memory | `Voluta` | `v.Checkpoints.UseInMemory()` |
-| File (JSON on disk) | `Voluta.Checkpoints.File` | `v.Checkpoints.UseFile(root)` |
-| SQLite (single file) | `Voluta.Checkpoints.Sqlite` | `v.Checkpoints.UseSqlite(path)` |
-| EF Core | `Voluta.Checkpoints.EntityFrameworkCore` | `v.Checkpoints.UseEntityFrameworkCore<TDb>()` |
-| S3 / compatible | `Voluta.Checkpoints.S3` | `v.Checkpoints.UseS3(o => …)` |
+| Provider | Package | Registration | When to use |
+|----------|---------|--------------|-------------|
+| In-memory | `Voluta` | `UseInMemory()` | Tests, samples, single process |
+| File (JSON on disk) | `Voluta.Checkpoints.File` | `UseFile(root)` | Simple single-node durability |
+| SQLite | `Voluta.Checkpoints.Sqlite` | `UseSqlite(path)` | Laptop / single-file demos |
+| **EF Core** | `Voluta.Checkpoints.EntityFrameworkCore` | `UseEntityFrameworkCore<TDb>()` | **Any DB EF supports** (SQL Server, Postgres, …) with *your* DbContext |
+| **Postgres (native)** | `Voluta.Checkpoints.Postgres` | `UsePostgres(…)` | Opinionated **Npgsql-only** path, fixed SQL schema, no EF |
+| S3 / compatible | `Voluta.Checkpoints.S3` | `UseS3(o => …)` | Object storage |
 
 ```csharp
 services.AddVoluta(v =>
 {
     v.Checkpoints.UseFile("/var/lib/myapp/voluta-checkpoints");
+    // or: v.Checkpoints.UseEntityFrameworkCore<MyDb>();  // any EF provider
+    // or: v.Checkpoints.UsePostgres(o => o.ConnectionString = "…");  // Npgsql native
     v.Graph((sp, checkpointer) => /* … */ .Compile(checkpointer));
 });
 ```
 
-Provider types (`FileCheckpointer`, EF, S3) are constructed via `Use*` only —
-not `new` from app code. Prefer JSON-friendly channel values (strings, numbers,
-lists of primitives); complex CLR graphs may not round-trip.
+### EF Core vs native Postgres — why both?
+
+**EF Core already covers Postgres** (and SQL Server, etc.): one package, *your*
+DbContext, provider-agnostic. That remains the right default if you already live
+in EF migrations and multi-DB.
+
+**`Voluta.Checkpoints.Postgres` is optional**, not a replacement for EF:
+
+| | EF Core package | Native Postgres package |
+|--|-----------------|-------------------------|
+| Dependencies | EF Core + *your* provider package | **Npgsql only** |
+| Schema | You map entities / migrations | Fixed `voluta_checkpoints` SQL (embedded) |
+| DBs | Any EF can target | **Postgres only** |
+| Ops | Fits existing EF estate | “Just give me a connection string” |
+
+If you only need Postgres and do **not** want EF on the host, use native.
+If you already have EF + Postgres, **stay on EF** — do not run both for the same
+app without a clear reason.
+
+Provider types are constructed via `Use*` only — not `new` from app code.
+Prefer JSON-friendly channel values (strings, numbers, lists of primitives);
+complex CLR graphs may not round-trip (wire v1 allow-list on durable providers).
 
 In-memory is not “fake voluta.” It is the same protocol with a store that dies
 with the process — fine until durability is a product requirement.

@@ -275,15 +275,44 @@ Do not confuse:
 
 ---
 
+## Grafana dashboard (download)
+
+We ship an importable **overview** dashboard for the metrics above.
+
+| | |
+|--|--|
+| **File in repo** | [`deploy/grafana/voluta-overview.json`](https://github.com/dot-stbl/voluta/blob/main/deploy/grafana/voluta-overview.json) |
+| **Raw download** | [voluta-overview.json](https://raw.githubusercontent.com/dot-stbl/voluta/main/deploy/grafana/voluta-overview.json) |
+| **Also in docs tree** | [`docs/ops/grafana/voluta-overview.json`](https://github.com/dot-stbl/voluta/blob/main/docs/ops/grafana/voluta-overview.json) (included in release `docs.tgz`) |
+| **Import notes** | [`deploy/grafana/README.md`](https://github.com/dot-stbl/voluta/blob/main/deploy/grafana/README.md) |
+
+### Import (UI)
+
+1. Grafana → **Dashboards** → **New** → **Import**.
+2. Upload the JSON (or paste from the raw URL).
+3. Select a **Prometheus**-compatible datasource that scrapes Voluta metrics
+   (via OTLP → collector → Prometheus, or `AddPrometheusExporter` on the host).
+4. Import. Dashboard UID is stable: `voluta-overview` (re-import overwrites).
+
+```bash
+# one-liner download
+curl -fsSL -o voluta-overview.json \
+  https://raw.githubusercontent.com/dot-stbl/voluta/main/deploy/grafana/voluta-overview.json
+```
+
+Wire metrics first (`AddVolutaInstrumentation` + export); empty panels usually mean
+the meter was never registered or the scrape job does not see `voluta_*` series.
+
 ## Quick checklist for hosts
 
 1. Call `AddVolutaInstrumentation()` on both tracing and metrics (or attach BCL listeners).
 2. Export OTLP (or Prometheus scrape of OTel metrics) as you do for the rest of the app.
-3. On catch of `GraphException` / `CheckpointStoreException`, log with
+3. Import the [Grafana dashboard](#grafana-dashboard-download) above.
+4. On catch of `GraphException` / `CheckpointStoreException`, log with
    `VolutaExceptionLogging.GetEventId(ex)` and property `ErrorCode = ex.Code`.
-4. Alert examples: rising `voluta.stream.dropped`, spike `voluta.interrupt.count`,
+5. Alert examples: rising `voluta.stream.dropped`, spike `voluta.interrupt.count`,
    high `voluta.superstep.duration` p99, any `graph.run_failed` / checkpoint fail EventIds.
-5. Do not expect library log lines under a `Voluta.*` category — there are none.
+6. Do not expect library log lines under a `Voluta.*` category — there are none.
 
 ## Source of truth in code
 
