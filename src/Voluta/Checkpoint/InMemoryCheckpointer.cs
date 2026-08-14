@@ -5,6 +5,11 @@ namespace Voluta.Checkpoint;
 /// <summary>
 ///     Process-local C-shape checkpointer for tests and single-process samples.
 /// </summary>
+/// <remarks>
+///     No JSON wire — values are held by reference (cloned on Get/List). Unlike File/EF/S3,
+///     InMemory does <strong>not</strong> enforce the durable wire-format v1 value allow-list;
+///     any CLR object may be stored within a single process.
+/// </remarks>
 public sealed class InMemoryCheckpointer : ICheckpointer
 {
     private readonly ConcurrentDictionary<string, List<CheckpointSnapshot>> history =
