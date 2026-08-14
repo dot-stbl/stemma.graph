@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Voluta.Templates</PackageId>
+    <Title>Voluta project templates</Title>
+    <Description>
+      Project templates for Voluta: `dotnet new voluta-agent` scaffolds a runnable
+      HITL agent graph with AddVoluta, InMemory checkpoint, interrupt node, and an
+      optional MEAI chat stub that builds without an API key.
+    </Description>
+    <PackageTags>$(PackageTags);template;dotnet-new;voluta-agent;hitl</PackageTags>
+    <PackageType>Template</PackageType>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- Template pack is not a library; skip PublicAPI / source analyzers noise. -->
+    <VolutaEnablePublicApi>false</VolutaEnablePublicApi>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="content\**\*"
+             Exclude="content\**\bin\**;content\**\obj\**"
+             Pack="true"
+             PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Remove="**\*" />
+    <None Remove="**\*" />
+  </ItemGroup>
+
+  <!-- Pack a short package README (not the monorepo root). -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+</Project>

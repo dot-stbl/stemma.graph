@@ -345,6 +345,16 @@ policy; Voluta runs the stateful graph.
 
 **Requires .NET 10 SDK** (`dotnet --version` ≥ 10.0.100).
 
+Scaffold a HITL agent (no clone required once the template pack is installed):
+
+```bash
+dotnet new install Voluta.Templates
+dotnet new voluta-agent -n MyAgent
+cd MyAgent && dotnet run
+```
+
+Or clone and run in-repo samples:
+
 ```bash
 git clone https://github.com/dot-stbl/voluta.git
 cd voluta
@@ -356,6 +366,8 @@ dotnet run --project samples/InterruptResume
 Reference from your app:
 
 ```bash
+dotnet add package Voluta --version 0.2.0
+# or, from a clone:
 dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj
 ```
 

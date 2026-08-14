@@ -1,0 +1,48 @@
+<Project>
+
+  <!--
+    Isolate template projects from the monorepo root Directory.Build.props
+    packaging defaults (icon-i5, monorepo README, PublicAPI, AOT, etc.).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Version>0.2.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Voluta contributors</Authors>
+    <PackageProjectUrl>https://github.com/dot-stbl/voluta</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dot-stbl/voluta</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>agents;stateful-graphs;workflows;checkpointing;dotnet</PackageTags>
+    <Copyright>Copyright (c) Voluta contributors</Copyright>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <VolutaPackageIconPath>$(MSBuildThisFileDirectory)..\assets\icon-i5.png</VolutaPackageIconPath>
+    <PackageIcon>icon-i5.png</PackageIcon>
+    <VolutaEnablePublicApi>false</VolutaEnablePublicApi>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Drop monorepo-root packaging items imported via parent Directory.Build.props. -->
+    <None Remove="$(MSBuildThisFileDirectory)..\README.md" />
+    <None Remove="$(MSBuildThisFileDirectory)..\assets\icon-i1.png" />
+    <None Remove="$(MSBuildThisFileDirectory)..\assets\icon-i4.png" />
+    <None Remove="$(MSBuildThisFileDirectory)..\assets\icon-i5.png" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(VolutaPackageIconPath)')">
+    <None Include="$(VolutaPackageIconPath)"
+          Pack="true"
+          PackagePath="$(PackageIcon)"
+          Visible="false" />
+  </ItemGroup>
+
+</Project>

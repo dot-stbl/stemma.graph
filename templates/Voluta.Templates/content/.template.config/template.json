@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Voluta contributors",
+  "classifications": [
+    "Console",
+    "Voluta",
+    "Agents",
+    "HITL"
+  ],
+  "identity": "Voluta.Templates.Agent",
+  "name": "Voluta HITL agent",
+  "shortName": "voluta-agent",
+  "description": "Runnable Voluta agent graph with AddVoluta, InMemory checkpoint, one interrupt node, and an optional MEAI chat stub (builds without an API key).",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "VolutaAgent",
+  "preferNameDirectory": true,
+  "defaultName": "VolutaAgent",
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "net10.0",
+          "description": ".NET 10"
+        }
+      ],
+      "defaultValue": "net10.0",
+      "replaces": "net10.0"
+    },
+    "VolutaVersion": {
+      "type": "parameter",
+      "description": "NuGet version of Voluta packages to reference.",
+      "datatype": "text",
+      "defaultValue": "0.2.0",
+      "replaces": "VOLUTA_PACKAGE_VERSION",
+      "displayName": "Voluta package version"
+    }
+  },
+  "primaryOutputs": [
+    {
+      "path": "VolutaAgent.csproj"
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

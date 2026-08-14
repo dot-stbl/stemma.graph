@@ -86,14 +86,21 @@ jobs:
                 --output "$pack_out"
             fi
           done
+          # Template pack (content only — no assembly / symbols).
+          echo "packing templates/Voluta.Templates"
+          dotnet pack templates/Voluta.Templates/Voluta.Templates.csproj -c Release \
+            -p:IncludeSymbols=false \
+            --output "$pack_out"
           ls -la "$pack_out"
           # Core + Generators must exist (any version). Voluta.Testing is IsPackable=false.
           test -n "$(ls -1 "$pack_out"/Voluta.[0-9]*.nupkg 2>/dev/null | grep -E '^'"$pack_out"'/Voluta\.[0-9]+\.[0-9]+\.[0-9]+\.nupkg$' || true)"
           core_nupkg="$(find "$pack_out" -maxdepth 1 -regextype posix-extended -regex '.*/Voluta\.[0-9]+\.[0-9]+\.[0-9]+\.nupkg' | head -1)"
           gen_nupkg="$(find "$pack_out" -maxdepth 1 -name 'Voluta.Generators.*.nupkg' | head -1)"
+          templates_nupkg="$(find "$pack_out" -maxdepth 1 -name 'Voluta.Templates.*.nupkg' | head -1)"
           test -n "$core_nupkg"
           test -n "$gen_nupkg"
-          echo "core=$core_nupkg gen=$gen_nupkg"
+          test -n "$templates_nupkg"
+          echo "core=$core_nupkg gen=$gen_nupkg templates=$templates_nupkg"
 
       - name: push to nuget.org
         if: github.event_name == 'push'
