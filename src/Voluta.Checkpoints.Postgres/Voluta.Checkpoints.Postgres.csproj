@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Postgres-native C-shape checkpointer for Voluta (Npgsql + SQL schema).
+    </Description>
+    <PackageTags>$(PackageTags);checkpoint;postgres;npgsql;persistence</PackageTags>
+    <RootNamespace>Voluta.Checkpoints.Postgres</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="9.0.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
+    <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+    <ProjectReference Include="..\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Voluta.Checkpoints.Postgres.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\voluta_checkpoints.sql" LogicalName="Voluta.Checkpoints.Postgres.Schema.voluta_checkpoints.sql" />
+  </ItemGroup>
+
+</Project>

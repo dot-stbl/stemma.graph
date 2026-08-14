@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
             {
                 throw new InvalidOperationException(
                     "AddVolutaCheckpoints requires exactly one Use* provider (UseInMemory, UseFile, UseSqlite, UseEntityFrameworkCore, UseS3).");
+                    "AddVolutaCheckpoints requires exactly one Use* provider (UseInMemory, UseFile, UseEntityFrameworkCore, UseS3, UsePostgres).");
             }
         });
     }

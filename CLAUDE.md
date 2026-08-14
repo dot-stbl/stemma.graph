@@ -56,6 +56,7 @@ voluta/
 │   ├── Voluta.Checkpoints.Sqlite/      ← UseSqlite
 │   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
+│   ├── Voluta.Checkpoints.Postgres/    ← UsePostgres
 │   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
 │   └── Voluta.UI/                      ← MapVolutaUI ops console
 ├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost

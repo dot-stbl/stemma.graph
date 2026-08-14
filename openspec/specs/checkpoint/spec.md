@@ -118,6 +118,8 @@ The compiled graph MUST expose host-facing mutation APIs that apply channel writ
 
 ### Requirement: File SQLite EF and S3 provider packages
 Durable checkpoint providers for local JSON files, SQLite single-file stores, EF Core (provider-agnostic relational), and S3-compatible object storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
+### Requirement: File EF S3 and Postgres provider packages
+Durable checkpoint providers for local JSON files, EF Core (provider-agnostic relational), S3-compatible object storage, and Postgres-native storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
 
 #### Scenario: File provider roundtrip
 - **WHEN** a consumer uses the file checkpointer package under a root directory
@@ -135,8 +137,24 @@ Durable checkpoint providers for local JSON files, SQLite single-file stores, EF
 - **WHEN** a consumer configures an S3 checkpointer with bucket and key prefix
 - **THEN** snapshots are stored under a stable key layout including thread and step and can be listed or fetched by thread
 
+#### Scenario: Postgres provider table layout
+- **WHEN** a consumer configures a Postgres checkpointer with connection string
+- **THEN** snapshots are stored as rows keyed by thread and step with a JSONB snapshot payload and can be listed or fetched by thread
+
+### Requirement: Postgres-native provider package
+A Postgres-native checkpointer package MUST ship separately from the core runtime and from the provider-agnostic EF Core package. It MUST implement Put/Get/List and MAY implement `IThreadDiscovery`. Snapshots MUST use wire-format v1 JSON and the same value allow-list as File/EF/S3. Hosts MUST register via `UsePostgres`.
+
+#### Scenario: Postgres provider roundtrip
+- **WHEN** a consumer configures `UsePostgres` with a connection string and puts a checkpoint
+- **THEN** get for the same thread returns a snapshot preserving C-shape semantic content
+
+#### Scenario: DI UsePostgres registration
+- **WHEN** the host configures checkpoints with UsePostgres and a connection string
+- **THEN** the checkpointer interface resolves to the Postgres provider implementation
+
 ### Requirement: Wire format version on durable providers
 File, SQLite, EF Core, and S3 checkpoint payloads MUST include an explicit wire format version field on every write. Missing version on read MUST be treated as version 1. Unsupported future versions MUST fail with a stable checkpoint store error code rather than silent mis-parse.
+File, EF Core, S3, and Postgres checkpoint payloads MUST include an explicit wire format version field on every write. Missing version on read MUST be treated as version 1. Unsupported future versions MUST fail with a stable checkpoint store error code rather than silent mis-parse.
 
 #### Scenario: Write stamps version one
 - **WHEN** a durable provider puts a checkpoint
@@ -152,6 +170,7 @@ File, SQLite, EF Core, and S3 checkpoint payloads MUST include an explicit wire 
 
 ### Requirement: Wire format v1 value allow-list on durable providers
 File, SQLite, EF Core, and S3 MUST reject channel values, pending write/send payloads, and interrupt payloads that are not in the wire format v1 allow-list at Put time, with stable code `checkpoint.unsupported_value_type`. Silent partial round-trip of arbitrary CLR graphs is forbidden.
+File, EF Core, S3, and Postgres MUST reject channel values, pending write/send payloads, and interrupt payloads that are not in the wire format v1 allow-list at Put time, with stable code `checkpoint.unsupported_value_type`. Silent partial round-trip of arbitrary CLR graphs is forbidden.
 
 Allow-listed shapes: `null`, string, bool, char, numeric primitives, `Guid`, date/time primitives (`DateTime`, `DateTimeOffset`, `DateOnly`, `TimeOnly`, `TimeSpan`), `JsonElement`, `byte[]`, lists/arrays of allow-listed values, and string-key dictionaries of allow-listed values (max nesting depth 8).
 
@@ -167,6 +186,7 @@ InMemory is process-local and MAY store arbitrary CLR references without JSON al
 
 ### Requirement: Host construction via Use builders
 Product documentation and DI fluent builders MUST treat File, SQLite, EF Core, and S3 checkpointers as configured through the checkpoint builder (`UseFile` / `UseSqlite` / `UseEntityFrameworkCore` / `UseS3`), not as the primary public construction path for hosts. Provider types may remain resolvable for advanced hosts, but public constructors of File/SQLite/EF/S3 checkpointers MUST NOT be part of the supported host surface (internal or equivalent).
+Product documentation and DI fluent builders MUST treat File, EF Core, S3, and Postgres checkpointers as configured through the checkpoint builder (`UseFile` / `UseEntityFrameworkCore` / `UseS3` / `UsePostgres`), not as the primary public construction path for hosts. Provider types may remain resolvable for advanced hosts, but public constructors of File/EF/S3/Postgres checkpointers MUST NOT be part of the supported host surface (internal or equivalent).
 
 #### Scenario: DI UseFile registration
 - **WHEN** the host configures checkpoints with UseFile and a root path
