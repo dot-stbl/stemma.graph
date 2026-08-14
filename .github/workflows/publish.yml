@@ -125,15 +125,20 @@ jobs:
 
       # Optional: rebuild docs.stbl.space after docs.tgz is on the release.
       # Secret DOCS_DISPATCH_TOKEN = PAT/fine-grained with repo scope on
-      # dot-stbl/vironima.internal (contents:write not required; only actions
-      # dispatch). If unset, skip — docs CI still runs on lock file bumps.
+      # dot-stbl/vironima.internal. If unset, skip — docs CI still runs on
+      # lock file bumps. Note: secrets cannot be used in `if:` expressions
+      # (Actions rejects the workflow); gate inside the step instead.
       - name: dispatch docs site rebuild
-        if: github.event_name == 'push' && secrets.DOCS_DISPATCH_TOKEN != ''
+        if: github.event_name == 'push'
         env:
-          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+          DOCS_DISPATCH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
         run: |
           set -euo pipefail
-          gh api repos/dot-stbl/vironima.internal/dispatches \
+          if [ -z "${DOCS_DISPATCH_TOKEN}" ]; then
+            echo "DOCS_DISPATCH_TOKEN not set — skip docs site dispatch"
+            exit 0
+          fi
+          GH_TOKEN="${DOCS_DISPATCH_TOKEN}" gh api repos/dot-stbl/vironima.internal/dispatches \
             -f event_type=product-docs-published \
             -f "client_payload[product]=voluta" \
             -f "client_payload[tag]=${GITHUB_REF_NAME}" \
