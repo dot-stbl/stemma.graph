@@ -1,0 +1,297 @@
+---
+title: Observability
+description: Traces, metrics, error codes, and how hosts log Voluta — what ships in-process vs host-owned.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Observability
+  order: 18
+  group: Concepts
+---
+
+Voluta’s runtime is designed for **ops-friendly signals** without dragging an
+OpenTelemetry SDK into the AOT core. Core always creates BCL instruments;
+hosts opt into export via `Voluta.OpenTelemetry`.
+
+**Short answer on logs:** the library does **not** write MEL / `ILogger`
+messages and does **not** define logging categories. It exposes **stable error
+codes** + **MEL EventIds** so *your* host can log exceptions consistently.
+
+## Layers
+
+| Layer | Package | What you get |
+|-------|---------|--------------|
+| Instruments (always on) | `Voluta` | `ActivitySource` + `Meter` named `"Voluta"` |
+| OTel wiring | `Voluta.OpenTelemetry` | `AddVolutaInstrumentation()` on tracer + meter providers |
+| Error catalog | `Voluta.Abstractions` | `VolutaErrorCodes` (dot.case strings) |
+| Log EventIds | `Voluta` | `VolutaEventIds` + `VolutaExceptionLogging.GetEventId(...)` |
+| Host logs | *your app* | `ILogger` categories you choose; map exceptions via EventId |
+
+```text
+Node / superstep / checkpoint
+        │
+        ├─► ActivitySource "Voluta"  ──► (optional) OTel traces
+        ├─► Meter "Voluta"           ──► (optional) OTel metrics
+        └─► throw GraphException / CheckpointStoreException
+                    │
+                    └─► host: GetEventId(ex) + logger.LogError(eventId, ex, ...)
+```
+
+## Source name
+
+| | Value |
+|--|--------|
+| `ActivitySource` name | `Voluta` (`VolutaDiagnostics.SourceName`) |
+| `Meter` name | `Voluta` (same) |
+
+Subscribe with:
+
+```csharp
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+using Voluta.OpenTelemetry;
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddVolutaInstrumentation()   // AddSource("Voluta")
+        .AddOtlpExporter())
+    .WithMetrics(metrics => metrics
+        .AddVolutaInstrumentation()   // AddMeter("Voluta")
+        .AddOtlpExporter());
+```
+
+Without the OTel package, listeners can still attach to BCL
+`ActivitySource` / `Meter` by name `"Voluta"`.
+
+---
+
+## Traces (activities)
+
+Created only when a listener is registered (BCL default). Spans are short-lived
+and **must not** cross `yield return` in async iterators (engine disposes
+scopes before streaming yields).
+
+### Activity names
+
+| Name | When | Typical parent |
+|------|------|----------------|
+| `voluta.superstep` | One Pregel superstep body (execute ready set → apply → checkpoint) | root / host request |
+| `voluta.node.execute` | Single node/task handler invocation | `voluta.superstep` |
+| `voluta.checkpoint.put` | Checkpointer `PutAsync` (InMemory emits today; durable providers may follow the same name) | superstep / host |
+| `voluta.checkpoint.get` | Checkpointer `GetAsync` (reserved / provider) | host / resume |
+| `voluta.checkpoint.list` | Checkpointer `ListAsync` (reserved / provider) | host / time-travel |
+
+Constants: `VolutaDiagnostics.*ActivityName`.
+
+### Activity tags (bounded cardinality)
+
+| Tag key | Constant | Values / notes |
+|---------|----------|----------------|
+| `node.name` | `TagNodeName` | Topology node name (bounded by graph) |
+| `run.status` | `TagRunStatus` | Checkpoint / terminal status label when set |
+| `error.type` | `TagErrorType` | Exception type full name on failure |
+| `provider.name` | `TagProviderName` | e.g. checkpointer provider label when set |
+
+**Never** tag with raw `thread.id`, free-text payloads, or user content
+(unbounded cardinality / PII).
+
+On fault, the engine sets activity status **Error** and `error.type`.
+
+### What is *not* a span
+
+- Stream events (`StreamEvent`) — product observation for clients/UI, not OTel.
+- Host HTTP / worker spans — compose outside Voluta (`AddAspNetCoreInstrumentation`, etc.).
+
+---
+
+## Metrics
+
+All instruments live on meter `"Voluta"`. Units follow OTel style: duration in
+**ms** on the instrument, not in the name.
+
+### Histograms
+
+| Metric name | Unit | Instrument | Meaning |
+|-------------|------|------------|---------|
+| `voluta.superstep.duration` | `ms` | `SuperstepDuration` | Wall time of one superstep body |
+| `voluta.node.duration` | `ms` | `NodeDuration` | Wall time of one node execute |
+
+Recorded via `ActivityScope` dispose (same tags as the span when set).
+
+### Counters
+
+| Metric name | Unit | Instrument | Meaning |
+|-------------|------|------------|---------|
+| `voluta.interrupt.count` | `{interrupt}` | `InterruptCount` | Node returned `NodeResult.Interrupt` |
+| `voluta.checkpoint.put.count` | `{operation}` | `CheckpointPutCount` | Checkpoint put operations |
+| `voluta.checkpoint.get.count` | `{operation}` | `CheckpointGetCount` | Checkpoint get operations |
+| `voluta.checkpoint.list.count` | `{operation}` | `CheckpointListCount` | Checkpoint list operations |
+| `voluta.stream.dropped` | `{event}` | `StreamDropped` | Live Custom/Messages events dropped under backpressure |
+
+### Metric tags
+
+Same keys as traces where applicable:
+
+| Tag | Used on |
+|-----|---------|
+| `node.name` | node duration, interrupt count, stream dropped |
+| `run.status` | when set on superstep/checkpoint paths |
+| `error.type` | failed operations |
+| `provider.name` | checkpoint provider metrics when set |
+| `stream.kind` | `voluta.stream.dropped` only — `custom` or `messages` |
+
+### Stream backpressure
+
+Live Custom/Messages use a **bounded** in-superstep buffer (capacity **256**).
+When full, `ChannelStreamWriter` drops the event and increments
+`voluta.stream.dropped` with `stream.kind`. The run still completes; hosts that
+need every token should drain faster or reduce emit rate.
+
+---
+
+## Logs — what exists and what does not
+
+### Runtime does **not** log
+
+There is **no** `ILogger<T>` usage inside `Voluta` / `Voluta.Abstractions` graph
+execution. No MEL categories such as `Voluta.Runtime` or `Voluta.Checkpoint`.
+
+That is intentional: logging policy (level, redaction, sinks) belongs to the
+host; the library stays free of host logging abstractions on the hot path.
+
+### What you use instead
+
+1. **Traces + metrics** (above) for continuous ops.
+2. **Exceptions with stable codes** for failures.
+3. **`VolutaEventIds`** so host logs share numeric/name filters with the code catalog.
+
+```csharp
+using Microsoft.Extensions.Logging;
+using Voluta.Diagnostics;
+using Voluta.Exceptions;
+
+try
+{
+    await graph.InvokeAsync(input, options, cancellationToken);
+}
+catch (GraphException exception)
+{
+    var eventId = VolutaExceptionLogging.GetEventId(exception);
+    logger.LogError(
+        eventId,
+        exception,
+        "Voluta graph failed with {ErrorCode}",
+        exception.Code);
+}
+```
+
+Same helper overloads exist for `CheckpointStoreException` and raw `string code`.
+
+Unknown codes resolve to fallback **EventId 2999** with `Name` = the raw code
+(or `voluta.unknown` if empty).
+
+### Suggested host categories (optional)
+
+If you want categories, define them **in the host** (not in Voluta):
+
+| Suggested category | Use |
+|--------------------|-----|
+| `Voluta.Host` / your app name | Invoke / resume / worker wake |
+| `Voluta.Host.Hitl` | Approve / reject paths |
+| `Voluta.Host.Checkpoint` | Provider configuration, migrations |
+
+Filter production logs by **EventId.Name** (`graph.run_failed`, …) or numeric
+id ranges below — not by library categories.
+
+---
+
+## Error codes ↔ EventIds
+
+`EventId.Name` **equals** the stable code string. Numeric ids are stable for
+log pipelines.
+
+### Graph / compile / run — `2xxx`
+
+| Code | EventId # | Constant |
+|------|-----------|----------|
+| `graph.invalid_channel` | 2000 | `GraphInvalidChannel` |
+| `graph.duplicate_channel` | 2001 | `GraphDuplicateChannel` |
+| `graph.invalid_node` | 2002 | `GraphInvalidNode` |
+| `graph.duplicate_node` | 2003 | `GraphDuplicateNode` |
+| `graph.invalid_edge` | 2004 | `GraphInvalidEdge` |
+| `graph.duplicate_conditional` | 2005 | `GraphDuplicateConditional` |
+| `graph.no_nodes` | 2006 | `GraphNoNodes` |
+| `graph.missing_start` | 2007 | `GraphMissingStart` |
+| `graph.unknown_endpoint` | 2008 | `GraphUnknownEndpoint` |
+| `graph.out_of_steps` | 2020 | `GraphOutOfSteps` |
+| `graph.run_failed` | 2021 | `GraphRunFailed` |
+| `graph.invalid_resume` | 2022 | `GraphInvalidResume` |
+| `graph.invalid_continue` | 2023 | `GraphInvalidContinue` |
+| `graph.thread_not_found` | 2024 | `GraphThreadNotFound` |
+| `graph.step_not_found` | 2025 | `GraphStepNotFound` |
+| `channel.concurrent_update` | 2040 | `ChannelConcurrentUpdate` |
+
+### Checkpoint store — `21xx`
+
+| Code | EventId # | Constant |
+|------|-----------|----------|
+| `checkpoint.put_failed` | 2100 | `CheckpointPutFailed` |
+| `checkpoint.get_failed` | 2101 | `CheckpointGetFailed` |
+| `checkpoint.list_failed` | 2102 | `CheckpointListFailed` |
+| `checkpoint.corrupt_payload` | 2103 | `CheckpointCorruptPayload` |
+| `checkpoint.unsupported_format_version` | 2104 | `CheckpointUnsupportedFormatVersion` |
+| `checkpoint.unsupported_value_type` | 2105 | `CheckpointUnsupportedValueType` |
+
+### Command / HITL — `23xx`
+
+| Code | EventId # | Constant |
+|------|-----------|----------|
+| `command.invalid_kind` | 2300 | `CommandInvalidKind` |
+| `command.invalid_payload` | 2301 | `CommandInvalidPayload` |
+
+### Fallback
+
+| | |
+|--|--|
+| Unknown / empty code | **2999** (`voluta.unknown` or raw code as name) |
+
+Full list: `VolutaErrorCodes.All` / `VolutaEventIds.All`.
+
+**Messages** on exceptions must stay free of secrets and PII; put safe detail in
+structured log properties if the host needs more context.
+
+---
+
+## Product stream vs telemetry
+
+Do not confuse:
+
+| | Product stream | OTel / BCL telemetry |
+|--|----------------|----------------------|
+| API | `IAsyncEnumerable<StreamEvent>` | `Activity` / metrics |
+| Modes | Values / Updates / Events / Messages | N/A |
+| Custom progress | `GraphContext.Stream` → Custom / Messages | optional drop metric only |
+| Audience | UI / SSE / agent host | SRE / dashboards |
+
+---
+
+## Quick checklist for hosts
+
+1. Call `AddVolutaInstrumentation()` on both tracing and metrics (or attach BCL listeners).
+2. Export OTLP (or Prometheus scrape of OTel metrics) as you do for the rest of the app.
+3. On catch of `GraphException` / `CheckpointStoreException`, log with
+   `VolutaExceptionLogging.GetEventId(ex)` and property `ErrorCode = ex.Code`.
+4. Alert examples: rising `voluta.stream.dropped`, spike `voluta.interrupt.count`,
+   high `voluta.superstep.duration` p99, any `graph.run_failed` / checkpoint fail EventIds.
+5. Do not expect library log lines under a `Voluta.*` category — there are none.
+
+## Source of truth in code
+
+| Concern | Type |
+|---------|------|
+| Names + instruments | `Voluta.Diagnostics.VolutaDiagnostics` |
+| Activity helper | `Voluta.Diagnostics.ActivityScope` (internal) |
+| EventIds | `Voluta.Diagnostics.VolutaEventIds` |
+| Host mapping | `Voluta.Diagnostics.VolutaExceptionLogging` |
+| Codes | `Voluta.Abstractions.Diagnostics.VolutaErrorCodes` |
+| OTel extensions | `Voluta.OpenTelemetry` `AddVolutaInstrumentation` |
