@@ -20,7 +20,7 @@
 | EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
 | PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
-| NuGet 0.1 tag | ✅ `v0.1.0` tagged · [release](https://github.com/dot-stbl/voluta/releases/tag/v0.1.0) · nuget.org publish optional |
+| NuGet 0.1 tag | ✅ `v0.1.0` on nuget.org · [release](https://github.com/dot-stbl/voluta/releases/tag/v0.1.0) · `0.1.1` README/pack fix |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 | OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
