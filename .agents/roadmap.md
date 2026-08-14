@@ -20,7 +20,7 @@
 | EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
 | PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
-| NuGet 0.1 tag | 🔜 `v0.1.0` after this PR (Unshipped → Shipped) |
+| NuGet 0.1 tag | ✅ `v0.1.0` tagged · [release](https://github.com/dot-stbl/voluta/releases/tag/v0.1.0) · nuget.org publish optional |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 | OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
@@ -41,7 +41,7 @@
 
 ## Ближайшие шаги
 
-1. Tag **`v0.1.0`** + nuget.org publish (surface frozen in PublicAPI.Shipped)
+1. nuget.org publish for `0.1.0` packages (optional — tag + GitHub Release done)
 2. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
 3. Docs site (D-011)
 
