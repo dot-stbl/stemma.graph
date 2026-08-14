@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
     <ProjectReference Include="..\..\src\Voluta.Checkpoints.File\Voluta.Checkpoints.File.csproj" />
     <ProjectReference Include="..\..\src\Voluta.Testing\Voluta.Testing.csproj" />
   </ItemGroup>

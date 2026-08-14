@@ -12,12 +12,9 @@
   <a href="https://github.com/dot-stbl/voluta/issues/1"><img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-orange?style=flat-square" /></a>
 </p>
 
-Agents that **loop until they're done** — and survive the process that ran them. Voluta is a
-low-level orchestration runtime for .NET: you describe a graph of nodes and edges, some of them
-cyclic, and it executes the graph in Pregel-style supersteps with typed state, durable
-checkpoints, streaming, and human-in-the-loop interrupts.
-
-Our design bets:
+**Stateful agent graphs for .NET** — cycles, typed channels, checkpoints, streaming, and
+human-in-the-loop. You describe nodes and edges; Voluta runs them in Pregel-style supersteps and
+can pause a thread for days, then resume in another process.
 
 ```text
 → cycles not DAGs
@@ -36,85 +33,85 @@ Our design bets:
 
 ## See it in action
 
-A ReAct agent that calls tools, loops back to think again, and stops on its own. This is the real
-output of `dotnet run --project samples/01-HelloWorld` (middle rounds trimmed):
+A ReAct-style loop (agent ⇄ tools) with no LLM — pure simulation so you can run it offline.
+Real output of `dotnet run --project samples/HelloWorld`:
 
 ```text
-Voluta sample 01 — simulated ReAct (agent ⇄ tools)
-Thread: react-sample-1
+  ◆  voluta · HelloWorld
 
-[agent] round 0: requesting tools
-stream step=1 kind=Updates nodes=[agent]
-  write status = tools
-  write messages = agent: call get_weather (round 1)
-[tools] executing simulated tool (round 1)
-stream step=2 kind=Updates nodes=[tools]
-  write tool_rounds = 1
-  write messages = tools: observation — temp=12C (round 1)
-  write status = agent
-…
-[agent] enough tool data — finishing
-stream step=5 kind=Updates nodes=[agent]
-  write status = done
-  write messages = agent: final answer — cloudy, 12°C in Oslo
-stream step=5 kind=End nodes=[-]
+  simulated ReAct · agent ⇄ tools · no LLM
+  thread   react-sample-1
+  stream   Updates
+  ────────────────────────────────────────
+  [agent] round 0 · requesting tools
+  · step 1  Updates  [agent]
+      status ← tools
+      messages ← agent: call get_weather (round 1)
+  [tools] executing simulated tool · round 1
+  · step 2  Updates  [tools]
+      tool_rounds ← 1
+      messages ← tools: observation — temp=12C (round 1)
+      status ← agent
+  …
+  [agent] enough tool data · finishing
+  · step 5  Updates  [agent]
+      status ← done
+      messages ← agent: final answer — cloudy, 12°C in Oslo
+  · step 5  End  [—]
 
-Final status: Done
-Messages:
-  - user: what's the weather in Oslo?
-  - agent: call get_weather (round 1)
-  - tools: observation — temp=12C (round 1)
-  - agent: call get_weather (round 2)
-  - tools: observation — temp=12C (round 2)
-  - agent: final answer — cloudy, 12°C in Oslo
+  ▸ result
+  status      Done
+  ✓ done
 ```
 
-Nothing above is a framework convention you have to learn. `messages` accumulates because it was
-declared `Append`; `status` replaces because it was declared `LastValue`; the loop exists because
-one edge is conditional:
+The loop exists because one edge is **conditional**. `messages` accumulates (`Append`);
+`status` replaces (`LastValue`):
 
 ```csharp
 var graph = new StateGraph()
     .AddChannel("messages", ChannelKind.Append)
     .AddChannel("status", ChannelKind.LastValue)
+    .AddChannel("tool_rounds", ChannelKind.LastValue)
     .AddNode("agent", AgentNodeAsync)
     .AddNode("tools", ToolsNodeAsync)
     .AddEdge(GraphConstants.Start, "agent")
-    .AddConditionalEdges(                                  // ← the cycle
+    .AddConditionalEdges(
         "agent",
         static context => context.Read<string>("status") == "tools" ? "tools" : GraphConstants.End)
     .AddEdge("tools", "agent")
     .Compile(checkpointer, new CompileOptions { RecursionLimit = 32 });
+
+await foreach (var item in graph.StreamAsync(
+                   input,
+                   new RunOptions { ThreadId = "react-1", StreamMode = StreamMode.Updates }))
+{
+    // item.Kind, item.NodeNames, item.Writes
+}
 ```
 
 <details>
-<summary><strong>Pausing for a human, then resuming — days later, in another process</strong></summary>
+<summary><strong>Human-in-the-loop — interrupt, then resume (even later, another process)</strong></summary>
 
-A node returns an interrupt instead of writes. The run stops, the checkpoint holds the payload, and
-`ResumeAsync` picks it up with a decision. Real output of `samples/02-InterruptResume`:
+A node returns `NodeResult.Interrupt` instead of writes. The run stops, the checkpoint holds the
+payload, and `ResumeInvokeAsync` continues with a `Command`. Real output of
+`samples/InterruptResume`:
 
 ```text
-=== Invoke (expect interrupt) ===
-stream step=0 kind=Start nodes=[-]
-[gate] interrupting for human approval
-stream step=1 kind=Interrupt nodes=[gate]
-  payload = { action = transfer, amount = 50, currency = USD }
+  ▸ invoke · expect interrupt
 
-Checkpoint status after invoke: Interrupted
-Interrupt payload: { action = transfer, amount = 50, currency = USD }
+  · step 0  Start  [—]
+  [gate] interrupting for human approval
+  · step 1  Interrupt  [gate]
+      payload ← { action = transfer, amount = 50, currency = USD }
+  checkpoint  Interrupted
 
-=== Resume with Command.Kind = approve ===
-stream step=1 kind=Start nodes=[-]
-[gate] resumed with payload=ok — approving
-stream step=2 kind=End nodes=[-]
+  ▸ resume · Command.Kind = approve
 
-Checkpoint status after resume: Done
-Messages:
-  - user: transfer $50
-  - gate: transfer approved
+  [gate] resumed · payload=ok · approving
+  · step 2  End  [—]
+  status      Done
+  ✓ done
 ```
-
-The node decides by looking at `context.ResumePayload` — no exceptions used for control flow:
 
 ```csharp
 static Task<NodeResult> GateNodeAsync(GraphContext context, CancellationToken cancellationToken)
@@ -128,18 +125,30 @@ static Task<NodeResult> GateNodeAsync(GraphContext context, CancellationToken ca
     return Task.FromResult<NodeResult>(
         NodeResult.Continue(new ChannelWrite("messages", "gate: transfer approved")));
 }
-```
 
-`ResumeAsync(threadId, command)` is a separate call against the same thread id, so the approval can
-arrive from an HTTP handler long after the original run ended — or from a different process.
+// first process
+var terminal = await graph.InvokeAsync(input, new RunOptions { ThreadId = "hitl-1" });
+// terminal.Kind == StreamEventKind.Interrupt
+
+// later — same or new process, same checkpointer root / store
+var done = await graph.ResumeInvokeAsync(
+    "hitl-1",
+    new Command
+    {
+        Kind = "approve",
+        Payload = "ok",
+        // optional: patch channels before the node re-runs
+        Values = new Dictionary<string, object?> { ["decision"] = "go" },
+    });
+```
 
 </details>
 
 <details>
-<summary><strong>Typed state instead of string keys</strong></summary>
+<summary><strong>Typed state with <code>[GraphState]</code> (source generator)</strong></summary>
 
-String channel names work, but you don't have to live with them. Annotate a partial class and the
-source generator emits the schema plus a partial update type:
+String channel names work. When you want compile-time names and updates that only write what you
+set:
 
 ```csharp
 [GraphState]
@@ -151,76 +160,164 @@ public partial class ReviewState
     [Channel(ChannelKind.LastValue)]
     public string? Verdict { get; set; }
 }
-```
 
-You get `ReviewState.CreateSchema()` and `ReviewState.ReviewStateUpdate`, where **unset properties
-emit no write at all** — an explicit `null` is a clear, not "unchanged":
-
-```csharp
 var graph = new StateGraph()
     .AddChannels(ReviewState.CreateSchema())
     .AddNode(
         "review",
         static (context, cancellationToken) => Task.FromResult<NodeResult>(
-            NodeResult.Continue(new ReviewState.ReviewStateUpdate { Verdict = "approved" }.ToWrites())))
+            NodeResult.Continue(
+                new ReviewState.ReviewStateUpdate { Verdict = "approved" }.ToWrites())))
     .AddEdge(GraphConstants.Start, "review")
     .AddEdge("review", GraphConstants.End)
     .Compile(new InMemoryCheckpointer());
 ```
 
-Interface-typed properties need `OptionalValue<IList<object?>>.Of(value)` — C# forbids user-defined
-conversions involving interfaces. The generator refuses to run on a non-partial class or one with
-no `[Channel]` properties, and tells you which.
+Unset properties emit **no** write. An explicit `null` is a clear. Interface-typed properties use
+`OptionalValue<T>.Of(value)`.
 
 </details>
 
 <details>
-<summary><strong>Testing a graph without fighting it</strong></summary>
+<summary><strong>Durable file checkpoint (survive process restart)</strong></summary>
 
-`Voluta.Testing` ships the doubles you'd otherwise write by hand:
+```csharp
+var checkpointer = new FileCheckpointer("/var/lib/voluta/threads"); // or any root path
+var graph = new StateGraph()
+    // … nodes …
+    .Compile(checkpointer);
 
-- `RecordingCheckpointer` — records every `Put` / `Get` / `List` on any inner checkpointer.
-- `FaultInjectingCheckpointer` — fails the *n*-th write, so you can assert the run survives it.
-- `CheckpointerConformance.RunAllAsync` — the suite every `ICheckpointer` must pass, interrupt
-  fields and pending writes included. Bring your own storage and run it.
-- `GraphFixtures.Linear()` / `.Cycle()` and `StreamCapture` — graphs and stream drains for tests.
+// process A
+await graph.InvokeAsync(input, new RunOptions { ThreadId = "order-9" });
+// → Interrupted
+
+// process B (new host, same root)
+var graph2 = /* recompile same topology */ .Compile(new FileCheckpointer("/var/lib/voluta/threads"));
+await graph2.ResumeInvokeAsync("order-9", new Command { Kind = "approve", Payload = "ok" });
+```
+
+Values serialize with `System.Text.Json` — prefer JSON-friendly types (strings, numbers, lists of
+primitives). For tests, `InMemoryCheckpointer` is enough; every storage implements
+`ICheckpointer` and can run `CheckpointerConformance.RunAllAsync`.
+
+</details>
+
+<details>
+<summary><strong>Fan-out with <code>Send</code> / subgraphs</strong></summary>
+
+```csharp
+// Map one item to many dynamic tasks (runtime-scheduled nodes)
+return NodeResult.ContinueWithSends(
+    new Send("worker", payload: orderLine1),
+    new Send("worker", payload: orderLine2));
+
+// Nest a compiled graph as a single node
+.AddNode("child", Subgraph.AsNode(childCompiledGraph))
+```
+
+`CompiledGraph.Describe()` returns topology (nodes, edges, channels) for the ops UI or docs.
+
+</details>
+
+<details>
+<summary><strong>Host with DI + ops console</strong></summary>
+
+```csharp
+// Program.cs
+builder.Services.AddVoluta(sp =>
+{
+    var checkpointer = sp.GetRequiredService<ICheckpointer>();
+    return new StateGraph()
+        // …
+        .Compile(checkpointer);
+});
+
+// Optional ops UI (ASP.NET)
+var session = new VolutaUiSession(graph, checkpointer);
+builder.Services.AddVolutaUI(session);
+app.MapVolutaUI(options => options.PathPrefix = "/voluta");
+// → http://localhost:5188/voluta  (see samples/UiHost)
+```
+
+</details>
+
+<details>
+<summary><strong>Testing without fighting the runtime</strong></summary>
+
+`Voluta.Testing` ships doubles you’d otherwise write by hand:
+
+| Helper | Role |
+|--------|------|
+| `RecordingCheckpointer` | Records every Put/Get/List |
+| `FaultInjectingCheckpointer` | Fails the *n*-th write |
+| `CheckpointerConformance.RunAllAsync` | Suite every `ICheckpointer` must pass |
+| `GraphFixtures.Linear()` / `.Cycle()` / `.Interrupt()` | Ready graphs |
+| `StreamCapture` | Drain a stream in tests |
+
+Unit tests cover linear/conditional/cycle, fan-out, Send, HITL (`Command.Values`, resume payload),
+stream modes (Updates / Events), Append flatten vs string, LastValue sequential overwrite, and
+File rehydrate + resume.
+
+```bash
+dotnet test voluta.slnx
+```
+
+</details>
+
+<details>
+<summary><strong>Sample: Hybrid-style marketing desk (mock tools)</strong></summary>
+
+Not a product agent — a demo that **exercises the graph** against Hybrid console.platform nouns
+(Campaign, SSP, DirectDeal, AdLibrary):
+
+```bash
+# terminal 1
+dotnet run --project samples/MockAdMcp          # http://localhost:5190
+
+# terminal 2
+dotnet run --project samples/MarketingAgent -- --offline
+```
+
+Flow: `brief → creative → setup (create RK → SSP → banner → Active) → review`. Tools are a
+simplified HTTP tools surface for demos — not the official MCP SDK and not live Hybrid API.
 
 </details>
 
 ## Why Voluta
 
-- **Cycles are the point** — an agent that reconsiders is a loop, not a pipeline. Conditional edges
-  plus a `RecursionLimit` give you loops that terminate on purpose instead of by accident.
-- **The run outlives the process** — every superstep boundary is a checkpoint. A thread can be
-  interrupted, inspected, resumed, or replayed from storage; `ICheckpointer` is the only seam.
-- **Multi-writer state is defined, not hoped for** — when two nodes in the same superstep write the
-  same channel, the reducer decides the outcome. `Append` accumulates, `LastValue` replaces.
-- **The core stays small** — runtime and abstractions are `IsAotCompatible` with zero third-party
-  dependencies. No LLM SDK, no DI container, no logging framework in the hot path.
+- **Cycles are the point** — think → act → observe is a loop. Conditional edges + `RecursionLimit`
+  make loops terminate on purpose.
+- **The run outlives the process** — every superstep can checkpoint. Interrupt, inspect, resume, or
+  replay from storage; `ICheckpointer` is the only seam.
+- **Multi-writer state is defined** — same-superstep writes go through reducers (`Append` /
+  `LastValue`). Concurrent `LastValue` writers fail fast instead of last-write-wins races.
+- **Core stays small** — `Voluta` + Abstractions + DI are `IsAotCompatible`, zero third-party deps
+  on the hot path. No LLM SDK, no logging framework required to run a graph.
+
+Voluta is **orchestration**, not a Claude Code / OpenCode clone. You bring tools, MCP, prompts, and
+policy; Voluta runs the stateful graph.
 
 ## Quick Start
 
-**Requires the .NET 10 SDK (10.0.100 or newer).** Check with `dotnet --version`.
-
-Nothing is published yet, so start from source:
+**Requires .NET 10 SDK** (`dotnet --version` ≥ 10.0.100).
 
 ```bash
 git clone https://github.com/dot-stbl/voluta.git
 cd voluta
 dotnet build voluta.slnx
+dotnet run --project samples/HelloWorld
+dotnet run --project samples/InterruptResume
 ```
 
-Run a sample to see a live graph:
+Reference from your app:
 
 ```bash
-dotnet run --project samples/01-HelloWorld
+dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj
 ```
 
-Then point your own project at the runtime with
-`dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj`.
+### Minimal complete program
 
-Here is a complete graph — a writer and a critic that loop until the score clears the bar. It
-prints `End after 4 supersteps`:
+Writer + critic loop until score ≥ 8 — prints `End after N supersteps`:
 
 ```csharp
 using Voluta;
@@ -233,8 +330,8 @@ using Voluta.Graph.Builder;
 using Voluta.Graph.Options;
 
 var graph = new StateGraph()
-    .AddChannel("draft", ChannelKind.LastValue)   // writes replace
-    .AddChannel("notes", ChannelKind.Append)      // writes accumulate
+    .AddChannel("draft", ChannelKind.LastValue)
+    .AddChannel("notes", ChannelKind.Append)
     .AddChannel("score", ChannelKind.LastValue)
     .AddNode("write", WriteAsync)
     .AddNode("critique", CritiqueAsync)
@@ -270,10 +367,18 @@ static Task<NodeResult> CritiqueAsync(GraphContext context, CancellationToken ca
 }
 ```
 
-Swap `InvokeAsync` for `StreamAsync` to observe the run as it happens
-(`StreamMode.Values` / `Updates` / `Events`), and pass a real `ICheckpointer` when you want the
-thread to outlive the process. Under a host, `services.AddVoluta(provider => …)` compiles the
-graph once and registers it as a singleton.
+Swap `InvokeAsync` for `StreamAsync` (`StreamMode.Values` / `Updates` / `Events`). Under a host:
+`services.AddVoluta(provider => …)`.
+
+### Chat helpers (optional)
+
+```csharp
+// Voluta.MicrosoftAi — thin IChatClient wrapper for nodes
+var text = await ChatClientNode.CompleteTextAsync(chatClient, messages, cancellationToken: ct);
+// or write assistant text into a channel:
+return await ChatClientNode.CompleteToChannelAsync(
+    chatClient, "answer", messages, cancellationToken: ct);
+```
 
 ## Durable checkpoints
 
@@ -353,54 +458,49 @@ Every provider is exercised by `CheckpointerConformance.RunAllAsync` in `Voluta.
 
 ## How a superstep works
 
-One tick of the engine, in order: collect every node made ready by the previous tick, run them
-concurrently, **barrier**, merge their writes through the channel reducers, persist a checkpoint,
-then evaluate edges to decide who runs next. Two consequences worth internalizing:
+One tick, in order: collect ready nodes → run them **concurrently** → **barrier** → merge writes
+through channel reducers → checkpoint → evaluate edges.
 
-- Nodes in the same superstep never see each other's writes — they see the state as of the barrier.
-  That is what makes concurrent nodes deterministic to reason about.
-- A conditional edge is evaluated *after* the merge, on committed state, so routing decisions can't
-  race with the writes they depend on.
+- Nodes in the same superstep **never** see each other’s writes (barrier isolation).
+- Conditional edges run **after** the merge, on committed state.
 
-Behavior contracts live in
-[`openspec/specs/`](https://github.com/dot-stbl/voluta/tree/main/openspec/specs)
-(12 capabilities). Planning history:
-[`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](https://github.com/dot-stbl/voluta/tree/main/openspec/changes/archive/2026-08-14-architecture-runtime-core).
+Contracts: [`openspec/specs/`](openspec/specs/) (12 capabilities).
 
 ## How it compares
 
-**vs. [LangGraph](https://github.com/langchain-ai/langgraph)** (Python, MIT) — The origin of this
-execution model and still the richest ecosystem around it. Voluta borrows the ideas
-(supersteps, channels, checkpoint-first persistence) and rebuilds the surface on .NET generics,
-typed reducers, and `IAsyncEnumerable` — no `TypedDict` reflection. Not a port; a peer.
+**vs. [LangGraph](https://github.com/langchain-ai/langgraph)** (Python) — Origin of the execution
+model (supersteps, channels, checkpoint-first). Voluta rebuilds the surface on .NET generics, typed
+reducers, and `IAsyncEnumerable`. Not a port; a peer.
 
-**vs. Microsoft Agent Framework** — MAF is the better answer for multi-agent conversations and
-function calling, and it has Microsoft behind it. It doesn't give you cyclic graphs with durable
-per-thread state. These compose: run MAF agents *inside* Voluta nodes.
+**vs. Microsoft Agent Framework** — Better for multi-agent chat and function calling. It does not
+give cyclic graphs with durable per-thread state. Compose: run MAF agents *inside* Voluta nodes.
 
-**vs. Durable Functions / Durable Task** — Battle-tested durability with far more storage
-providers, and the right tool for business workflows. Its programming model is orchestrator code
-with replay semantics; Voluta's is a graph with explicit state channels, which fits an
-agent's think-act-observe loop more directly and keeps the loop bound visible.
+**vs. Durable Functions / Durable Task** — Stronger storage ecosystem for business workflows.
+Orchestrator + replay vs graph + explicit channels — Voluta fits think-act-observe loops more
+directly.
 
-**vs. rolling your own `while` loop** — Works until you need to answer "what was the state at
-step 7?", "how do I resume after the pod restarted?", or "two nodes wrote the same field, now
-what?". Those three questions are the entire library.
+**vs. a hand-rolled `while`** — Works until “state at step 7?”, “resume after restart?”, or “two
+nodes wrote the same field”. Those three questions *are* the library.
 
 ## Packages
 
-| Package | Role | Status |
-|---|---|---|
-| `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | on `main` |
-| `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | on `main` |
-| `Voluta.DependencyInjection` | `AddVoluta` + `AddVolutaCheckpoints` | on `main` |
-| `Voluta.Generators` | `[GraphState]` source generator | on `main` |
-| `Voluta.Testing` | Test doubles + checkpointer conformance suite | on `main` |
-| `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | on `main` |
-| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | on `main` |
-| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | on `main` |
-| `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
-| `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | on `main` |
+How-to for checkpoints (DI `Use*` + host DbContext) is under
+[Durable checkpoints](#durable-checkpoints). Behavior contracts:
+[`openspec/specs/checkpoint/`](openspec/specs/checkpoint/). Until NuGet publishes,
+browse source under [`src/`](src/) (each package is one folder; no per-package README yet).
+
+| Package | Role | Source |
+|---------|------|--------|
+| `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | [`src/Voluta.Abstractions`](src/Voluta.Abstractions/) |
+| `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | [`src/Voluta`](src/Voluta/) |
+| `Voluta.DependencyInjection` | `AddVoluta` + `AddVolutaCheckpoints` | [`src/Voluta.DependencyInjection`](src/Voluta.DependencyInjection/) |
+| `Voluta.Generators` | `[GraphState]` source generator | [`src/Voluta.Generators`](src/Voluta.Generators/) |
+| `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/Voluta.Testing`](src/Voluta.Testing/) |
+| `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
+| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
+| `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | [`src/Voluta.MicrosoftAi`](src/Voluta.MicrosoftAi/) |
+| `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
@@ -410,12 +510,27 @@ claim AOT.
 ## Samples
 
 | Sample | What it shows |
-|---|---|
-| [`01-HelloWorld`](https://github.com/dot-stbl/voluta/tree/main/samples/01-HelloWorld) | Simulated ReAct loop (agent ⇄ tools), streaming updates |
-| [`02-InterruptResume`](https://github.com/dot-stbl/voluta/tree/main/samples/02-InterruptResume) | HITL interrupt and `Command` resume |
-| [`03-AotSmoke`](https://github.com/dot-stbl/voluta/tree/main/samples/03-AotSmoke) | Native AOT publish smoke test |
-| [`04-ReviewBot`](https://github.com/dot-stbl/voluta/tree/main/samples/04-ReviewBot) | CLI review harness: plan → sandboxed tools → review |
-| [`05-DocQ`](https://github.com/dot-stbl/voluta/tree/main/samples/05-DocQ) | Docs Q&A over a sandboxed folder |
+|--------|----------------|
+| [`HelloWorld`](samples/HelloWorld/) | Cyclic agent ⇄ tools, `StreamMode.Updates` |
+| [`InterruptResume`](samples/InterruptResume/) | HITL interrupt + `Command` resume |
+| [`AotSmoke`](samples/AotSmoke/) | Native AOT publish smoke |
+| [`ReviewBot`](samples/ReviewBot/) | CLI: plan → sandbox tools → review (+ optional HITL) |
+| [`DocQ`](samples/DocQ/) | Docs Q&A over a sandboxed folder |
+| [`MarketingAgent`](samples/MarketingAgent/) | Hybrid desk setup over mock tools |
+| [`MockAdMcp`](samples/MockAdMcp/) | Hybrid-shaped tool server (Campaign / SSP / deal / AdLibrary) |
+| [`UiHost`](samples/UiHost/) | ASP.NET host for `MapVolutaUI` |
+
+Index: [`samples/README.md`](samples/README.md).
+
+```bash
+dotnet run --project samples/HelloWorld
+dotnet run --project samples/InterruptResume
+dotnet run --project samples/ReviewBot -- --offline --root .
+dotnet run --project samples/DocQ -- --offline --root . --question "What is Voluta?"
+dotnet run --project samples/MockAdMcp          # :5190
+dotnet run --project samples/MarketingAgent -- --offline
+dotnet run --project samples/UiHost             # http://localhost:5188/voluta
+```
 
 ## What isn't here yet
 
@@ -426,42 +541,39 @@ Stated plainly so you can judge the fit:
 - **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE — not multi-host
   thread discovery or auth.
 - **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
+- **No first-party MCP client/server** — samples use a demo HTTP tools surface; real MCP is
+  `ModelContextProtocol` (+ AspNetCore) on top of Voluta.
+- **No built-in coding agent** (bash/edit/permissions) — Voluta is the graph runtime, not Claude Code.
 
 ## Development
 
 ```bash
 dotnet build voluta.slnx                      # 0 warnings, 0 errors — the gate
-dotnet test voluta.slnx                       # xUnit + Shouldly + NSubstitute
-dotnet format voluta.slnx --severity hidden   # style drift check
+dotnet test  voluta.slnx                      # xUnit + Shouldly + NSubstitute
+dotnet format voluta.slnx --severity hidden   # style drift
 dotnet run -c Release --project benchmarks/Voluta.Benchmarks
 ```
 
-`TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are on for every project, so a clean build
-*is* the style review. Benchmarks (`LinearInvoke`, `CycleFiveTicks`, `ParallelAppend`,
-`CheckpointPutGet`) are not gated on PR CI — see
-[#10](https://github.com/dot-stbl/voluta/issues/10).
+`TreatWarningsAsErrors` + `EnforceCodeStyleInBuild` are on. Specs:
+[`openspec/specs/`](openspec/specs/). Agent handbook: [`CLAUDE.md`](CLAUDE.md).
 
 ## Contributing
 
-Small fixes go straight to a PR. For anything non-trivial, open an issue first so we can agree on
-the shape before you write it — the runtime's contracts are still moving.
+Small fixes → PR. Non-trivial changes → issue first (contracts still move).
 
 ```bash
 git config core.hooksPath .githooks   # once per clone
 ```
 
-The `commit-msg` hook strips AI attribution trailers, so don't hand-add them; commits follow
-`[voluta](feat/scope): subject`. AI-generated code is welcome when it's tested and you understand
-it. Full setup, conventions, and the PR checklist:
-[CONTRIBUTING.md](https://github.com/dot-stbl/voluta/blob/main/CONTRIBUTING.md).
+Commit shape: `[voluta](feat/scope): subject`. Details:
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Inspiration
 
-The execution model comes from [LangGraph](https://github.com/langchain-ai/langgraph) (MIT) —
-Pregel-style supersteps, channel/reducer state, checkpoint-first persistence. The API diverges
-substantially, and any place where Voluta is wrong about this design space is our own fault,
-not theirs.
+Execution model from [LangGraph](https://github.com/langchain-ai/langgraph) (MIT) — supersteps,
+channel/reducer state, checkpoint-first persistence. The API diverges substantially; design
+mistakes are ours, not theirs.
 
 ## License
 
-MIT — see [LICENSE](https://github.com/dot-stbl/voluta/blob/main/LICENSE).
+MIT — see [LICENSE](LICENSE).

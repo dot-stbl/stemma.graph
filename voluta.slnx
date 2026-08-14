@@ -24,13 +24,15 @@
     <Project Path="src/Voluta.UI/Voluta.UI.csproj" />
   </Folder>
   <Folder Name="/samples/">
-    <Project Path="samples/01-HelloWorld/01-HelloWorld.csproj" />
-    <Project Path="samples/02-InterruptResume/02-InterruptResume.csproj" />
-    <Project Path="samples/03-AotSmoke/03-AotSmoke.csproj" />
     <Project Path="samples/Voluta.Samples.Shared/Voluta.Samples.Shared.csproj" />
-    <Project Path="samples/04-ReviewBot/04-ReviewBot.csproj" />
-    <Project Path="samples/05-DocQ/05-DocQ.csproj" />
-    <Project Path="samples/06-UiHost/06-UiHost.csproj" />
+    <Project Path="samples/HelloWorld/HelloWorld.csproj" />
+    <Project Path="samples/InterruptResume/InterruptResume.csproj" />
+    <Project Path="samples/AotSmoke/AotSmoke.csproj" />
+    <Project Path="samples/ReviewBot/ReviewBot.csproj" />
+    <Project Path="samples/DocQ/DocQ.csproj" />
+    <Project Path="samples/MarketingAgent/MarketingAgent.csproj" />
+    <Project Path="samples/MockAdMcp/MockAdMcp.csproj" />
+    <Project Path="samples/UiHost/UiHost.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Voluta.Benchmarks/Voluta.Benchmarks.csproj" />

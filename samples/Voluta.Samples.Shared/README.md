@@ -1,7 +1,8 @@
 # Voluta.Samples.Shared
 
-Helpers for CLI harness samples (04-ReviewBot, 05-DocQ):
+Helpers for CLI samples (HelloWorld, InterruptResume, ReviewBot, DocQ, MarketingAgent):
 
+- `CliUi` — terminal styling (banner, role tags, panels, stream events)
 - `SandboxFileSystem` — path-jail under a root
 - `IChatCompletionClient` / `OpenAiCompatibleChatClient` / `ScriptedChatClient`
 - `HarnessCli` — flags, env chat client, confirm

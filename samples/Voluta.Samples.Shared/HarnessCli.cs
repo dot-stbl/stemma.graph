@@ -24,18 +24,18 @@ public static class HarnessCli
     {
         if (offline)
         {
-            Console.WriteLine("[chat] offline ScriptedChatClient");
+            CliUi.Node("chat", "offline · ScriptedChatClient");
             return new ScriptedChatClient();
         }
 
         if (OpenAiCompatibleChatClient.TryCreateFromEnvironment(out var client, out var error) && client is not null)
         {
-            Console.WriteLine("[chat] OpenAI-compatible client from env");
+            CliUi.Node("chat", "OpenAI-compatible · from env");
             return client;
         }
 
-        Console.WriteLine($"[chat] {error}");
-        Console.WriteLine("[chat] falling back to ScriptedChatClient");
+        CliUi.Warn(error ?? "chat client unavailable");
+        CliUi.Node("chat", "falling back · ScriptedChatClient");
         return new ScriptedChatClient();
     }
 
@@ -51,7 +51,11 @@ public static class HarnessCli
 
     public static bool Confirm(string prompt)
     {
-        Console.Write($"{prompt} [y/N] ");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write($"  ? {prompt} ");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.Write("[y/N] ");
+        Console.ResetColor();
         var line = Console.ReadLine();
         return line is not null
                && (line.Equals("y", StringComparison.OrdinalIgnoreCase)
