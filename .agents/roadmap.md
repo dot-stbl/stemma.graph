@@ -22,6 +22,7 @@
 | PublicAPI owner review | 📝 decision draft — [docs/public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) (381 unshipped lines / 8 pkgs; P0 markers + P1 EF config → internal) |
 | NuGet 0.1 tag | ❌ owner OK on review → optional hygiene PR → tag `v0.1.0` + publish |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
+| OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
 ## Shipped package map
 
@@ -43,7 +44,6 @@
 1. **Owner OK** on [public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) → optional P0/P1 internals → tag **`v0.1.0`** + nuget.org publish
 2. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
 3. Docs site (D-011)
-4. OpenSpec main specs sync (graph DI / Agents.AI / wire format) — gap after post-MVP code
 
 ## Не в планах
 
