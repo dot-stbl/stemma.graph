@@ -274,10 +274,24 @@ Both pass `CheckpointerConformance.RunAllAsync`. PublicAPI ship gate enabled. Sa
 
 Host pattern: `Compile(checkpointer, new CompileOptions { Services = sp })` inside `AddVoluta` graph factory. MAF package deps: `Microsoft.Agents.AI.Abstractions` 1.17 + `Microsoft.Extensions.AI.Abstractions` 10.9. Core stays AOT and AI-free.
 
+### D-029 — Checkpoint wire-format version field
+
+**Decision (2026-08-14):** File / EF / S3 checkpoint JSON documents carry
+`formatVersion` (camelCase via `JsonSerializerOptions.Web`). Current value is
+**1**. Missing field deserializes as **1** (backward-compatible with existing
+on-disk / in-DB / S3 objects). Unsupported future versions throw
+`CheckpointStoreException` with code `checkpoint.unsupported_format_version`.
+
+Wire constant is **duplicated** per provider (`CheckpointWireFormat.Version`) —
+no shared package, keeps checkpoint package isolation. Writes always stamp
+version 1 (domain `CheckpointSnapshot.FormatVersion` is not trusted as wire
+schema). InMemory stays process-local (no JSON wire). Polymorphic channel-value
+serde remains best-effort (open).
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
-2. **Checkpoint serde** — JSON versioning, polymorphic channel values (File package is best-effort JSON).
+2. **Checkpoint serde** — polymorphic channel values (File/EF/S3 best-effort JSON); wire versioning closed in D-029.
 3. **Token-level LLM streaming** — graph stream mode vs node-local (Agents.AI).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.
