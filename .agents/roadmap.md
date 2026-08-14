@@ -4,7 +4,7 @@
 > [`openspec/specs/`](../openspec/specs/). Planning history:
 > [`openspec/changes/archive/2026-08-14-architecture-runtime-core/`](../openspec/changes/archive/2026-08-14-architecture-runtime-core/).
 
-## Текущий статус (2026-08-14)
+## Текущий статус (2026-08-15)
 
 | | |
 |---|---|
@@ -20,7 +20,8 @@
 | EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
 | PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
-| NuGet 0.1 tag | ✅ `v0.1.0` on nuget.org · [release](https://github.com/dot-stbl/voluta/releases/tag/v0.1.0) · `0.1.1` README/pack fix |
+| NuGet 0.1 tag | ✅ `v0.1.0` / `v0.1.1` |
+| NuGet 0.2 tag | ✅ `v0.2.0` production host (time-travel, OTel, multi-HITL, stream, hardening) |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 | OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
@@ -41,9 +42,9 @@
 
 ## Ближайшие шаги
 
-1. nuget.org publish for `0.1.0` packages (optional — tag + GitHub Release done)
-2. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
-3. Docs site (D-011)
+1. docs.stbl.space sync to 0.2.x (#43)
+2. SPA ops console (React+Vite) — replace/augment Razor UI
+3. LangGraph parity gaps (tooling, more providers, Studio-like UX)
 
 ## Не в планах
 
