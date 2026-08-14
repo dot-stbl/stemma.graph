@@ -62,6 +62,17 @@ A checkpointer MAY support listing checkpoints for a thread (time-travel). If un
 - **WHEN** InMemory has stored multiple steps for a thread and list is supported
 - **THEN** the host can enumerate checkpoints ordered by step
 
+### Requirement: Optional thread discovery
+A checkpointer MAY implement `IThreadDiscovery` to enumerate known thread identifiers across the store (not only history for one thread). Ops UI and multi-host tooling cast the registered `ICheckpointer` to `IThreadDiscovery` when available. An empty store MUST return an empty list; storage outages may throw `CheckpointStoreException`.
+
+#### Scenario: File root scan
+- **WHEN** File checkpointer has put checkpoints for threads A and B under a root directory
+- **THEN** a new process with the same root can list both thread ids via `ListThreadIdsAsync`
+
+#### Scenario: UI merge after restart
+- **WHEN** the ops UI session has no in-process tracked ids and the checkpointer implements discovery with durable threads
+- **THEN** `ListThreadsAsync` returns those threads with latest status from Get
+
 ### Requirement: Host time-travel read façade
 The compiled graph MUST expose host-facing time-travel reads that wrap checkpointer get/list without leaking engine-only C-shape fields as the primary product surface.
 

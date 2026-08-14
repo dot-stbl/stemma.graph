@@ -13,7 +13,7 @@ namespace Voluta.Checkpoint;
 ///     InMemory does <strong>not</strong> enforce the durable wire-format v1 value allow-list;
 ///     any CLR object may be stored within a single process.
 /// </remarks>
-public sealed class InMemoryCheckpointer : ICheckpointer
+public sealed class InMemoryCheckpointer : ICheckpointer, IThreadDiscovery
 {
     private const string ProviderName = "inmemory";
 
@@ -123,6 +123,17 @@ public sealed class InMemoryCheckpointer : ICheckpointer
             1,
             new TagList { { VolutaDiagnostics.TagProviderName, ProviderName } });
         return Task.FromResult(ordered);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var ids = history.Keys
+            .OrderBy(static threadId => threadId, StringComparer.Ordinal)
+            .ToArray();
+        return Task.FromResult<IReadOnlyList<string>>(ids);
     }
 }
 

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\Voluta.UI\Voluta.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

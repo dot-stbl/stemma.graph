@@ -35,6 +35,8 @@ static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IRe
 Voluta.Abstractions.Diagnostics.VolutaErrorCodes
 Voluta.Abstractions.Runtime.Command.Kinds
 
+Voluta.Abstractions.Checkpoint.IThreadDiscovery
+Voluta.Abstractions.Checkpoint.IThreadDiscovery.ListThreadIdsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
 Voluta.Abstractions.Checkpoint.ThreadSnapshot
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.get -> object?
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.init -> void

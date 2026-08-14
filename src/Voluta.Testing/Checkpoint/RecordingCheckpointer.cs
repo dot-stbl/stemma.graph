@@ -4,8 +4,9 @@ namespace Voluta.Testing.Checkpoint;
 
 /// <summary>
 ///     <see cref="ICheckpointer" /> decorator that records Put/Get/List calls for assertions.
+///     Forwards <see cref="IThreadDiscovery" /> when the inner store implements it.
 /// </summary>
-public sealed class RecordingCheckpointer(ICheckpointer inner) : ICheckpointer
+public sealed class RecordingCheckpointer(ICheckpointer inner) : ICheckpointer, IThreadDiscovery
 {
     private readonly ConcurrentQueue<CheckpointGetRecord> gets = new();
     private readonly ConcurrentQueue<CheckpointListRecord> lists = new();
@@ -49,6 +50,14 @@ public sealed class RecordingCheckpointer(ICheckpointer inner) : ICheckpointer
         var result = await inner.ListAsync(threadId, cancellationToken);
         lists.Enqueue(new CheckpointListRecord(threadId, result));
         return result;
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return inner is IThreadDiscovery discovery
+            ? discovery.ListThreadIdsAsync(cancellationToken)
+            : Task.FromResult<IReadOnlyList<string>>([]);
     }
 }
 

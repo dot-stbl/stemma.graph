@@ -12,11 +12,12 @@ namespace Voluta.Checkpoints.File;
 ///     Host registration: <c>v.Checkpoints.UseFile(rootDirectory)</c> (or
 ///     <c>AddVolutaCheckpoints(c =&gt; c.UseFile(...))</c>). Direct construction is
 ///     internal for conformance / unit tests only.
-    ///     Channel values must be wire-format v1 allow-listed shapes (primitives, string,
-    ///     lists/dictionaries of those, JsonElement). Unsupported types fail Put with
-    ///     <c>checkpoint.unsupported_value_type</c>.
+///     Channel values must be wire-format v1 allow-listed shapes (primitives, string,
+///     lists/dictionaries of those, JsonElement). Unsupported types fail Put with
+///     <c>checkpoint.unsupported_value_type</c>.
+///     Implements <see cref="IThreadDiscovery" /> by scanning child directories under the root.
 /// </remarks>
-public sealed class FileCheckpointer : ICheckpointer
+public sealed class FileCheckpointer : ICheckpointer, IThreadDiscovery
 {
     private readonly ConcurrentDictionary<string, object> locks = new(StringComparer.Ordinal);
     private readonly string root;
@@ -106,6 +107,27 @@ public sealed class FileCheckpointer : ICheckpointer
 
             return Task.FromResult<IReadOnlyList<CheckpointSnapshot>>(list);
         }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Scans immediate child directories of the checkpointer root. Directory names are the
+    ///     sanitized thread ids used on Put (invalid path chars replaced with <c>_</c>).
+    /// </remarks>
+    public Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!Directory.Exists(root))
+        {
+            return Task.FromResult<IReadOnlyList<string>>([]);
+        }
+
+        var ids = Directory.EnumerateDirectories(root)
+            .Select(static path => Path.GetFileName(path))
+            .Where(static name => !string.IsNullOrEmpty(name))
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToArray();
+        return Task.FromResult<IReadOnlyList<string>>(ids!);
     }
 
     private static string InitRoot(string rootDirectory)

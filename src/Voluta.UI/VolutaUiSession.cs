@@ -45,15 +45,35 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
     }
 
     /// <summary>
-    ///     Lists every tracked thread with its latest checkpoint status (for the inspector list).
+    ///     Lists known threads with latest checkpoint status (for the inspector list).
     /// </summary>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     /// <returns>Thread summaries ordered by id.</returns>
+    /// <remarks>
+    ///     Merges in-process <see cref="TrackThread" /> ids with
+    ///     <see cref="IThreadDiscovery.ListThreadIdsAsync" /> when the checkpointer implements
+    ///     discovery (File / EF / S3 / InMemory). After a process restart, durable stores still
+    ///     surface threads without re-tracking.
+    /// </remarks>
     public async Task<IReadOnlyList<ThreadSummary>> ListThreadsAsync(
         CancellationToken cancellationToken = default)
     {
-        var result = new List<ThreadSummary>();
-        foreach (var threadId in knownThreads.Keys.OrderBy(static id => id, StringComparer.Ordinal))
+        var threadIds = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var threadId in knownThreads.Keys)
+        {
+            threadIds.Add(threadId);
+        }
+
+        if (Checkpointer is IThreadDiscovery discovery)
+        {
+            foreach (var threadId in await discovery.ListThreadIdsAsync(cancellationToken))
+            {
+                threadIds.Add(threadId);
+            }
+        }
+
+        var result = new List<ThreadSummary>(threadIds.Count);
+        foreach (var threadId in threadIds)
         {
             var snapshot = await Checkpointer.GetAsync(threadId, cancellationToken);
             if (snapshot is null)
