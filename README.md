@@ -406,6 +406,43 @@ ChatClientNodes.Add(
 AgentNodes.Add(graph, "research", agent, outputChannel: "draft", inputChannel: "question");
 ```
 
+## Long-running / workers
+
+HITL and multi-minute agent turns must not pin to an HTTP request. Pattern:
+
+1. **Wake** a `threadId` (queue, bus, or in-process channel).
+2. **Invoke** or **ResumeInvoke** until the stream hits interrupt / end / fail.
+3. **Park** on interrupt (checkpoint is source of truth — process may exit).
+4. **Complete** on done; **dead-letter / alert** on fail (last-good checkpoint remains;
+   do not `ResumeInvoke` a Failed thread).
+
+Runnable sample: [`samples/WorkerHost`](samples/WorkerHost/) — `BackgroundService` +
+in-memory wake channel, no Hangfire/Quartz.
+
+```csharp
+// producer (HTTP approve, bus consumer, …)
+await wakes.EnqueueAsync(ThreadWake.Start(threadId, inputWrites));
+// later, after human approval:
+await wakes.EnqueueAsync(ThreadWake.Resume(threadId, Command.Approve("ok")));
+
+// worker loop (BackgroundService)
+await foreach (var wake in wakes.ReadAllAsync(stoppingToken))
+{
+    var terminal = wake.Command is { } command
+        ? await graph.ResumeInvokeAsync(wake.ThreadId, command, stoppingToken)
+        : await graph.InvokeAsync(wake.Input ?? [], new RunOptions { ThreadId = wake.ThreadId }, stoppingToken);
+    // Interrupt → park; End → complete; exception/Failed → DLQ policy
+}
+```
+
+### Multi-instance (k8s scale-out)
+
+- Use a **shared durable checkpointer** (File / EF / S3), not in-memory, across replicas.
+- Wakes are **hints**; the checkpoint decides invoke vs resume vs already-terminal.
+- **Partition or lease** by `threadId` so two pods do not run the same thread at once.
+- Interrupt park is multi-process safe: pod A parks, pod B resumes hours later against
+  the same store.
+
 ## Host DI — `AddVoluta`
 
 One composition root: checkpoints + graph (and later UI hooks). Prefer this over raw
@@ -647,12 +684,14 @@ Metrics: `voluta.superstep.duration`, `voluta.node.duration` (ms), `voluta.inter
 | [`MarketingAgent`](samples/MarketingAgent/) | Hybrid desk setup over mock tools |
 | [`MockAdMcp`](samples/MockAdMcp/) | Hybrid-shaped tool server (Campaign / SSP / deal / AdLibrary) |
 | [`UiHost`](samples/UiHost/) | ASP.NET host for `MapVolutaUI` |
+| [`WorkerHost`](samples/WorkerHost/) | Durable `BackgroundService` runner (wake / park / resume) |
 
 Index: [`samples/README.md`](samples/README.md).
 
 ```bash
 dotnet run --project samples/HelloWorld
 dotnet run --project samples/InterruptResume
+dotnet run --project samples/WorkerHost
 dotnet run --project samples/ReviewBot -- --offline --root .
 dotnet run --project samples/DocQ -- --offline --root . --question "What is Voluta?"
 dotnet run --project samples/MockAdMcp          # :5190
