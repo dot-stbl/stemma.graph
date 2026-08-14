@@ -471,7 +471,7 @@ await foreach (var wake in wakes.ReadAllAsync(stoppingToken))
 
 ### Multi-instance (k8s scale-out)
 
-- Use a **shared durable checkpointer** (File / EF / S3), not in-memory, across replicas.
+- Use a **shared durable checkpointer** (File / SQLite / EF / S3), not in-memory, across replicas.
 - Wakes are **hints**; the checkpoint decides invoke vs resume vs already-terminal.
 - **Partition or lease** by `threadId` so two pods do not run the same thread at once.
 - Interrupt park is multi-process safe: pod A parks, pod B resumes hours later against
@@ -486,7 +486,7 @@ One composition root: checkpoints + graph (and later UI hooks). Prefer this over
 // Recommended: checkpoints + graph in one call
 services.AddVoluta(v =>
 {
-    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3
+    v.Checkpoints.UseInMemory(); // or UseFile / UseSqlite / UseEntityFrameworkCore / UseS3
     v.Graph((sp, checkpointer) => new StateGraph()
         // …nodes, edges, channels…
         .Compile(checkpointer, new CompileOptions { Services = sp }));
@@ -507,6 +507,7 @@ Exactly one `Use*` per host:
 ```csharp
 v.Checkpoints.UseInMemory();
 v.Checkpoints.UseFile("./.voluta/checkpoints");
+v.Checkpoints.UseSqlite("./.voluta/checkpoints.db");
 
 // EF — register IDbContextFactory first (any provider: Npgsql, SqlServer, SQLite, …)
 services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
@@ -551,7 +552,7 @@ EF value conversion — the checkpointer itself does not call `JsonSerializer`.
 - **Storage failures** → `CheckpointStoreException` with stable `Code`
   (`checkpoint.put_failed` / `get_failed` / `list_failed`). Graph logic still uses
   `GraphException` and friends.
-- **Channel values (wire format v1)** on File / EF / S3: allow-list only — `null`, primitives,
+- **Channel values (wire format v1)** on File / SQLite / EF / S3: allow-list only — `null`, primitives,
   string, `Guid`, date/time, `JsonElement`, `byte[]`, lists and string-key dictionaries of those
   (depth ≤ 8). Unsupported types fail Put with `checkpoint.unsupported_value_type` (no silent
   loss). **InMemory** is process-local and does not enforce the allow-list.
@@ -672,6 +673,7 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Generators` | `[GraphState]` source generator | [`src/Voluta.Generators`](src/Voluta.Generators/) |
 | `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/Voluta.Testing`](src/Voluta.Testing/) |
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
+| `Voluta.Checkpoints.Sqlite` | SQLite file checkpointer (`UseSqlite`) | [`src/Voluta.Checkpoints.Sqlite`](src/Voluta.Checkpoints.Sqlite/) |
 | `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
 | `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
@@ -679,7 +681,7 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
-Checkpoint providers (File / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
+Checkpoint providers (File / SQLite / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
 and do not claim AOT.
 
 ### OpenTelemetry

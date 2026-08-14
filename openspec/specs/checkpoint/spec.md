@@ -116,12 +116,16 @@ The compiled graph MUST expose host-facing mutation APIs that apply channel writ
 - **WHEN** the host forks a Running checkpoint with next nodes and calls `ContinueInvokeAsync` on the new thread
 - **THEN** the run continues and can reach Done
 
-### Requirement: File EF and S3 provider packages
-Durable checkpoint providers for local JSON files, EF Core (provider-agnostic relational), and S3-compatible object storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
+### Requirement: File SQLite EF and S3 provider packages
+Durable checkpoint providers for local JSON files, SQLite single-file stores, EF Core (provider-agnostic relational), and S3-compatible object storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
 
 #### Scenario: File provider roundtrip
 - **WHEN** a consumer uses the file checkpointer package under a root directory
 - **THEN** put and get for a thread preserve C-shape semantic content across process restarts on the same root
+
+#### Scenario: SQLite provider roundtrip
+- **WHEN** a consumer uses the SQLite checkpointer package with a database file path
+- **THEN** put and get for a thread preserve C-shape semantic content across process restarts on the same file
 
 #### Scenario: EF Core provider with consumer DbContext factory
 - **WHEN** a consumer registers a DbContext factory and configures the EF checkpointer against that context type
@@ -132,7 +136,7 @@ Durable checkpoint providers for local JSON files, EF Core (provider-agnostic re
 - **THEN** snapshots are stored under a stable key layout including thread and step and can be listed or fetched by thread
 
 ### Requirement: Wire format version on durable providers
-File, EF Core, and S3 checkpoint payloads MUST include an explicit wire format version field on every write. Missing version on read MUST be treated as version 1. Unsupported future versions MUST fail with a stable checkpoint store error code rather than silent mis-parse.
+File, SQLite, EF Core, and S3 checkpoint payloads MUST include an explicit wire format version field on every write. Missing version on read MUST be treated as version 1. Unsupported future versions MUST fail with a stable checkpoint store error code rather than silent mis-parse.
 
 #### Scenario: Write stamps version one
 - **WHEN** a durable provider puts a checkpoint
@@ -147,7 +151,7 @@ File, EF Core, and S3 checkpoint payloads MUST include an explicit wire format v
 - **THEN** the operation fails with a checkpoint store error identifying unsupported format version
 
 ### Requirement: Wire format v1 value allow-list on durable providers
-File, EF Core, and S3 MUST reject channel values, pending write/send payloads, and interrupt payloads that are not in the wire format v1 allow-list at Put time, with stable code `checkpoint.unsupported_value_type`. Silent partial round-trip of arbitrary CLR graphs is forbidden.
+File, SQLite, EF Core, and S3 MUST reject channel values, pending write/send payloads, and interrupt payloads that are not in the wire format v1 allow-list at Put time, with stable code `checkpoint.unsupported_value_type`. Silent partial round-trip of arbitrary CLR graphs is forbidden.
 
 Allow-listed shapes: `null`, string, bool, char, numeric primitives, `Guid`, date/time primitives (`DateTime`, `DateTimeOffset`, `DateOnly`, `TimeOnly`, `TimeSpan`), `JsonElement`, `byte[]`, lists/arrays of allow-listed values, and string-key dictionaries of allow-listed values (max nesting depth 8).
 
@@ -162,11 +166,15 @@ InMemory is process-local and MAY store arbitrary CLR references without JSON al
 - **THEN** Put fails with `CheckpointStoreException` code `checkpoint.unsupported_value_type` and does not persist the snapshot
 
 ### Requirement: Host construction via Use builders
-Product documentation and DI fluent builders MUST treat File, EF Core, and S3 checkpointers as configured through the checkpoint builder (`UseFile` / `UseEntityFrameworkCore` / `UseS3`), not as the primary public construction path for hosts. Provider types may remain resolvable for advanced hosts, but public constructors of File/EF/S3 checkpointers MUST NOT be part of the supported host surface (internal or equivalent).
+Product documentation and DI fluent builders MUST treat File, SQLite, EF Core, and S3 checkpointers as configured through the checkpoint builder (`UseFile` / `UseSqlite` / `UseEntityFrameworkCore` / `UseS3`), not as the primary public construction path for hosts. Provider types may remain resolvable for advanced hosts, but public constructors of File/SQLite/EF/S3 checkpointers MUST NOT be part of the supported host surface (internal or equivalent).
 
 #### Scenario: DI UseFile registration
 - **WHEN** the host configures checkpoints with UseFile and a root path
 - **THEN** the checkpointer interface resolves to the file provider implementation
+
+#### Scenario: DI UseSqlite registration
+- **WHEN** the host configures checkpoints with UseSqlite and a database path
+- **THEN** the checkpointer interface resolves to the SQLite provider implementation
 
 #### Scenario: InMemory remains newable
 - **WHEN** a sample or test constructs the InMemory checkpointer with `new`

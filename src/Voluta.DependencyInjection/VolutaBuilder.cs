@@ -77,7 +77,7 @@ public sealed class VolutaBuilder(IServiceCollection services)
         if (graphRequiresCheckpointer && !Checkpoints.IsProviderConfigured)
         {
             throw new InvalidOperationException(
-                "AddVoluta Graph(sp, checkpointer => …) requires Checkpoints.Use* (UseInMemory, UseFile, UseEntityFrameworkCore, UseS3).");
+                "AddVoluta Graph(sp, checkpointer => …) requires Checkpoints.Use* (UseInMemory, UseFile, UseSqlite, UseEntityFrameworkCore, UseS3).");
         }
 
         if (graphFactory is { } factory)

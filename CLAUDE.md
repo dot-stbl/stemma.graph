@@ -29,7 +29,7 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
 - **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/AotSmoke`
-- **Full .NET / ASP.NET:** Checkpoints.File / EF / S3, UI, Agents.AI, Testing, Generators — regular CLR, not AOT-claimed
+- **Full .NET / ASP.NET:** Checkpoints.File / Sqlite / EF / S3, UI, Agents.AI, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -53,6 +53,7 @@ voluta/
 │   ├── Voluta.Testing/                 ← doubles + conformance
 │   ├── Voluta.Generators/              ← [GraphState] source-gen
 │   ├── Voluta.Checkpoints.File/        ← UseFile
+│   ├── Voluta.Checkpoints.Sqlite/      ← UseSqlite
 │   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
 │   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode

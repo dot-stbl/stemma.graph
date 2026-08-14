@@ -14,6 +14,7 @@
 | Benchmarks | ✅ `benchmarks/Voluta.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
 | File checkpointer | ✅ `Voluta.Checkpoints.File` |
+| SQLite checkpointer | ✅ `Voluta.Checkpoints.Sqlite` |
 | Agents.AI | ✅ `IGraphNode` adapters for MAF `AIAgent` + MEAI `IChatClient` (`Voluta.MicrosoftAi` removed) |
 | Graph DI | ✅ `GraphContext.Services`, `IGraphNode`, `AddNode<T>` |
 | UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample UiHost |
@@ -35,6 +36,7 @@
 | `Voluta.Testing` | doubles + conformance | full |
 | `Voluta.Generators` | `[GraphState]` | full (analyzer) |
 | `Voluta.Checkpoints.File` | JSON file store | full |
+| `Voluta.Checkpoints.Sqlite` | SQLite single-file store | full |
 | `Voluta.Checkpoints.EntityFrameworkCore` | provider-agnostic EF Core store | full |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible store | full |
 | `Voluta.Agents.AI` | MAF + MEAI as `IGraphNode` | full |

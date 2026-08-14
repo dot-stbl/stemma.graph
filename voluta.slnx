@@ -21,6 +21,7 @@
     <Project Path="src/Voluta.Checkpoints.File/Voluta.Checkpoints.File.csproj" />
     <Project Path="src/Voluta.Checkpoints.EntityFrameworkCore/Voluta.Checkpoints.EntityFrameworkCore.csproj" />
     <Project Path="src/Voluta.Checkpoints.S3/Voluta.Checkpoints.S3.csproj" />
+    <Project Path="src/Voluta.Checkpoints.Sqlite/Voluta.Checkpoints.Sqlite.csproj" />
     <Project Path="src/Voluta.Agents.AI/Voluta.Agents.AI.csproj" />
     <Project Path="src/Voluta.UI/Voluta.UI.csproj" />
   </Folder>
@@ -51,6 +52,7 @@
     <Project Path="tests/Voluta.Checkpoints.File.Unit/Voluta.Checkpoints.File.Unit.csproj" />
     <Project Path="tests/Voluta.Checkpoints.EntityFrameworkCore.Unit/Voluta.Checkpoints.EntityFrameworkCore.Unit.csproj" />
     <Project Path="tests/Voluta.Checkpoints.S3.Unit/Voluta.Checkpoints.S3.Unit.csproj" />
+    <Project Path="tests/Voluta.Checkpoints.Sqlite.Unit/Voluta.Checkpoints.Sqlite.Unit.csproj" />
     <Project Path="tests/Voluta.Architecture.Unit/Voluta.Architecture.Unit.csproj" />
   </Folder>
 </Solution>
