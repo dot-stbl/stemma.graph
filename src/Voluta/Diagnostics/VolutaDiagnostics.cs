@@ -71,6 +71,11 @@ public static class VolutaDiagnostics
     public const string CheckpointListCountMetricName = "voluta.checkpoint.list.count";
 
     /// <summary>
+    ///     Metric: live stream events dropped under backpressure.
+    /// </summary>
+    public const string StreamDroppedMetricName = "voluta.stream.dropped";
+
+    /// <summary>
     ///     Tag key for graph node name (bounded by topology).
     /// </summary>
     public const string TagNodeName = "node.name";
@@ -89,6 +94,11 @@ public static class VolutaDiagnostics
     ///     Tag key for checkpointer provider name (e.g. <c>inmemory</c>).
     /// </summary>
     public const string TagProviderName = "provider.name";
+
+    /// <summary>
+    ///     Tag key for stream event kind on drop metrics (<c>custom</c> / <c>messages</c>).
+    /// </summary>
+    public const string TagStreamKind = "stream.kind";
 
     /// <summary>
     ///     Shared activity source for the Voluta assembly.
@@ -135,4 +145,10 @@ public static class VolutaDiagnostics
     /// </summary>
     public static Counter<long> CheckpointListCount { get; } =
         Meter.CreateCounter<long>(CheckpointListCountMetricName, unit: "{operation}");
+
+    /// <summary>
+    ///     Count of dropped live stream events (bounded channel overflow).
+    /// </summary>
+    public static Counter<long> StreamDropped { get; } =
+        Meter.CreateCounter<long>(StreamDroppedMetricName, unit: "{event}");
 }

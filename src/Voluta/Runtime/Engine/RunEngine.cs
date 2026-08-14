@@ -116,7 +116,11 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         }
 
         var resumeByTaskId = RunEngineLoopHelpers.BuildResumeMap(command, pendingInterrupts);
-        var readyTasks = RunEngineLoopHelpers.ToResumeReadyTasks(pendingInterrupts);
+        var remainingAfterResume = RunEngineLoopHelpers.RemainingPendingInterrupts(
+            pendingInterrupts,
+            resumeByTaskId);
+        var readyTasks = RunEngineLoopHelpers.ToResumeReadyTasks(
+            RunEngineLoopHelpers.SelectPendingInterrupts(pendingInterrupts, resumeByTaskId));
         if (readyTasks.Count == 0)
         {
             var nextNodes = checkpoint.NextNodes.Count > 0
@@ -141,6 +145,24 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             };
         }
 
+        // Progressive multi-interrupt: re-run only resumed task ids; keep remaining pending.
+        if (remainingAfterResume.Count > 0)
+        {
+            await foreach (var item in RunPartialMultiInterruptResumeAsync(
+                               options,
+                               store,
+                               readyTasks,
+                               remainingAfterResume,
+                               checkpoint,
+                               resumeByTaskId,
+                               cancellationToken))
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
         await foreach (var item in RunLoopAsync(
                            options,
                            store,
@@ -157,8 +179,17 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
     /// <summary>
     ///     Continues a Running thread from the latest checkpoint (after UpdateState / Fork).
     ///     Does not re-inject HITL resume payload; use <see cref="ResumeAsync" /> for Interrupted.
-    ///     Side-effect risk: nodes in NextNodes re-execute — hosts must make nodes idempotent.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <strong>Incomplete-only ready set (A2):</strong> when the checkpoint has
+    ///         <see cref="CheckpointSnapshot.PendingSends" />, Continue schedules those push tasks
+    ///         only — it does <em>not</em> re-drive <see cref="CheckpointSnapshot.NextNodes" /> as
+    ///         fresh pull tasks. That avoids double-firing side-effect nodes that already completed
+    ///         and only scheduled Sends. When there are no pending sends, Continue falls back to
+    ///         pull from NextNodes (fork/update of a mid-run pull barrier).
+    ///     </para>
+    /// </remarks>
     public async IAsyncEnumerable<StreamEvent> ContinueAsync(
         string threadId,
         StreamMode streamMode,
@@ -187,23 +218,23 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 
         var options = new RunOptions { ThreadId = threadId, StreamMode = streamMode };
 
-        if (streamMode == StreamMode.Events)
+        if (RunEngineStreaming.EmitsLifecycle(streamMode))
         {
             yield return new StreamEvent
             {
-                Mode = StreamMode.Events,
+                Mode = streamMode,
                 Kind = StreamEventKind.Start,
                 Step = checkpoint.Step
             };
         }
 
-        // Prefer pull next-nodes; pending sends merge in the first superstep via checkpoint.PendingSends.
+        // A2: pending sends only — do not re-pull NextNodes alongside (avoids re-exec map/side-effect).
         if (checkpoint.PendingSends.Count > 0)
         {
             await foreach (var item in ContinueWithPendingSendsAsync(
                                options,
                                store,
-                               nextNodes,
+                               nextNodes: [],
                                checkpoint,
                                cancellationToken))
             {
@@ -224,6 +255,113 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         {
             yield return item;
         }
+    }
+
+    /// <summary>
+    ///     Progressive multi-interrupt: run only resumed tasks for one superstep, then park
+    ///     with remaining <see cref="PendingInterrupt" /> list (status Interrupted).
+    /// </summary>
+    private async IAsyncEnumerable<StreamEvent> RunPartialMultiInterruptResumeAsync(
+        RunOptions options,
+        ChannelStore store,
+        IReadOnlyList<ReadyTask> readyTasks,
+        IReadOnlyList<PendingInterrupt> remainingInterrupts,
+        CheckpointSnapshot checkpoint,
+        IReadOnlyDictionary<string, object?> resumeByTaskId,
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken)
+    {
+        var step = checkpoint.Step + 1;
+        if (step > topology.RecursionLimit)
+        {
+            var outOfSteps = new GraphOutOfStepsException(topology.RecursionLimit, step);
+            await checkpointer.PutAsync(
+                RunEngineSnapshots.Build(
+                    options.ThreadId,
+                    step,
+                    GraphRunStatus.Failed,
+                    store,
+                    checkpoint.LastNode,
+                    RunEngineLoopHelpers.DistinctNodeNames(readyTasks),
+                    [],
+                    null),
+                cancellationToken);
+            yield return RunEngineStreaming.Terminal(
+                options.StreamMode,
+                StreamEventKind.Failed,
+                step,
+                store,
+                outOfSteps);
+            throw outOfSteps;
+        }
+
+        SuperstepCommit? commit = null;
+        await foreach (var item in RunEngineLoopHelpers.RunSuperstepStreamingAsync(
+                           topology,
+                           checkpointer,
+                           options,
+                           store,
+                           readyTasks,
+                           step,
+                           checkpoint.LastNode,
+                           resumeByTaskId,
+                           cancellationToken))
+        {
+            if (item.LiveEvent is { } live)
+            {
+                yield return live;
+            }
+
+            if (item.Commit is { } done)
+            {
+                commit = done;
+            }
+        }
+
+        if (commit is null)
+        {
+            throw new InvalidOperationException("Superstep completed without a commit.");
+        }
+
+        if (commit.TerminalEvent is { } terminal
+            && terminal.Kind is StreamEventKind.Failed or StreamEventKind.Cancelled)
+        {
+            yield return terminal;
+            if (commit.Exception is not null)
+            {
+                throw commit.Exception;
+            }
+
+            yield break;
+        }
+
+        // Force park with remaining interrupts even if the superstep would have continued.
+        var nextNames = remainingInterrupts
+            .Select(static item => item.NodeName)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToArray();
+        var firstPayload = remainingInterrupts[0].Payload;
+        await checkpointer.PutAsync(
+            RunEngineSnapshots.Build(
+                options.ThreadId,
+                step,
+                GraphRunStatus.Interrupted,
+                store,
+                commit.LastNode,
+                nextNames,
+                [],
+                firstPayload,
+                channelValues: null,
+                pendingInterrupts: remainingInterrupts),
+            cancellationToken);
+
+        yield return RunEngineStreaming.Terminal(
+            options.StreamMode,
+            StreamEventKind.Interrupt,
+            step,
+            store,
+            payload: firstPayload);
     }
 
     private async IAsyncEnumerable<StreamEvent> ContinueWithPendingSendsAsync(
@@ -512,11 +650,14 @@ file static class RunEngineLoopHelpers
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken)
     {
-        var liveChannel = System.Threading.Channels.Channel.CreateUnbounded<StreamEvent>(
-            new System.Threading.Channels.UnboundedChannelOptions
+        // C2: bounded live buffer — TryWrite false when full (Wait mode); writer drops + metric.
+        const int LiveStreamCapacity = 256;
+        var liveChannel = System.Threading.Channels.Channel.CreateBounded<StreamEvent>(
+            new System.Threading.Channels.BoundedChannelOptions(LiveStreamCapacity)
             {
                 SingleReader = true,
                 SingleWriter = false,
+                FullMode = System.Threading.Channels.BoundedChannelFullMode.Wait,
             });
 
         Func<string, IStreamWriter>? streamWriterFactory = null;
@@ -922,17 +1063,77 @@ file static class RunEngineLoopHelpers
     {
         if (command.Resumes is { Count: > 0 } resumes)
         {
-            return new Dictionary<string, object?>(resumes, StringComparer.Ordinal);
+            // Progressive: only include keys that are still pending.
+            var map = new Dictionary<string, object?>(resumes.Count, StringComparer.Ordinal);
+            var known = new HashSet<string>(
+                pendingInterrupts.Select(static item => item.TaskId),
+                StringComparer.Ordinal);
+            foreach (var pair in resumes)
+            {
+                if (known.Contains(pair.Key))
+                {
+                    map[pair.Key] = pair.Value;
+                }
+            }
+
+            return map;
         }
 
         // Single-path: same payload for every pending interrupt (typically one).
-        var map = new Dictionary<string, object?>(pendingInterrupts.Count, StringComparer.Ordinal);
+        var broadcast = new Dictionary<string, object?>(pendingInterrupts.Count, StringComparer.Ordinal);
         foreach (var pending in pendingInterrupts)
         {
-            map[pending.TaskId] = command.Payload;
+            broadcast[pending.TaskId] = command.Payload;
         }
 
-        return map;
+        return broadcast;
+    }
+
+    public static IReadOnlyList<PendingInterrupt> SelectPendingInterrupts(
+        IReadOnlyList<PendingInterrupt> pendingInterrupts,
+        IReadOnlyDictionary<string, object?> resumeByTaskId)
+    {
+        if (pendingInterrupts.Count == 0 || resumeByTaskId.Count == 0)
+        {
+            return [];
+        }
+
+        var selected = new List<PendingInterrupt>(resumeByTaskId.Count);
+        foreach (var pending in pendingInterrupts)
+        {
+            if (resumeByTaskId.ContainsKey(pending.TaskId))
+            {
+                selected.Add(pending);
+            }
+        }
+
+        return selected;
+    }
+
+    public static IReadOnlyList<PendingInterrupt> RemainingPendingInterrupts(
+        IReadOnlyList<PendingInterrupt> pendingInterrupts,
+        IReadOnlyDictionary<string, object?> resumeByTaskId)
+    {
+        if (pendingInterrupts.Count == 0)
+        {
+            return [];
+        }
+
+        if (resumeByTaskId.Count == 0)
+        {
+            return pendingInterrupts;
+        }
+
+        var remaining = new List<PendingInterrupt>();
+        foreach (var pending in pendingInterrupts)
+        {
+            if (!resumeByTaskId.ContainsKey(pending.TaskId))
+            {
+                remaining.Add(pending);
+            }
+        }
+
+        return remaining;
     }
 
     public static IReadOnlyList<ReadyTask> ToResumeReadyTasks(IReadOnlyList<PendingInterrupt> pendingInterrupts)
