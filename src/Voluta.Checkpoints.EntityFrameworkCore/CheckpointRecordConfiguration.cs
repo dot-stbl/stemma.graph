@@ -13,10 +13,10 @@ namespace Voluta.Checkpoints.EntityFrameworkCore;
 ///     Fluent configuration for <see cref="CheckpointRecord" />.
 ///     Column names follow the host naming convention (no forced snake_case).
 /// </summary>
-public sealed class CheckpointRecordConfiguration : IEntityTypeConfiguration<CheckpointRecord>
+internal sealed class CheckpointRecordConfiguration : IEntityTypeConfiguration<CheckpointRecord>
 {
     /// <summary>Default table name for checkpoint rows.</summary>
-    public const string TableName = "voluta_checkpoints";
+    internal const string TableName = "voluta_checkpoints";
 
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<CheckpointRecord> builder)

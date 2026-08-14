@@ -6,7 +6,7 @@ namespace Voluta.Checkpoints.EntityFrameworkCore;
 /// <summary>
 ///     EF Core checkpointer over any <typeparamref name="TContext" /> that implements
 ///     <see cref="IVolutaCheckpointDbContext" />. Snapshot JSON conversion lives in the
-///     EF model (<see cref="CheckpointRecordConfiguration" />), not here.
+///     EF model (internal entity configuration), not here.
 /// </summary>
 /// <typeparam name="TContext">Host DbContext type.</typeparam>
 /// <remarks>
