@@ -21,7 +21,7 @@
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
 | PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
 | NuGet 0.1 tag | ✅ `v0.1.0` / `v0.1.1` |
-| NuGet 0.2 tag | ✅ `v0.2.0` production host (time-travel, OTel, multi-HITL, stream, hardening) |
+| NuGet 0.2 tag | 🔜 `v0.2.0` (version bumped; tag + publish after this release PR) |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 | OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
