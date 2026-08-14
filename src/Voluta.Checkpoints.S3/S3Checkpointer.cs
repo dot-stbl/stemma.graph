@@ -12,11 +12,27 @@ namespace Voluta.Checkpoints.S3;
 /// </summary>
 /// <remarks>
 ///     Key layout: <c>{prefix}/{safeThreadId}/{step:D12}.json</c>.
+///     Host registration: <c>v.Checkpoints.UseS3(configure)</c>.
+///     Direct construction is internal for conformance / unit tests only.
 ///     Values use System.Text.Json; prefer JSON-friendly types (strings, numbers, lists of primitives).
 /// </remarks>
-public sealed class S3Checkpointer(IAmazonS3 client, S3CheckpointerOptions options) : ICheckpointer
+public sealed class S3Checkpointer : ICheckpointer
 {
-    private readonly string bucket = InitBucket(options);
+    private readonly IAmazonS3 client;
+    private readonly S3CheckpointerOptions options;
+    private readonly string bucket;
+
+    /// <summary>
+    ///     Creates an S3 checkpointer.
+    /// </summary>
+    /// <param name="client">S3 client (must already be configured for the target endpoint).</param>
+    /// <param name="options">Bucket and key-prefix options.</param>
+    internal S3Checkpointer(IAmazonS3 client, S3CheckpointerOptions options)
+    {
+        this.client = client;
+        this.options = options;
+        bucket = InitBucket(options);
+    }
 
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)

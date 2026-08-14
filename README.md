@@ -182,23 +182,28 @@ Unset properties emit **no** write. An explicit `null` is a clear. Interface-typ
 <summary><strong>Durable file checkpoint (survive process restart)</strong></summary>
 
 ```csharp
-var checkpointer = new FileCheckpointer("/var/lib/voluta/threads"); // or any root path
-var graph = new StateGraph()
-    // … nodes …
-    .Compile(checkpointer);
+// Host DI (recommended) — same root on every process
+services.AddVoluta(v =>
+{
+    v.Checkpoints.UseFile("/var/lib/voluta/threads");
+    v.Graph((sp, checkpointer) => new StateGraph()
+        // … nodes …
+        .Compile(checkpointer, new CompileOptions { Services = sp }));
+});
 
 // process A
+var graph = sp.GetRequiredService<CompiledGraph>();
 await graph.InvokeAsync(input, new RunOptions { ThreadId = "order-9" });
 // → Interrupted
 
-// process B (new host, same root)
-var graph2 = /* recompile same topology */ .Compile(new FileCheckpointer("/var/lib/voluta/threads"));
-await graph2.ResumeInvokeAsync("order-9", new Command { Kind = "approve", Payload = "ok" });
+// process B (new host, same UseFile root) — resume
+await graph.ResumeInvokeAsync("order-9", new Command { Kind = "approve", Payload = "ok" });
 ```
 
 Values serialize with `System.Text.Json` — prefer JSON-friendly types (strings, numbers, lists of
 primitives). For tests, `InMemoryCheckpointer` is enough; every storage implements
-`ICheckpointer` and can run `CheckpointerConformance.RunAllAsync`.
+`ICheckpointer` and can run `CheckpointerConformance.RunAllAsync`. Provider types
+(`FileCheckpointer`, EF, S3) are constructed via `Use*` only — not `new`.
 
 </details>
 

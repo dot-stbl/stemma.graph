@@ -9,13 +9,25 @@ namespace Voluta.Checkpoints.File;
 ///     JSON file checkpointer: one directory per thread, history as step-ordered files.
 /// </summary>
 /// <remarks>
+///     Host registration: <c>v.Checkpoints.UseFile(rootDirectory)</c> (or
+///     <c>AddVolutaCheckpoints(c =&gt; c.UseFile(...))</c>). Direct construction is
+///     internal for conformance / unit tests only.
 ///     Values are serialized with System.Text.Json; prefer JSON-friendly types
 ///     (strings, numbers, lists of primitives). Complex CLR graphs may not roundtrip.
 /// </remarks>
-public sealed class FileCheckpointer(string rootDirectory) : ICheckpointer
+public sealed class FileCheckpointer : ICheckpointer
 {
     private readonly ConcurrentDictionary<string, object> locks = new(StringComparer.Ordinal);
-    private readonly string root = InitRoot(rootDirectory);
+    private readonly string root;
+
+    /// <summary>
+    ///     Creates a file checkpointer rooted at <paramref name="rootDirectory" />.
+    /// </summary>
+    /// <param name="rootDirectory">Root directory for per-thread checkpoint JSON files.</param>
+    internal FileCheckpointer(string rootDirectory)
+    {
+        root = InitRoot(rootDirectory);
+    }
 
     /// <inheritdoc />
     public Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)

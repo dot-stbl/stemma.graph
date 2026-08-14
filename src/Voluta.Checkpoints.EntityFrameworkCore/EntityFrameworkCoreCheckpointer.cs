@@ -9,10 +9,24 @@ namespace Voluta.Checkpoints.EntityFrameworkCore;
 ///     EF model (<see cref="CheckpointRecordConfiguration" />), not here.
 /// </summary>
 /// <typeparam name="TContext">Host DbContext type.</typeparam>
-public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<TContext> factory)
-    : ICheckpointer
+/// <remarks>
+///     Host registration: <c>v.Checkpoints.UseEntityFrameworkCore&lt;TContext&gt;()</c>.
+///     Direct construction is internal for conformance / unit tests only.
+/// </remarks>
+public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
     where TContext : DbContext, IVolutaCheckpointDbContext
 {
+    private readonly IDbContextFactory<TContext> factory;
+
+    /// <summary>
+    ///     Creates an EF Core checkpointer over <paramref name="factory" />.
+    /// </summary>
+    /// <param name="factory">Factory for host DbContext instances.</param>
+    internal EntityFrameworkCoreCheckpointer(IDbContextFactory<TContext> factory)
+    {
+        this.factory = factory;
+    }
+
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
     {
@@ -106,10 +120,22 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<
 /// <summary>
 ///     Non-generic façade over dedicated <see cref="VolutaCheckpointDbContext" />.
 /// </summary>
-public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaCheckpointDbContext> factory)
-    : ICheckpointer
+/// <remarks>
+///     Host registration: <c>v.Checkpoints.UseEntityFrameworkCore()</c>.
+///     Direct construction is internal for conformance / unit tests only.
+/// </remarks>
+public sealed class EntityFrameworkCoreCheckpointer : ICheckpointer
 {
-    private readonly EntityFrameworkCoreCheckpointer<VolutaCheckpointDbContext> inner = new(factory);
+    private readonly EntityFrameworkCoreCheckpointer<VolutaCheckpointDbContext> inner;
+
+    /// <summary>
+    ///     Creates a checkpointer over dedicated <see cref="VolutaCheckpointDbContext" />.
+    /// </summary>
+    /// <param name="factory">Factory for <see cref="VolutaCheckpointDbContext" />.</param>
+    internal EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaCheckpointDbContext> factory)
+    {
+        inner = new EntityFrameworkCoreCheckpointer<VolutaCheckpointDbContext>(factory);
+    }
 
     /// <inheritdoc />
     public Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
