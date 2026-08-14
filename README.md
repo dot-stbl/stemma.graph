@@ -517,6 +517,29 @@ catch (GraphException exception)
 `Get` miss stays `null` — not an exception. Interrupt control flow stays
 `NodeResult.Interrupt` (not exceptions).
 
+
+<details>
+<summary><strong>Failure &amp; recovery (checkpoint policy)</strong></summary>
+
+When a node throws, a superstep merge fails, or the recursion limit is hit:
+
+1. **Stream** surfaces a `Failed` event (and the invoke/stream API rethrows the graph fault).
+2. **Checkpoint Put** writes a **terminal** snapshot at the **failing superstep** with
+   `GraphRunStatus.Failed` (or `Cancelled` on cooperative cancel). Incomplete writes from the
+   failed superstep are **not** applied.
+3. **Channel values** on that terminal snapshot are the **last successful** apply — last-good
+   payload, not a wipe and not a half-merge.
+4. **Get** returns that latest terminal document (`Status = Failed`, last-good channels).
+5. **List** (when supported) still enumerates earlier `Running` / `Interrupted` / `Done` steps
+   for tooling; prior step keys are never overwritten by the failure put.
+6. **Resume** (`ResumeInvokeAsync`) still requires `Interrupted` — Failed/Cancelled are terminal
+   for HITL resume. Hosts re-invoke with a new thread, or rebuild input from last-good channels /
+   list history.
+
+Contracts: [`openspec/specs/error-cancellation/`](openspec/specs/error-cancellation/).
+
+</details>
+
 ## How a superstep works
 
 One tick, in order: collect ready nodes → run them **concurrently** → **barrier** → merge writes

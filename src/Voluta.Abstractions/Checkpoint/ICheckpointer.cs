@@ -21,6 +21,22 @@ public interface ICheckpointer
     /// <param name="threadId">Thread identifier.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     /// <returns>The latest snapshot, or null if not found.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         <strong>Failure checkpoint policy:</strong> after a node/superstep failure the
+    ///         runtime puts a terminal <see cref="Runtime.GraphRunStatus.Failed" /> (or
+    ///         <see cref="Runtime.GraphRunStatus.Cancelled" />) snapshot at the failing
+    ///         superstep index. That document's channel values are the last successfully
+    ///         applied superstep — incomplete writes are never merged. Get therefore returns
+    ///         status Failed/Cancelled with last-good payload, not a wiped or half-applied
+    ///         state. Providers MUST NOT overwrite a prior step's document when putting a
+    ///         higher step (keyed by thread + step).
+    ///     </para>
+    ///     <para>
+    ///         Use <see cref="ListAsync" /> when supported to inspect earlier successful
+    ///         Running/Interrupted/Done steps for recovery tooling.
+    ///     </para>
+    /// </remarks>
     public Task<CheckpointSnapshot?> GetAsync(string threadId, CancellationToken cancellationToken = default);
 
     /// <summary>

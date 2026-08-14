@@ -14,11 +14,15 @@ If a node task throws an exception that is not translated into a continue/interr
 - **THEN** the run status becomes failed, stream/events include a failure signal, and the host receives the exception (or a wrapped graph fault)
 
 ### Requirement: Failed run checkpoint policy
-On failure after a prior successful superstep, the last successfully committed checkpoint MUST remain loadable. The runtime MUST document whether a failure checkpoint is also written; if written, it MUST record failed status without corrupting channel values from the last good step.
+On failure after a prior successful superstep, the last successfully committed checkpoint MUST remain loadable (via list history and/or as channel payload on the terminal marker). The runtime MUST write a terminal failure checkpoint at the **failing** superstep index (not reusing the prior successful step key). That snapshot MUST record `Failed` status and MUST carry channel values from the last successful apply — incomplete node writes MUST NOT be merged. Get for the thread returns that latest terminal snapshot (status Failed, last-good payload). Resume-as-interrupt MUST reject Failed threads.
+
+#### Scenario: Get after node throw preserves last-good channels
+- **WHEN** superstep N succeeds and checkpoints Running, then superstep N+1 a node throws
+- **THEN** Get returns status Failed at step N+1 with the same channel values as after step N; List (when supported) still contains the step-N Running snapshot
 
 #### Scenario: Resume after failure not automatic
 - **WHEN** a run fails on superstep N+1 and the host loads the thread
-- **THEN** the host can read the last good checkpoint and decide whether to retry; the runtime does not silently continue past the failure
+- **THEN** the host can read last-good channel values (and prior steps via List) and decide whether to retry; the runtime does not silently continue past the failure
 
 ### Requirement: Concurrent multi-write LastValue is a failure
 A superstep that violates LastValue single-writer rules MUST fail the run (or that superstep) with a concurrent-update error, consistent with state-channels requirements.
