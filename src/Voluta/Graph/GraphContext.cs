@@ -11,12 +11,14 @@ namespace Voluta.Graph;
 /// <param name="resumePayload">Resume command payload when continuing after interrupt.</param>
 /// <param name="taskPayload">Send/PUSH task payload when this invocation was scheduled via Send.</param>
 /// <param name="services">Optional host <see cref="IServiceProvider" /> (from <see cref="Options.CompileOptions.Services" />).</param>
+/// <param name="threadId">Parent run thread id (for nested checkpoint namespaces).</param>
 public sealed class GraphContext(
     string nodeName,
     IReadOnlyDictionary<string, object?> channelValues,
     object? resumePayload = null,
     object? taskPayload = null,
-    IServiceProvider? services = null)
+    IServiceProvider? services = null,
+    string? threadId = null)
 {
     private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
@@ -40,6 +42,12 @@ public sealed class GraphContext(
     ///     <see cref="Options.CompileOptions.Services" />; otherwise <see langword="null" />.
     /// </summary>
     public IServiceProvider? Services { get; } = services;
+
+    /// <summary>
+    ///     Thread id of the parent run. Used by <see cref="Subgraph.AsNode" /> to build a stable
+    ///     nested child thread id (default: <c>{ThreadId}/{NodeName}</c>).
+    /// </summary>
+    public string? ThreadId { get; } = threadId;
 
     /// <summary>
     ///     Reads a channel value cast to <typeparamref name="T" />, or default when missing/null.

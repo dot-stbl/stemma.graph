@@ -228,6 +228,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     step,
                     lastNode,
                     payloadForStep,
+                    options.ThreadId,
                     superstep,
                     cancellationToken);
             }
@@ -284,6 +285,7 @@ file static class RunEngineLoopHelpers
         long step,
         string? lastNode,
         object? payloadForStep,
+        string threadId,
         ActivityScope superstep,
         CancellationToken cancellationToken)
     {
@@ -293,6 +295,7 @@ file static class RunEngineLoopHelpers
             orderedReady,
             preApplySnapshot,
             payloadForStep,
+            threadId,
             cancellationToken);
 
         if (executionOutcome.Cancelled)

@@ -58,3 +58,5 @@ Voluta.Runtime.CommandTaxonomy
 
 Voluta.Graph.CompiledGraph.GetHistoryAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!>!
 Voluta.Graph.CompiledGraph.GetStateAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot?>!
+Voluta.Graph.GraphContext.ThreadId.get -> string?
+Voluta.Graph.GraphContext.GraphContext(string! nodeName, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! channelValues, object? resumePayload = null, object? taskPayload = null, System.IServiceProvider? services = null, string? threadId = null) -> void

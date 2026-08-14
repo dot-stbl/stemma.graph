@@ -18,6 +18,7 @@ internal static class RunEngineExecution
         IReadOnlyList<ReadyTask> orderedReady,
         IReadOnlyDictionary<string, object?> snapshot,
         object? resumePayload,
+        string threadId,
         CancellationToken cancellationToken)
     {
         try
@@ -29,6 +30,7 @@ internal static class RunEngineExecution
                     orderedReady[0],
                     snapshot,
                     resumePayload,
+                    threadId,
                     cancellationToken);
                 return new ReadyExecutionOutcome { Executions = [single] };
             }
@@ -42,6 +44,7 @@ internal static class RunEngineExecution
                     orderedReady[index],
                     snapshot,
                     resumePayload,
+                    threadId,
                     cancellationToken);
             }
 
@@ -137,6 +140,7 @@ file static class RunEngineExecutionHelpers
         ReadyTask readyTask,
         IReadOnlyDictionary<string, object?> snapshot,
         object? resumePayload,
+        string threadId,
         CancellationToken cancellationToken)
     {
         if (!topology.Nodes.TryGetValue(readyTask.NodeName, out var handler))
@@ -155,7 +159,8 @@ file static class RunEngineExecutionHelpers
             snapshot,
             resumePayload,
             readyTask.TaskPayload,
-            topology.Services);
+            topology.Services,
+            threadId);
         try
         {
             var result = await handler(context, cancellationToken);

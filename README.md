@@ -221,9 +221,18 @@ return NodeResult.ContinueWithSends(
     new Send("worker", payload: orderLine1),
     new Send("worker", payload: orderLine2));
 
-// Nest a compiled graph as a single node
-.AddNode("child", Subgraph.AsNode(childCompiledGraph))
+// Nest a compiled graph as a single node (stable child thread: parentId/child)
+.AddNode("child", Subgraph.AsNode(
+    childCompiledGraph,
+    inputChannels: ["messages"],
+    outputChannels: ["result"]));
+// Custom multi-agent nest namespace:
+// threadIdFactory: ctx => $"{ctx.ThreadId}/agent/{ctx.NodeName}"
 ```
+
+Child interrupt → parent interrupt (same HITL `Command` resume on the parent
+thread resumes the nested child). Default nested checkpoint key:
+`{parentThreadId}/{nodeName}`.
 
 `CompiledGraph.Describe()` returns topology (nodes, edges, channels) for the ops UI or docs.
 
