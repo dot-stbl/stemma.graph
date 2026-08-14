@@ -1,5 +1,6 @@
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
+using Voluta.Abstractions.Diagnostics;
 using Voluta.Checkpoint;
 using Voluta.Exceptions;
 using Voluta.Graph.Options;
@@ -28,11 +29,11 @@ public sealed class StateGraph
     public StateGraph AddChannel(string name, ChannelKind kind)
     {
         return string.IsNullOrWhiteSpace(name)
-            ? throw new GraphCompileException("graph.invalid_channel", "Channel name must be non-empty.")
+            ? throw new GraphCompileException(VolutaErrorCodes.GraphInvalidChannel, "Channel name must be non-empty.")
             : channels.TryAdd(name, kind)
                 ? this
                 : throw new GraphCompileException(
-                    "graph.duplicate_channel",
+                    VolutaErrorCodes.GraphDuplicateChannel,
                     $"Channel '{name}' is already registered.");
     }
 
@@ -45,15 +46,15 @@ public sealed class StateGraph
     public StateGraph AddNode(string name, NodeHandler handler)
     {
         return string.IsNullOrWhiteSpace(name)
-            ? throw new GraphCompileException("graph.invalid_node", "Node name must be non-empty.")
+            ? throw new GraphCompileException(VolutaErrorCodes.GraphInvalidNode, "Node name must be non-empty.")
             : StateGraphValidation.IsSentinel(name)
                 ? throw new GraphCompileException(
-                    "graph.invalid_node",
+                    VolutaErrorCodes.GraphInvalidNode,
                     $"Node name '{name}' is reserved for START/END sentinels.")
                 : nodes.TryAdd(name, handler)
                     ? this
                     : throw new GraphCompileException(
-                        "graph.duplicate_node",
+                        VolutaErrorCodes.GraphDuplicateNode,
                         $"Node '{name}' is already registered.");
     }
 
@@ -122,7 +123,7 @@ public sealed class StateGraph
     {
         if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(target))
         {
-            throw new GraphCompileException("graph.invalid_edge", "Edge endpoints must be non-empty.");
+            throw new GraphCompileException(VolutaErrorCodes.GraphInvalidEdge, "Edge endpoints must be non-empty.");
         }
 
         if (!staticEdges.TryGetValue(source, out var targets))
@@ -144,11 +145,13 @@ public sealed class StateGraph
     public StateGraph AddConditionalEdges(string source, Func<GraphContext, IReadOnlyList<string>> router)
     {
         return string.IsNullOrWhiteSpace(source)
-            ? throw new GraphCompileException("graph.invalid_edge", "Conditional edge source must be non-empty.")
+            ? throw new GraphCompileException(
+                VolutaErrorCodes.GraphInvalidEdge,
+                "Conditional edge source must be non-empty.")
             : conditionalEdges.TryAdd(source, router)
                 ? this
                 : throw new GraphCompileException(
-                    "graph.duplicate_conditional",
+                    VolutaErrorCodes.GraphDuplicateConditional,
                     $"Conditional edges for '{source}' are already registered.");
     }
 
@@ -209,14 +212,14 @@ file static class StateGraphValidation
     {
         if (nodes.Count == 0)
         {
-            throw new GraphCompileException("graph.no_nodes", "Graph must register at least one node.");
+            throw new GraphCompileException(VolutaErrorCodes.GraphNoNodes, "Graph must register at least one node.");
         }
 
         if (!staticEdges.ContainsKey(GraphConstants.Start)
             && !conditionalEdges.ContainsKey(GraphConstants.Start))
         {
             throw new GraphCompileException(
-                "graph.missing_start",
+                VolutaErrorCodes.GraphMissingStart,
                 "Compile requires at least one edge originating from START.");
         }
 
@@ -250,14 +253,14 @@ file static class StateGraphValidation
             if (isSource && name == GraphConstants.End)
             {
                 throw new GraphCompileException(
-                    "graph.invalid_edge",
+                    VolutaErrorCodes.GraphInvalidEdge,
                     "END cannot be an edge source.");
             }
 
             if (!isSource && name == GraphConstants.Start)
             {
                 throw new GraphCompileException(
-                    "graph.invalid_edge",
+                    VolutaErrorCodes.GraphInvalidEdge,
                     "START cannot be an edge target.");
             }
 
@@ -267,7 +270,7 @@ file static class StateGraphValidation
         if (!nodes.ContainsKey(name))
         {
             throw new GraphCompileException(
-                "graph.unknown_endpoint",
+                VolutaErrorCodes.GraphUnknownEndpoint,
                 $"Edge references unknown node '{name}'.");
         }
     }

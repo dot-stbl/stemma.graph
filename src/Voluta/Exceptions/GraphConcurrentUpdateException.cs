@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Diagnostics;
+
 namespace Voluta.Exceptions;
 
 /// <summary>
@@ -8,6 +10,6 @@ namespace Voluta.Exceptions;
 /// </remarks>
 /// <param name="message">Human-readable description.</param>
 public sealed class GraphConcurrentUpdateException(string message)
-    : GraphException("channel.concurrent_update", message)
+    : GraphException(VolutaErrorCodes.ChannelConcurrentUpdate, message)
 {
 }

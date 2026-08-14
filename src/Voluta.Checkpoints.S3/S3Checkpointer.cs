@@ -3,6 +3,7 @@ using System.Text.Json;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Voluta.Abstractions.Checkpoint;
+using Voluta.Abstractions.Diagnostics;
 using Voluta.Checkpoints.S3.Wire;
 
 namespace Voluta.Checkpoints.S3;
@@ -57,7 +58,7 @@ public sealed class S3Checkpointer : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.put_failed",
+                VolutaErrorCodes.CheckpointPutFailed,
                 $"Failed to put checkpoint for thread '{snapshot.ThreadId}' step {snapshot.Step}.",
                 exception);
         }
@@ -96,7 +97,7 @@ public sealed class S3Checkpointer : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.get_failed",
+                VolutaErrorCodes.CheckpointGetFailed,
                 $"Failed to get checkpoint for thread '{threadId}'.",
                 exception);
         }
@@ -137,7 +138,7 @@ public sealed class S3Checkpointer : ICheckpointer
                     cancellationToken);
                 snapshots[index] = snapshot
                     ?? throw new CheckpointStoreException(
-                        "checkpoint.corrupt_payload",
+                        VolutaErrorCodes.CheckpointCorruptPayload,
                         $"S3 object '{orderedKeys[index]}' could not be deserialized as a checkpoint.");
             }
 
@@ -147,7 +148,7 @@ public sealed class S3Checkpointer : ICheckpointer
                                           and not CheckpointStoreException)
         {
             throw new CheckpointStoreException(
-                "checkpoint.list_failed",
+                VolutaErrorCodes.CheckpointListFailed,
                 $"Failed to list checkpoints for thread '{threadId}'.",
                 exception);
         }

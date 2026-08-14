@@ -1,4 +1,5 @@
 using Voluta.Abstractions.Checkpoint;
+using Voluta.Abstractions.Diagnostics;
 
 namespace Voluta.Checkpoints.File.Wire;
 
@@ -11,7 +12,7 @@ internal static class CheckpointWireFormat
     public const int Version = 1;
 
     /// <summary>Stable code when a document's version is newer than this package supports.</summary>
-    public const string UnsupportedCode = "checkpoint.unsupported_format_version";
+    public const string UnsupportedCode = VolutaErrorCodes.CheckpointUnsupportedFormatVersion;
 
     public static void EnsureSupported(int formatVersion)
     {
