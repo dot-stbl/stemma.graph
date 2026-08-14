@@ -43,7 +43,6 @@ permissions:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
 
 jobs:
   # ── 1. publish — build, pack, push every package in the solution ─────
@@ -51,6 +50,9 @@ jobs:
     name: publish
     runs-on: ubuntu-latest
     environment: nuget  # gate any manual approval here if needed
+    env:
+      # runner.* is only available at job/step scope, not workflow-level env
+      NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
     steps:
       - name: checkout
         uses: actions/checkout@v4

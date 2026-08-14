@@ -55,13 +55,15 @@ permissions:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
 
 jobs:
   # ── 1. pr-dotnet — BE gate on every PR to main ──────────────────
   pr-dotnet:
     name: pr-dotnet
     runs-on: ubuntu-latest
+    env:
+      # runner.* is only available at job/step scope, not workflow-level env
+      NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
     steps:
       - name: checkout
         uses: actions/checkout@v4
