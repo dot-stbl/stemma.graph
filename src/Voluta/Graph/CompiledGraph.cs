@@ -134,6 +134,57 @@ public sealed class CompiledGraph
             StreamMode.Updates);
     }
 
+    /// <summary>
+    ///     Loads the latest host-facing state for a thread (time-travel read).
+    ///     Returns null when the thread was never checkpointed.
+    /// </summary>
+    /// <param name="threadId">Thread identifier.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Latest <see cref="ThreadSnapshot" />, or null if not found.</returns>
+    public async Task<ThreadSnapshot?> GetStateAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(threadId))
+        {
+            throw new ArgumentException("Thread id is required.", nameof(threadId));
+        }
+
+        var snapshot = await checkpointer.GetAsync(threadId, cancellationToken);
+        return snapshot is null ? null : ThreadSnapshotMapping.FromSnapshot(snapshot);
+    }
+
+    /// <summary>
+    ///     Lists host-facing states for a thread ordered by step ascending (time-travel history).
+    ///     Providers that do not support list throw <see cref="NotSupportedException" />.
+    /// </summary>
+    /// <param name="threadId">Thread identifier.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Steps oldest-first; empty when the thread has no checkpoints.</returns>
+    public async Task<IReadOnlyList<ThreadSnapshot>> GetHistoryAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(threadId))
+        {
+            throw new ArgumentException("Thread id is required.", nameof(threadId));
+        }
+
+        var list = await checkpointer.ListAsync(threadId, cancellationToken);
+        if (list.Count == 0)
+        {
+            return [];
+        }
+
+        var result = new List<ThreadSnapshot>(list.Count);
+        foreach (var snapshot in list)
+        {
+            result.Add(ThreadSnapshotMapping.FromSnapshot(snapshot));
+        }
+
+        return result;
+    }
+
     private static async Task<StreamEvent> DrainToTerminalAsync(
         IAsyncEnumerable<StreamEvent> stream,
         StreamMode streamMode)

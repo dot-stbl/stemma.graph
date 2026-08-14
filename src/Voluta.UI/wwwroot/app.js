@@ -199,6 +199,50 @@
 
   document.getElementById("refreshThreads").onclick = () => loadThreadList();
 
+  async function loadHistory(threadId) {
+    const list = document.getElementById("historyList");
+    if (!list) {
+      return;
+    }
+    const res = await fetch(api("/api/threads/" + encodeURIComponent(threadId) + "/history"));
+    if (res.status === 501) {
+      list.innerHTML = `<p class="dim" style="padding:8px">History not supported by checkpointer.</p>`;
+      return;
+    }
+    if (!res.ok) {
+      list.innerHTML = `<p class="dim" style="padding:8px">${escapeHtml(await res.text())}</p>`;
+      return;
+    }
+    const items = await res.json();
+    if (!items.length) {
+      list.innerHTML = `<p class="dim" style="padding:8px">No steps.</p>`;
+      return;
+    }
+    list.innerHTML = "";
+    for (const item of items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "history-item";
+      btn.innerHTML =
+        `${statusBadge(item.status)} <span class="mono">step ${escapeHtml(item.step)}</span>` +
+        ` <span class="mono dim">${escapeHtml(item.lastNode ?? "—")}</span>`;
+      btn.onclick = () => {
+        document.getElementById("inspectorOut").textContent = JSON.stringify(item, null, 2);
+        renderCheckpointMeta({
+          threadId: item.threadId,
+          step: item.step,
+          status: item.status,
+          lastNode: item.lastNode,
+          nextNodes: item.nextNodes || [],
+          interruptPayload: item.interruptPayload,
+          channelValues: item.values || {},
+          channelVersions: {},
+        });
+      };
+      list.appendChild(btn);
+    }
+  }
+
   document.getElementById("loadThread").onclick = async () => {
     const id = document.getElementById("threadId").value.trim();
     const out = document.getElementById("inspectorOut");
@@ -211,11 +255,16 @@
       out.textContent = await res.text();
       document.getElementById("inspectorMeta").innerHTML =
         `<div class="placeholder"><p>Not found (${res.status}).</p></div>`;
+      const historyList = document.getElementById("historyList");
+      if (historyList) {
+        historyList.innerHTML = `<p class="dim" style="padding:8px">—</p>`;
+      }
       return;
     }
     const data = await res.json();
     renderCheckpointMeta(data);
     out.textContent = JSON.stringify(data, null, 2);
+    await loadHistory(id);
     loadThreadList();
   };
 

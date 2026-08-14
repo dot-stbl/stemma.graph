@@ -62,6 +62,25 @@ A checkpointer MAY support listing checkpoints for a thread (time-travel). If un
 - **WHEN** InMemory has stored multiple steps for a thread and list is supported
 - **THEN** the host can enumerate checkpoints ordered by step
 
+### Requirement: Host time-travel read façade
+The compiled graph MUST expose host-facing time-travel reads that wrap checkpointer get/list without leaking engine-only C-shape fields as the primary product surface.
+
+- `GetStateAsync(threadId)` MUST return a `ThreadSnapshot` for the latest checkpoint, or a documented empty result (null) when the thread was never put.
+- `GetHistoryAsync(threadId)` MUST return ordered `ThreadSnapshot` steps (oldest first) when the provider supports list; providers that do not support list MUST throw `NotSupportedException` (or equivalent) rather than return partial silent data.
+- `ThreadSnapshot` MUST include at least: thread id, step, status, channel values, last node, next nodes, and interrupt payload when present.
+
+#### Scenario: GetState after done
+- **WHEN** a thread has completed successfully and the host calls `GetStateAsync`
+- **THEN** the result has status Done and channel values matching the latest checkpoint
+
+#### Scenario: GetHistory ordered
+- **WHEN** a thread has multiple checkpoints and the host calls `GetHistoryAsync`
+- **THEN** steps are ordered ascending and the last entry matches `GetStateAsync`
+
+#### Scenario: Missing thread GetState
+- **WHEN** the host calls `GetStateAsync` for a thread that was never put
+- **THEN** the result indicates not found without treating it as a storage outage
+
 ### Requirement: File EF and S3 provider packages
 Durable checkpoint providers for local JSON files, EF Core (provider-agnostic relational), and S3-compatible object storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
 

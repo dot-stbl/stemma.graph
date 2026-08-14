@@ -1,0 +1,46 @@
+using Voluta.Abstractions.Runtime;
+
+namespace Voluta.Abstractions.Checkpoint;
+
+/// <summary>
+///     Host/UI-facing projection of a checkpoint for time-travel read (current state or history step).
+///     Omits engine-internal C-shape fields (versions, pending writes/sends) that ops rarely need.
+/// </summary>
+public sealed class ThreadSnapshot
+{
+    /// <summary>
+    ///     Thread (conversation / run) identifier.
+    /// </summary>
+    public required string ThreadId { get; init; }
+
+    /// <summary>
+    ///     Superstep index of this snapshot.
+    /// </summary>
+    public long Step { get; init; }
+
+    /// <summary>
+    ///     Run status at this step.
+    /// </summary>
+    public GraphRunStatus Status { get; init; }
+
+    /// <summary>
+    ///     Channel name → value (last-good payload for Failed/Cancelled terminals).
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> Values { get; init; }
+        = new Dictionary<string, object?>(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Last node that completed before this snapshot, when known.
+    /// </summary>
+    public string? LastNode { get; init; }
+
+    /// <summary>
+    ///     Next node names scheduled or expected, when known.
+    /// </summary>
+    public IReadOnlyList<string> NextNodes { get; init; } = [];
+
+    /// <summary>
+    ///     HITL interrupt payload when <see cref="Status" /> is <see cref="GraphRunStatus.Interrupted" />.
+    /// </summary>
+    public object? InterruptPayload { get; init; }
+}

@@ -34,3 +34,20 @@ static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IRe
 static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values) -> Voluta.Abstractions.Runtime.Command!
 Voluta.Abstractions.Diagnostics.VolutaErrorCodes
 Voluta.Abstractions.Runtime.Command.Kinds
+
+Voluta.Abstractions.Checkpoint.ThreadSnapshot
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.get -> object?
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.LastNode.get -> string?
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.LastNode.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.NextNodes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.NextNodes.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Status.get -> Voluta.Abstractions.Runtime.GraphRunStatus
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Status.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Step.get -> long
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Step.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.ThreadId.get -> string!
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.ThreadId.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.ThreadSnapshot() -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.Values.init -> void
