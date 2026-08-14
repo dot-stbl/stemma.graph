@@ -297,11 +297,12 @@ file static class RunEngineLoopHelpers
 
         if (executionOutcome.Cancelled)
         {
+            // Terminal marker at the failing superstep (not step-1): never clobber last-good.
             var cancelledNodes = DistinctNodeNames(orderedReady);
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
                     options.ThreadId,
-                    step - 1,
+                    step,
                     GraphRunStatus.Cancelled,
                     store,
                     lastNode,
@@ -326,11 +327,12 @@ file static class RunEngineLoopHelpers
 
         if (executionOutcome.Failure is { } failure)
         {
+            // Last-good payload: Failed at this superstep with store from last successful apply.
             var failedNodes = DistinctNodeNames(orderedReady);
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
                     options.ThreadId,
-                    step - 1,
+                    step,
                     GraphRunStatus.Failed,
                     store,
                     lastNode,
@@ -394,11 +396,12 @@ file static class RunEngineLoopHelpers
         var applyError = RunEngineExecution.TryApplyWrites(store, writes);
         if (applyError is not null)
         {
+            // Merge never applied — store still last-good; Failed at this step keeps history.
             var applyFailedNodes = DistinctNodeNames(orderedReady);
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
                     options.ThreadId,
-                    step - 1,
+                    step,
                     GraphRunStatus.Failed,
                     store,
                     lastNode,
