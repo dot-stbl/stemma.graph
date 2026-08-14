@@ -462,23 +462,19 @@ HITL and multi-minute agent turns must not pin to an HTTP request. Pattern:
 4. **Complete** on done; **dead-letter / alert** on fail (last-good checkpoint remains;
    do not `ResumeInvoke` a Failed thread).
 
-Runnable sample: [`samples/WorkerHost`](samples/WorkerHost/) — `BackgroundService` +
-in-memory wake channel, no Hangfire/Quartz.
+Package: **`Voluta.Hosting`** — `IThreadWakeBus`, `InMemoryThreadWakeBus`,
+`GraphThreadRunner`, `GraphWorkerService`, `AddVolutaWorkerHosting()`.
+Sample: [`samples/WorkerHost`](samples/WorkerHost/). No Hangfire/Quartz; NATS/SQS
+are host-owned implementations of the interface.
 
 ```csharp
+services.AddVoluta(v => { /* checkpoints + graph */ });
+services.AddVolutaWorkerHosting(); // IThreadWakeBus + BackgroundService worker
+
 // producer (HTTP approve, bus consumer, …)
 await wakes.EnqueueAsync(ThreadWake.Start(threadId, inputWrites));
 // later, after human approval:
 await wakes.EnqueueAsync(ThreadWake.Resume(threadId, Command.Approve("ok")));
-
-// worker loop (BackgroundService)
-await foreach (var wake in wakes.ReadAllAsync(stoppingToken))
-{
-    var terminal = wake.Command is { } command
-        ? await graph.ResumeInvokeAsync(wake.ThreadId, command, stoppingToken)
-        : await graph.InvokeAsync(wake.Input ?? [], new RunOptions { ThreadId = wake.ThreadId }, stoppingToken);
-    // Interrupt → park; End → complete; exception/Failed → DLQ policy
-}
 ```
 
 ### Multi-instance (k8s scale-out)
@@ -486,6 +482,11 @@ await foreach (var wake in wakes.ReadAllAsync(stoppingToken))
 - Use a **shared durable checkpointer** (File / SQLite / EF / S3), not in-memory, across replicas.
 - Wakes are **hints**; the checkpoint decides invoke vs resume vs already-terminal.
 - **Partition or lease** by `threadId` so two pods do not run the same thread at once.
+- Use a **shared durable checkpointer** (File / EF / S3), not in-memory, across replicas.
+  **Checkpointer is the source of truth**; wakes are only hints.
+- Replace `InMemoryThreadWakeBus` with a durable queue implementing `IThreadWakeBus`.
+- **Partition or lease** by `threadId` so two pods do not run the same thread at once
+  (`GraphWorkerService` only dedupes in-flight wakes **within one process**).
 - Interrupt park is multi-process safe: pod A parks, pod B resumes hours later against
   the same store.
 

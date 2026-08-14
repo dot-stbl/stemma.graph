@@ -58,8 +58,9 @@ voluta/
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
 │   ├── Voluta.Checkpoints.Postgres/    ← UsePostgres
 │   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
-│   └── Voluta.UI/                      ← MapVolutaUI ops console
-├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost
+│   ├── Voluta.UI/                      ← MapVolutaUI ops console
+│   └── Voluta.Hosting/                 ← IThreadWakeBus + GraphWorkerService presets
+├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost · WorkerHost
 ├── benchmarks/  ← Voluta.Benchmarks
 ├── tests/
 ├── openspec/

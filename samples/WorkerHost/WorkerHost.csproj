@@ -6,12 +6,14 @@
     <IsPackable>false</IsPackable>
     <Description>
       WorkerHost: durable BackgroundService runner — wake by threadId, run until interrupt/done/fail.
+      Uses Voluta.Hosting presets (IThreadWakeBus + GraphWorkerService).
     </Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
     <ProjectReference Include="..\..\src\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Voluta.Hosting\Voluta.Hosting.csproj" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.*" />
   </ItemGroup>
 

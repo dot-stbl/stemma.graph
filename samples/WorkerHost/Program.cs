@@ -9,6 +9,7 @@
 //
 // Multi-instance: share a durable checkpointer (File / EF / S3). Wakes may fan out;
 // only one instance should process a given thread at a time (lease / partition).
+// Types live in Voluta.Hosting (IThreadWakeBus, GraphWorkerService, …).
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,7 +23,9 @@ using Voluta.DependencyInjection;
 using Voluta.DependencyInjection.Checkpoints;
 using Voluta.Graph;
 using Voluta.Graph.Builder;
-using Voluta.Samples.WorkerHost;
+using Voluta.Hosting;
+using Voluta.Hosting.Wake;
+using Voluta.Hosting.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Information);
@@ -43,10 +46,7 @@ builder.Services.AddVoluta(voluta =>
         .Compile(checkpointer));
 });
 
-builder.Services.AddSingleton<ThreadWakeChannel>();
-builder.Services.AddSingleton<GraphThreadRunner>();
-builder.Services.AddSingleton<GraphWorkerService>();
-builder.Services.AddHostedService(static services => services.GetRequiredService<GraphWorkerService>());
+builder.Services.AddVolutaWorkerHosting();
 builder.Services.AddHostedService<DemoProducerService>();
 
 using var host = builder.Build();
@@ -88,7 +88,7 @@ static Task<NodeResult> FinishAsync(GraphContext context, CancellationToken canc
 ///     Production producers are HTTP handlers, queues, or schedulers — not this class.
 /// </summary>
 file sealed class DemoProducerService(
-    ThreadWakeChannel wakes,
+    InMemoryThreadWakeBus wakes,
     GraphWorkerService worker,
     ICheckpointer checkpointer,
     IHostApplicationLifetime lifetime,

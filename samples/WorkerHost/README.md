@@ -2,19 +2,19 @@
 
 HITL and long agent turns must not live inside a single HTTP request. This sample
 shows a **wake → run until interrupt/done/fail → park or complete** loop using
-`BackgroundService` and an in-memory channel.
+`Voluta.Hosting` (`BackgroundService` + in-memory wake bus).
 
 ```text
-producer ──ThreadWake(threadId)──► channel ──► GraphWorkerService
-                                                    │
-                                                    ▼
-                                            Invoke / ResumeInvoke
-                                                    │
-                          ┌─────────────────────────┼─────────────────────────┐
-                          ▼                         ▼                         ▼
-                     Interrupt                  End (Done)                 Failed
-                     → park                     → complete                 → dead-letter
-                     (checkpoint SoT)           (no more wakes)            (last-good C)
+producer ──ThreadWake(threadId)──► IThreadWakeBus ──► GraphWorkerService
+                                                        │
+                                                        ▼
+                                                Invoke / ResumeInvoke
+                                                        │
+                          ┌─────────────────────────────┼─────────────────────────┐
+                          ▼                             ▼                         ▼
+                     Interrupt                      End (Done)                 Failed
+                     → park                         → complete                 → dead-letter
+                     (checkpoint SoT)               (no more wakes)            (last-good C)
 ```
 
 ## Run
@@ -35,18 +35,23 @@ Demo: final status=Done
 
 The process exits after the demo completes (producer stops the host).
 
-## Pieces
+## Pieces (package `Voluta.Hosting`)
 
 | Type | Role |
 |------|------|
 | `ThreadWake` | Start (input writes) or Resume (`Command`) for a `threadId` |
-| `ThreadWakeChannel` | In-process `Channel<T>` bus — replace with NATS/SQS/etc. |
+| `IThreadWakeBus` | Abstraction: enqueue + drain wakes |
+| `InMemoryThreadWakeBus` | In-process `Channel<T>` bus — replace with NATS/SQS/etc. |
 | `GraphThreadRunner` | One wake → `InvokeAsync` / `ResumeInvokeAsync` → disposition |
 | `GraphWorkerService` | `BackgroundService` drain loop + park/complete/fail policy |
+| `AddVolutaWorkerHosting()` | DI preset: bus + runner + hosted worker |
 | `DemoProducerService` | Sample-only driver (start → park → approve → stop) |
 
-No new NuGet package: copy these types into your host, or extract a shared
-library when you have a second consumer.
+```csharp
+services.AddVoluta(/* graph + checkpoints */);
+services.AddVolutaWorkerHosting();
+// producers: inject IThreadWakeBus (or InMemoryThreadWakeBus for Complete())
+```
 
 ## Multi-instance / k8s scale-out
 
@@ -55,8 +60,8 @@ library when you have a second consumer.
 - **Wakes are hints.** Any instance may receive “run thread X”; the durable
   snapshot decides whether the next turn is invoke, resume, or already terminal.
 - **Avoid double-run.** Partition wakes by `threadId` (queue key / consumer
-  group) or take a short lease before `Invoke`/`Resume`. This sample skips a
-  second in-flight wake for the same id **on one instance** only.
+  group) or take a short lease before `Invoke`/`Resume`. `GraphWorkerService`
+  skips a second in-flight wake for the same id **on one instance** only.
 - **Interrupt park is multi-process safe.** Process A interrupts and exits; hours
   later process B receives a resume wake and `ResumeInvokeAsync` against the same
   store.
@@ -66,11 +71,11 @@ library when you have a second consumer.
 
 ## Production swaps
 
-| Sample | Production |
-|--------|------------|
-| `ThreadWakeChannel` | Durable queue + poison/DLQ |
+| Sample / package default | Production |
+|--------------------------|------------|
+| `InMemoryThreadWakeBus` | Durable queue + poison/DLQ implementing `IThreadWakeBus` |
 | `UseInMemory()` | `UseFile` / `UseEntityFrameworkCore` / `UseS3` |
 | Log-only fail policy | Metrics, alert, DLQ message with `threadId` + error code |
 | `DemoProducerService` | HTTP approve endpoint, bus consumer, cron redrive |
 
-Not in scope: Hangfire/Quartz, full Agent Server PaaS.
+Not in scope: Hangfire/Quartz, NATS implementation (interface only), full Agent Server PaaS.
