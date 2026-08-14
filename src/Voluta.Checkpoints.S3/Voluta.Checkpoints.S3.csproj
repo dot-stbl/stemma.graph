@@ -10,7 +10,9 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
     <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+    <ProjectReference Include="..\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,10 @@
 #nullable enable
+static Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilderExtensions.UseInMemory(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
 static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Func<System.IServiceProvider!, Voluta.Graph.CompiledGraph!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Voluta.Graph.CompiledGraph! graph) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVolutaCheckpoints(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.VolutaCheckpointBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilderExtensions
 Voluta.DependencyInjection.ServiceCollectionExtensions

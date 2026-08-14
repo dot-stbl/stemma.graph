@@ -1,4 +1,8 @@
 #nullable enable
+const Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecordConfiguration.TableName = "voluta_checkpoints" -> string!
+static Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointBuilderExtensions.UseEntityFrameworkCore(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
+static Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointBuilderExtensions.UseEntityFrameworkCore<TContext>(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
+static Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointModelExtensions.ApplyVolutaCheckpointModel(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> Microsoft.EntityFrameworkCore.ModelBuilder!
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.CheckpointRecord() -> void
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.PayloadJson.get -> string!
@@ -12,12 +16,20 @@ Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.ThreadId.set -> void
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecordConfiguration
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecordConfiguration.CheckpointRecordConfiguration() -> void
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecordConfiguration.Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord!>! builder) -> void
-const Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecordConfiguration.TableName = "voluta_checkpoints" -> string!
 Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer
 Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer.EntityFrameworkCoreCheckpointer(Microsoft.EntityFrameworkCore.IDbContextFactory<Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointDbContext!>! factory) -> void
 Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
 Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
 Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer<TContext>
+Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer<TContext>.EntityFrameworkCoreCheckpointer(Microsoft.EntityFrameworkCore.IDbContextFactory<TContext!>! factory) -> void
+Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer<TContext>.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
+Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer<TContext>.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
+Voluta.Checkpoints.EntityFrameworkCore.EntityFrameworkCoreCheckpointer<TContext>.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Checkpoints.EntityFrameworkCore.IVolutaCheckpointDbContext
+Voluta.Checkpoints.EntityFrameworkCore.IVolutaCheckpointDbContext.Checkpoints.get -> Microsoft.EntityFrameworkCore.DbSet<Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord!>!
+Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointBuilderExtensions
 Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointDbContext
 Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointDbContext.Checkpoints.get -> Microsoft.EntityFrameworkCore.DbSet<Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord!>!
 Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointDbContext.VolutaCheckpointDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointDbContext!>! options) -> void
+Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointModelExtensions

@@ -6,14 +6,16 @@ using Voluta.Checkpoints.EntityFrameworkCore.Wire;
 namespace Voluta.Checkpoints.EntityFrameworkCore;
 
 /// <summary>
-///     EF Core checkpointer: one row per (thread, step), full C-shape as JSON payload.
+///     EF Core checkpointer over any <typeparamref name="TContext" /> that implements
+///     <see cref="IVolutaCheckpointDbContext" />. Prefer <see cref="IDbContextFactory{TContext}" />.
 /// </summary>
+/// <typeparam name="TContext">Host DbContext type.</typeparam>
 /// <remarks>
-///     Prefer registering <see cref="IDbContextFactory{TContext}" /> so each call opens a short-lived context.
 ///     Values use System.Text.Json; prefer JSON-friendly types (strings, numbers, lists of primitives).
 /// </remarks>
-public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaCheckpointDbContext> factory)
+public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<TContext> factory)
     : ICheckpointer
+    where TContext : DbContext, IVolutaCheckpointDbContext
 {
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
@@ -83,6 +85,36 @@ public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaChec
         }
 
         return list;
+    }
+}
+
+/// <summary>
+///     Non-generic façade over dedicated <see cref="VolutaCheckpointDbContext" />
+///     (wraps <c>EntityFrameworkCoreCheckpointer&lt;VolutaCheckpointDbContext&gt;</c>).
+/// </summary>
+public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaCheckpointDbContext> factory)
+    : ICheckpointer
+{
+    private readonly EntityFrameworkCoreCheckpointer<VolutaCheckpointDbContext> inner = new(factory);
+
+    /// <inheritdoc />
+    public Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
+    {
+        return inner.PutAsync(snapshot, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<CheckpointSnapshot?> GetAsync(string threadId, CancellationToken cancellationToken = default)
+    {
+        return inner.GetAsync(threadId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<CheckpointSnapshot>> ListAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        return inner.ListAsync(threadId, cancellationToken);
     }
 }
 
