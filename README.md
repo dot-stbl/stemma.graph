@@ -701,10 +701,13 @@ builder.Services.AddOpenTelemetry()
         .AddOtlpExporter());
 ```
 
-Spans: `voluta.superstep`, `voluta.node.execute`, `voluta.checkpoint.put|get|list`.  
-Metrics: `voluta.superstep.duration`, `voluta.node.duration` (ms), `voluta.interrupt.count`,
-`voluta.checkpoint.*.count`. Tags: `node.name`, `run.status`, `error.type`, `provider.name`
-(no raw thread ids).
+  Spans: `voluta.superstep`, `voluta.node.execute`, `voluta.checkpoint.put|get|list`.  
+  Metrics: `voluta.superstep.duration`, `voluta.node.duration` (ms), `voluta.interrupt.count`,
+  `voluta.checkpoint.*.count`, `voluta.stream.dropped`. Tags: `node.name`, `run.status`,
+  `error.type`, `provider.name`, `stream.kind` (no raw thread ids).
+
+  **No library `ILogger` output** — hosts log exceptions via `VolutaExceptionLogging.GetEventId`
+  + `VolutaErrorCodes`. Full catalog: [`docs/0.x/concepts/observability.mdx`](docs/0.x/concepts/observability.mdx).
 
 
 <details>
