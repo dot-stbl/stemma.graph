@@ -1,14 +1,5 @@
-# .github/workflows/ci.yml
-#
 # PR gate for Voluta: restore + build (analyzers + format) + test + pack smoke.
-#
-#   pr-dotnet — build whole solution + run unit tests + pack library projects
-#
-# Runner: ubuntu-latest (Voluta is a pure .NET library, no native deps,
-# no self-hosted runner needed — unlike anlytra's k8s-deploy setup).
-#
-# Release flow lives in publish.yml — OIDC trusted publishing to nuget.org
-# on a v*.*.* tag (no long-lived API keys).
+# Release flow lives in publish.yml (OIDC trusted publishing on v*.*.* tags).
 
 name: ci
 
@@ -16,85 +7,45 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "openspec/**"
-      - "benchmarks/**"
-      - "samples/**"
-      - "**/*.csproj"
-      - "**/*.props"
-      - "**/*.targets"
-      - "voluta.slnx"
-      - ".github/workflows/**"
-      - ".editorconfig"
-      - ".gitignore"
-      - ".gitattributes"
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "openspec/**"
-      - "benchmarks/**"
-      - "samples/**"
-      - "**/*.csproj"
-      - "**/*.props"
-      - "**/*.targets"
-      - "voluta.slnx"
-      - ".github/workflows/**"
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
-env:
-  DOTNET_VERSION: "10.0.x"
-
 jobs:
-  # ── 1. pr-dotnet — BE gate on every PR to main ──────────────────
   pr-dotnet:
     name: pr-dotnet
     runs-on: ubuntu-latest
-    env:
-      # runner.* is only available at job/step scope, not workflow-level env
-      NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
     steps:
       - name: checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: cache nuget
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-v1-${{ hashFiles('voluta.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
-          restore-keys: |
-            nuget-v1-
 
       - name: setup-dotnet
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: |
+            **/voluta.slnx
+            **/Directory.Build.props
+            **/Directory.Packages.props
+            **/*.csproj
 
       - name: restore
         run: dotnet restore voluta.slnx --nologo
 
       - name: build
-        # TreatWarningsAsErrors + EnforceCodeStyleInBuild in Directory.Build.props
-        # — format drift and analyzer warnings fail the build.
         run: dotnet build voluta.slnx -c Debug --nologo
 
       - name: unit tests
         run: |
-          # Skip integration tests that need Docker on CI (no Postgres testcontainer).
-          # Local devs run them with: dotnet test --filter "FullyQualifiedName~Integration"
           dotnet test voluta.slnx \
             --filter "FullyQualifiedName!~Integration" \
             --no-build \
@@ -102,33 +53,25 @@ jobs:
             --logger "console;verbosity=normal"
 
       - name: pack smoke
-        # Pack packable src libraries only — no push. Catches packaging breaks
-        # before a release tag (quality-engineering: CI pack smoke).
         run: |
           set -euo pipefail
-          pack_out="${{ runner.temp }}/pack-smoke"
+          pack_out="${RUNNER_TEMP}/pack-smoke"
           mkdir -p "$pack_out"
           for proj in $(find src -name "*.csproj"); do
-            echo "── packing $proj ──"
-            dotnet pack "$proj" -c Debug \
-              --no-build \
-              --output "$pack_out"
+            echo "packing $proj"
+            dotnet pack "$proj" -c Debug --no-build --output "$pack_out"
           done
           ls -la "$pack_out"
-          # At least one nupkg must be produced (src libraries are packable).
           test -n "$(find "$pack_out" -name '*.nupkg' | head -1)"
 
       - name: openspec validate
-        # Soft gate: validate main specs when CLI is available.
-        # continue-on-error so a missing/renamed npm package never blocks the PR gate.
         continue-on-error: true
         run: |
           set -euo pipefail
           if ! command -v npx >/dev/null 2>&1; then
-            echo "::warning::npx not available — skipping openspec validate"
+            echo "npx not available — skipping openspec validate"
             exit 0
           fi
-          # Main specs live under openspec/specs/ (architecture-runtime-core archived).
           npx -y @fission-ai/openspec validate --specs --strict \
             || npx -y openspec validate --specs --strict \
-            || echo "::warning::openspec CLI not available or validate failed — not failing CI"
+            || echo "openspec CLI not available or validate failed — not failing CI"
