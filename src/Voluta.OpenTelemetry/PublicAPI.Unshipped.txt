@@ -1,0 +1,5 @@
+#nullable enable
+static Voluta.OpenTelemetry.MeterProviderBuilderExtensions.AddVolutaInstrumentation(this OpenTelemetry.Metrics.MeterProviderBuilder! builder) -> OpenTelemetry.Metrics.MeterProviderBuilder!
+static Voluta.OpenTelemetry.TracerProviderBuilderExtensions.AddVolutaInstrumentation(this OpenTelemetry.Trace.TracerProviderBuilder! builder) -> OpenTelemetry.Trace.TracerProviderBuilder!
+Voluta.OpenTelemetry.MeterProviderBuilderExtensions
+Voluta.OpenTelemetry.TracerProviderBuilderExtensions

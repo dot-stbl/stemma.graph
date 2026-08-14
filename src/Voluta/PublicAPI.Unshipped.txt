@@ -1,4 +1,20 @@
 #nullable enable
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointGetActivityName = "voluta.checkpoint.get" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointGetCountMetricName = "voluta.checkpoint.get.count" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointListActivityName = "voluta.checkpoint.list" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointListCountMetricName = "voluta.checkpoint.list.count" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointPutActivityName = "voluta.checkpoint.put" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.CheckpointPutCountMetricName = "voluta.checkpoint.put.count" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.InterruptCountMetricName = "voluta.interrupt.count" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.NodeDurationMetricName = "voluta.node.duration" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.NodeExecuteActivityName = "voluta.node.execute" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.SourceName = "Voluta" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.SuperstepActivityName = "voluta.superstep" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.SuperstepDurationMetricName = "voluta.superstep.duration" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.TagErrorType = "error.type" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.TagNodeName = "node.name" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.TagProviderName = "provider.name" -> string!
+const Voluta.Diagnostics.VolutaDiagnostics.TagRunStatus = "run.status" -> string!
 static readonly Voluta.Diagnostics.VolutaEventIds.ChannelConcurrentUpdate -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointCorruptPayload -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.CheckpointGetFailed -> Microsoft.Extensions.Logging.EventId
@@ -20,11 +36,20 @@ static readonly Voluta.Diagnostics.VolutaEventIds.GraphNoNodes -> Microsoft.Exte
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphOutOfSteps -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphRunFailed -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphUnknownEndpoint -> Microsoft.Extensions.Logging.EventId
+static Voluta.Diagnostics.VolutaDiagnostics.ActivitySource.get -> System.Diagnostics.ActivitySource!
+static Voluta.Diagnostics.VolutaDiagnostics.CheckpointGetCount.get -> System.Diagnostics.Metrics.Counter<long>!
+static Voluta.Diagnostics.VolutaDiagnostics.CheckpointListCount.get -> System.Diagnostics.Metrics.Counter<long>!
+static Voluta.Diagnostics.VolutaDiagnostics.CheckpointPutCount.get -> System.Diagnostics.Metrics.Counter<long>!
+static Voluta.Diagnostics.VolutaDiagnostics.InterruptCount.get -> System.Diagnostics.Metrics.Counter<long>!
+static Voluta.Diagnostics.VolutaDiagnostics.Meter.get -> System.Diagnostics.Metrics.Meter!
+static Voluta.Diagnostics.VolutaDiagnostics.NodeDuration.get -> System.Diagnostics.Metrics.Histogram<double>!
+static Voluta.Diagnostics.VolutaDiagnostics.SuperstepDuration.get -> System.Diagnostics.Metrics.Histogram<double>!
 static Voluta.Diagnostics.VolutaEventIds.All.get -> System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.Logging.EventId>!
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(string! code) -> Microsoft.Extensions.Logging.EventId
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Abstractions.Checkpoint.CheckpointStoreException! exception) -> Microsoft.Extensions.Logging.EventId
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Exceptions.GraphException! exception) -> Microsoft.Extensions.Logging.EventId
 static Voluta.Runtime.CommandTaxonomy.EnsureValid(Voluta.Abstractions.Runtime.Command! command) -> void
+Voluta.Diagnostics.VolutaDiagnostics
 Voluta.Diagnostics.VolutaEventIds
 Voluta.Diagnostics.VolutaExceptionLogging
 Voluta.Exceptions.Run.GraphInvalidCommandException

@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Voluta.Abstractions.Checkpoint;
+using Voluta.Diagnostics;
+
 namespace Voluta.Checkpoint;
 
 /// <summary>
@@ -12,6 +15,8 @@ namespace Voluta.Checkpoint;
 /// </remarks>
 public sealed class InMemoryCheckpointer : ICheckpointer
 {
+    private const string ProviderName = "inmemory";
+
     private readonly ConcurrentDictionary<string, List<CheckpointSnapshot>> history =
         new(StringComparer.Ordinal);
 
@@ -24,12 +29,25 @@ public sealed class InMemoryCheckpointer : ICheckpointer
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        using var activity = VolutaDiagnostics.ActivitySource.StartActivity(
+            VolutaDiagnostics.CheckpointPutActivityName);
+        activity?.SetTag(VolutaDiagnostics.TagProviderName, ProviderName);
+        activity?.SetTag(VolutaDiagnostics.TagRunStatus, snapshot.Status.ToString());
+
         var list = history.GetOrAdd(snapshot.ThreadId, static _ => []);
         lock (list)
         {
             // Store without deep re-clone: RunEngineSnapshots.Build already allocated fresh maps.
             list.Add(snapshot);
         }
+
+        VolutaDiagnostics.CheckpointPutCount.Add(
+            1,
+            new TagList
+            {
+                { VolutaDiagnostics.TagProviderName, ProviderName },
+                { VolutaDiagnostics.TagRunStatus, snapshot.Status.ToString() },
+            });
 
         return Task.CompletedTask;
     }
@@ -39,17 +57,35 @@ public sealed class InMemoryCheckpointer : ICheckpointer
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        using var activity = VolutaDiagnostics.ActivitySource.StartActivity(
+            VolutaDiagnostics.CheckpointGetActivityName);
+        activity?.SetTag(VolutaDiagnostics.TagProviderName, ProviderName);
+
         if (!history.TryGetValue(threadId, out var list))
         {
+            VolutaDiagnostics.CheckpointGetCount.Add(
+                1,
+                new TagList { { VolutaDiagnostics.TagProviderName, ProviderName } });
             return Task.FromResult<CheckpointSnapshot?>(null);
         }
 
+        CheckpointSnapshot? result;
         lock (list)
         {
-            return list.Count == 0
-                ? Task.FromResult<CheckpointSnapshot?>(null)
-                : Task.FromResult<CheckpointSnapshot?>(InMemoryCheckpointClone.Clone(list[^1]));
+            result = list.Count == 0
+                ? null
+                : InMemoryCheckpointClone.Clone(list[^1]);
         }
+
+        if (result is not null)
+        {
+            activity?.SetTag(VolutaDiagnostics.TagRunStatus, result.Status.ToString());
+        }
+
+        VolutaDiagnostics.CheckpointGetCount.Add(
+            1,
+            new TagList { { VolutaDiagnostics.TagProviderName, ProviderName } });
+        return Task.FromResult(result);
     }
 
     /// <inheritdoc />
@@ -59,21 +95,34 @@ public sealed class InMemoryCheckpointer : ICheckpointer
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        using var activity = VolutaDiagnostics.ActivitySource.StartActivity(
+            VolutaDiagnostics.CheckpointListActivityName);
+        activity?.SetTag(VolutaDiagnostics.TagProviderName, ProviderName);
+
         if (!history.TryGetValue(threadId, out var list))
         {
+            VolutaDiagnostics.CheckpointListCount.Add(
+                1,
+                new TagList { { VolutaDiagnostics.TagProviderName, ProviderName } });
             return Task.FromResult<IReadOnlyList<CheckpointSnapshot>>([]);
         }
 
+        IReadOnlyList<CheckpointSnapshot> ordered;
         lock (list)
         {
-            var ordered = new List<CheckpointSnapshot>(list.Count);
+            var snapshots = new List<CheckpointSnapshot>(list.Count);
             foreach (var snapshot in list.OrderBy(static item => item.Step))
             {
-                ordered.Add(InMemoryCheckpointClone.Clone(snapshot));
+                snapshots.Add(InMemoryCheckpointClone.Clone(snapshot));
             }
 
-            return Task.FromResult<IReadOnlyList<CheckpointSnapshot>>(ordered);
+            ordered = snapshots;
         }
+
+        VolutaDiagnostics.CheckpointListCount.Add(
+            1,
+            new TagList { { VolutaDiagnostics.TagProviderName, ProviderName } });
+        return Task.FromResult(ordered);
     }
 }
 

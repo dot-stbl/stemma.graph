@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Results;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
+using Voluta.Diagnostics;
 using Voluta.Exceptions;
 using Voluta.Exceptions.Run;
 using Voluta.Graph;
@@ -206,211 +208,45 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 throw outOfSteps;
             }
 
-            // Pre-apply snapshot for node handlers (barrier visibility).
-            var preApplySnapshot = store.SnapshotValues();
             // readyTasks from ToPullTasks are already sorted; re-sort only when sends merge in.
             var orderedReady = readyTasks;
             var payloadForStep = isFirstResumeStep ? resumePayload : null;
             isFirstResumeStep = false;
 
-            var executionOutcome = await RunEngineExecution.TryExecuteReadyAsync(
-                topology,
-                orderedReady,
-                preApplySnapshot,
-                payloadForStep,
-                cancellationToken);
-
-            if (executionOutcome.Cancelled)
+            // Superstep activity must complete before any yield (async iterator rule).
+            SuperstepCommit commit;
+            using (var superstep = ActivityScope.Start(
+                       VolutaDiagnostics.SuperstepActivityName,
+                       VolutaDiagnostics.SuperstepDuration))
             {
-                var cancelledNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
-                await checkpointer.PutAsync(
-                    RunEngineSnapshots.Build(
-                        options.ThreadId,
-                        step - 1,
-                        GraphRunStatus.Cancelled,
-                        store,
-                        lastNode,
-                        cancelledNodes,
-                        [],
-                        null),
-                    cancellationToken);
-
-                yield return RunEngineStreaming.Terminal(
-                    options.StreamMode,
-                    StreamEventKind.Cancelled,
-                    step,
-                    store);
-                throw executionOutcome.Exception!;
-            }
-
-            if (executionOutcome.Failure is { } failure)
-            {
-                var failedNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
-                await checkpointer.PutAsync(
-                    RunEngineSnapshots.Build(
-                        options.ThreadId,
-                        step - 1,
-                        GraphRunStatus.Failed,
-                        store,
-                        lastNode,
-                        failedNodes,
-                        [],
-                        null),
-                    cancellationToken);
-
-                yield return RunEngineStreaming.Terminal(
-                    options.StreamMode,
-                    StreamEventKind.Failed,
-                    step,
+                commit = await RunEngineLoopHelpers.ExecuteSuperstepAsync(
+                    topology,
+                    checkpointer,
+                    options,
                     store,
-                    failure);
-                throw failure;
+                    orderedReady,
+                    step,
+                    lastNode,
+                    payloadForStep,
+                    superstep,
+                    cancellationToken);
             }
 
-            var executions = executionOutcome.Executions!;
-            if (executions.FirstOrDefault(item => item.Result is InterruptNodeResult) is { } interrupted)
-            {
-                var interruptResult = (InterruptNodeResult)interrupted.Result;
-                lastNode = interrupted.NodeName;
-                await checkpointer.PutAsync(
-                    RunEngineSnapshots.Build(
-                        options.ThreadId,
-                        step,
-                        GraphRunStatus.Interrupted,
-                        store,
-                        lastNode,
-                        [interrupted.NodeName],
-                        [],
-                        interruptResult.Payload),
-                    cancellationToken);
+            lastNode = commit.LastNode;
+            readyTasks = commit.ReadyTasks;
 
-                yield return new StreamEvent
+            if (commit.TerminalEvent is { } terminal)
+            {
+                yield return terminal;
+                if (commit.Exception is not null)
                 {
-                    Mode = options.StreamMode,
-                    Kind = StreamEventKind.Interrupt,
-                    Step = step,
-                    NodeNames = [interrupted.NodeName],
-                    Payload = interruptResult.Payload,
-                    State = options.StreamMode == StreamMode.Values ? store.SnapshotValues() : null
-                };
+                    throw commit.Exception;
+                }
+
                 yield break;
             }
 
-            var writes = RunEngineExecution.CollectWrites(executions);
-            var applyError = RunEngineExecution.TryApplyWrites(store, writes);
-            if (applyError is not null)
-            {
-                var applyFailedNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
-                await checkpointer.PutAsync(
-                    RunEngineSnapshots.Build(
-                        options.ThreadId,
-                        step - 1,
-                        GraphRunStatus.Failed,
-                        store,
-                        lastNode,
-                        applyFailedNodes,
-                        [],
-                        null),
-                    cancellationToken);
-
-                yield return RunEngineStreaming.Terminal(
-                    options.StreamMode,
-                    StreamEventKind.Failed,
-                    step,
-                    store,
-                    applyError);
-                throw applyError;
-            }
-
-            // One post-apply snapshot shared by routing, checkpoint, and Values stream.
-            var postApplySnapshot = store.SnapshotValues();
-            var nodeNames = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
-            foreach (var nodeName in nodeNames)
-            {
-                store.MarkSeen(nodeName);
-            }
-
-            lastNode = orderedReady[^1].NodeName;
-            var scheduled = new List<string>(executions.Count);
-            var pendingSends = new List<PendingSend>();
-            foreach (var execution in executions)
-            {
-                scheduled.AddRange(
-                    RunEngineRouting.ResolveNextNodes(
-                        topology,
-                        execution.NodeName,
-                        postApplySnapshot,
-                        null));
-
-                if (execution.Result is ContinueNodeResult continueResult)
-                {
-                    foreach (var send in continueResult.Sends)
-                    {
-                        if (!topology.Nodes.ContainsKey(send.Node))
-                        {
-                            throw new GraphRunFailedException(
-                                $"Send targets unknown node '{send.Node}' from '{execution.NodeName}'.");
-                        }
-
-                        pendingSends.Add(
-                            new PendingSend
-                            {
-                                NodeName = send.Node,
-                                Payload = send.Payload,
-                                TaskId = $"{execution.NodeName}->{send.Node}:{pendingSends.Count}",
-                            });
-                    }
-                }
-            }
-
-            var nextPull = RunEngineRouting.ToPullTasks(
-                topology,
-                RunEngineLoopHelpers.DistinctNames(scheduled));
-            if (pendingSends.Count == 0)
-            {
-                readyTasks = nextPull;
-            }
-            else
-            {
-                // Merge pull (already sorted) with sends; sort once by node then task id.
-                var merged = new List<ReadyTask>(nextPull.Count + pendingSends.Count);
-                merged.AddRange(nextPull);
-                foreach (var send in pendingSends)
-                {
-                    merged.Add(new ReadyTask(send.NodeName, send.TaskId, send.Payload));
-                }
-
-                merged.Sort(static (left, right) =>
-                {
-                    var nodeCompare = string.CompareOrdinal(left.NodeName, right.NodeName);
-                    return nodeCompare != 0
-                        ? nodeCompare
-                        : string.CompareOrdinal(left.TaskId, right.TaskId);
-                });
-                readyTasks = merged;
-            }
-
-            var checkpointNextNodes = RunEngineLoopHelpers.DistinctNodeNames(readyTasks);
-            await checkpointer.PutAsync(
-                RunEngineSnapshots.Build(
-                    options.ThreadId,
-                    step,
-                    GraphRunStatus.Running,
-                    store,
-                    lastNode,
-                    checkpointNextNodes,
-                    pendingSends,
-                    null,
-                    postApplySnapshot),
-                cancellationToken);
-
-            foreach (var streamItem in RunEngineStreaming.EmitCommit(
-                         options.StreamMode,
-                         step,
-                         nodeNames,
-                         writes,
-                         store,
-                         postApplySnapshot))
+            foreach (var streamItem in commit.StreamItems)
             {
                 yield return streamItem;
             }
@@ -419,10 +255,272 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 }
 
 /// <summary>
-///     Hot-path helpers for ready-set node name extraction (file-static).
+///     Result of one superstep body (after activity disposed, before stream yields).
+/// </summary>
+file sealed class SuperstepCommit
+{
+    public required string? LastNode { get; init; }
+
+    public required IReadOnlyList<ReadyTask> ReadyTasks { get; init; }
+
+    public StreamEvent? TerminalEvent { get; init; }
+
+    public Exception? Exception { get; init; }
+
+    public IReadOnlyList<StreamEvent> StreamItems { get; init; } = [];
+}
+
+/// <summary>
+///     Hot-path helpers for ready-set node name extraction and superstep body (file-static).
 /// </summary>
 file static class RunEngineLoopHelpers
 {
+    public static async Task<SuperstepCommit> ExecuteSuperstepAsync(
+        GraphTopology topology,
+        ICheckpointer checkpointer,
+        RunOptions options,
+        ChannelStore store,
+        IReadOnlyList<ReadyTask> orderedReady,
+        long step,
+        string? lastNode,
+        object? payloadForStep,
+        ActivityScope superstep,
+        CancellationToken cancellationToken)
+    {
+        var preApplySnapshot = store.SnapshotValues();
+        var executionOutcome = await RunEngineExecution.TryExecuteReadyAsync(
+            topology,
+            orderedReady,
+            preApplySnapshot,
+            payloadForStep,
+            cancellationToken);
+
+        if (executionOutcome.Cancelled)
+        {
+            var cancelledNodes = DistinctNodeNames(orderedReady);
+            await checkpointer.PutAsync(
+                RunEngineSnapshots.Build(
+                    options.ThreadId,
+                    step - 1,
+                    GraphRunStatus.Cancelled,
+                    store,
+                    lastNode,
+                    cancelledNodes,
+                    [],
+                    null),
+                cancellationToken);
+
+            superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Cancelled));
+            return new SuperstepCommit
+            {
+                LastNode = lastNode,
+                ReadyTasks = orderedReady,
+                TerminalEvent = RunEngineStreaming.Terminal(
+                    options.StreamMode,
+                    StreamEventKind.Cancelled,
+                    step,
+                    store),
+                Exception = executionOutcome.Exception,
+            };
+        }
+
+        if (executionOutcome.Failure is { } failure)
+        {
+            var failedNodes = DistinctNodeNames(orderedReady);
+            await checkpointer.PutAsync(
+                RunEngineSnapshots.Build(
+                    options.ThreadId,
+                    step - 1,
+                    GraphRunStatus.Failed,
+                    store,
+                    lastNode,
+                    failedNodes,
+                    [],
+                    null),
+                cancellationToken);
+
+            superstep.SetError(failure);
+            superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Failed));
+            return new SuperstepCommit
+            {
+                LastNode = lastNode,
+                ReadyTasks = orderedReady,
+                TerminalEvent = RunEngineStreaming.Terminal(
+                    options.StreamMode,
+                    StreamEventKind.Failed,
+                    step,
+                    store,
+                    failure),
+                Exception = failure,
+            };
+        }
+
+        var executions = executionOutcome.Executions!;
+        if (executions.FirstOrDefault(item => item.Result is InterruptNodeResult) is { } interrupted)
+        {
+            var interruptResult = (InterruptNodeResult)interrupted.Result;
+            lastNode = interrupted.NodeName;
+            await checkpointer.PutAsync(
+                RunEngineSnapshots.Build(
+                    options.ThreadId,
+                    step,
+                    GraphRunStatus.Interrupted,
+                    store,
+                    lastNode,
+                    [interrupted.NodeName],
+                    [],
+                    interruptResult.Payload),
+                cancellationToken);
+
+            superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Interrupted));
+            superstep.SetTag(VolutaDiagnostics.TagNodeName, interrupted.NodeName);
+            return new SuperstepCommit
+            {
+                LastNode = lastNode,
+                ReadyTasks = orderedReady,
+                TerminalEvent = new StreamEvent
+                {
+                    Mode = options.StreamMode,
+                    Kind = StreamEventKind.Interrupt,
+                    Step = step,
+                    NodeNames = [interrupted.NodeName],
+                    Payload = interruptResult.Payload,
+                    State = options.StreamMode == StreamMode.Values ? store.SnapshotValues() : null,
+                },
+            };
+        }
+
+        var writes = RunEngineExecution.CollectWrites(executions);
+        var applyError = RunEngineExecution.TryApplyWrites(store, writes);
+        if (applyError is not null)
+        {
+            var applyFailedNodes = DistinctNodeNames(orderedReady);
+            await checkpointer.PutAsync(
+                RunEngineSnapshots.Build(
+                    options.ThreadId,
+                    step - 1,
+                    GraphRunStatus.Failed,
+                    store,
+                    lastNode,
+                    applyFailedNodes,
+                    [],
+                    null),
+                cancellationToken);
+
+            superstep.SetError(applyError);
+            superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Failed));
+            return new SuperstepCommit
+            {
+                LastNode = lastNode,
+                ReadyTasks = orderedReady,
+                TerminalEvent = RunEngineStreaming.Terminal(
+                    options.StreamMode,
+                    StreamEventKind.Failed,
+                    step,
+                    store,
+                    applyError),
+                Exception = applyError,
+            };
+        }
+
+        // One post-apply snapshot shared by routing, checkpoint, and Values stream.
+        var postApplySnapshot = store.SnapshotValues();
+        var nodeNames = DistinctNodeNames(orderedReady);
+        foreach (var nodeName in nodeNames)
+        {
+            store.MarkSeen(nodeName);
+        }
+
+        lastNode = orderedReady[^1].NodeName;
+        var scheduled = new List<string>(executions.Count);
+        var pendingSends = new List<PendingSend>();
+        foreach (var execution in executions)
+        {
+            scheduled.AddRange(
+                RunEngineRouting.ResolveNextNodes(
+                    topology,
+                    execution.NodeName,
+                    postApplySnapshot,
+                    null));
+
+            if (execution.Result is ContinueNodeResult continueResult)
+            {
+                foreach (var send in continueResult.Sends)
+                {
+                    if (!topology.Nodes.ContainsKey(send.Node))
+                    {
+                        var sendError = new GraphRunFailedException(
+                            $"Send targets unknown node '{send.Node}' from '{execution.NodeName}'.");
+                        superstep.SetError(sendError);
+                        throw sendError;
+                    }
+
+                    pendingSends.Add(
+                        new PendingSend
+                        {
+                            NodeName = send.Node,
+                            Payload = send.Payload,
+                            TaskId = $"{execution.NodeName}->{send.Node}:{pendingSends.Count}",
+                        });
+                }
+            }
+        }
+
+        var nextPull = RunEngineRouting.ToPullTasks(topology, DistinctNames(scheduled));
+        IReadOnlyList<ReadyTask> readyTasks;
+        if (pendingSends.Count == 0)
+        {
+            readyTasks = nextPull;
+        }
+        else
+        {
+            // Merge pull (already sorted) with sends; sort once by node then task id.
+            var merged = new List<ReadyTask>(nextPull.Count + pendingSends.Count);
+            merged.AddRange(nextPull);
+            foreach (var send in pendingSends)
+            {
+                merged.Add(new ReadyTask(send.NodeName, send.TaskId, send.Payload));
+            }
+
+            merged.Sort(static (left, right) =>
+            {
+                var nodeCompare = string.CompareOrdinal(left.NodeName, right.NodeName);
+                return nodeCompare != 0
+                    ? nodeCompare
+                    : string.CompareOrdinal(left.TaskId, right.TaskId);
+            });
+            readyTasks = merged;
+        }
+
+        var checkpointNextNodes = DistinctNodeNames(readyTasks);
+        await checkpointer.PutAsync(
+            RunEngineSnapshots.Build(
+                options.ThreadId,
+                step,
+                GraphRunStatus.Running,
+                store,
+                lastNode,
+                checkpointNextNodes,
+                pendingSends,
+                null,
+                postApplySnapshot),
+            cancellationToken);
+
+        superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Running));
+        return new SuperstepCommit
+        {
+            LastNode = lastNode,
+            ReadyTasks = readyTasks,
+            StreamItems = RunEngineStreaming.EmitCommit(
+                options.StreamMode,
+                step,
+                nodeNames,
+                writes,
+                store,
+                postApplySnapshot).ToList(),
+        };
+    }
+
     public static IReadOnlyList<string> DistinctNodeNames(IReadOnlyList<ReadyTask> tasks)
     {
         if (tasks.Count == 0)

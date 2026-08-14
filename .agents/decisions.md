@@ -80,6 +80,7 @@ Voluta                         # runtime + InMemory (no ME.DI reference)
 Voluta.DependencyInjection     # AddVoluta for IServiceCollection
 
 # Full .NET / ASP.NET tier (not AOT-claimed)
+Voluta.OpenTelemetry           # AddVolutaInstrumentation (OTel SDK)
 Voluta.Testing                 # doubles + conformance (pack carefully)
 Voluta.Checkpoints.EntityFrameworkCore   # later
 Voluta.Checkpoints.S3                    # later
@@ -308,6 +309,17 @@ Rules are **duplicated** per provider package (same isolation as D-029).
 **InMemory** remains process-local and does **not** enforce the allow-list
 (any CLR reference may be held within one process). Host-owned
 `JsonSerializerContext` / custom DTO registration is deferred (optional later).
+
+### D-030 — OpenTelemetry: BCL emit in core + `Voluta.OpenTelemetry` package
+
+**Decision (2026-08-14):** Core `Voluta` ships `ActivitySource` + `Meter` named
+`"Voluta"` (`System.Diagnostics` only — no OpenTelemetry SDK package reference,
+AOT-safe). Hosts opt in with **`Voluta.OpenTelemetry`**:
+`AddVolutaInstrumentation()` on `TracerProviderBuilder` and
+`MeterProviderBuilder` (same pattern as `OpenTelemetry.Instrumentation.*`).
+No `Voluta.AspNetCore`. Metric names `voluta.*` dot.case; tags
+`node.name` / `run.status` / `error.type` / `provider.name`; never raw
+`thread.id`. Issue #36.
 
 ## Open questions (remaining)
 
