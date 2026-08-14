@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Voluta.Checkpoints.EntityFrameworkCore.Unit" />
+  </ItemGroup>
+
 </Project>

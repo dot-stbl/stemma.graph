@@ -37,7 +37,7 @@ internal sealed class FileCheckpointDocument
     {
         return new FileCheckpointDocument
         {
-            FormatVersion = snapshot.FormatVersion,
+            FormatVersion = CheckpointWireFormat.Version,
             ThreadId = snapshot.ThreadId,
             Step = snapshot.Step,
             Status = snapshot.Status.ToString(),
@@ -76,6 +76,8 @@ internal sealed class FileCheckpointDocument
 
     public CheckpointSnapshot ToSnapshot()
     {
+        CheckpointWireFormat.EnsureSupported(FormatVersion);
+
         var status = Enum.TryParse<GraphRunStatus>(Status, ignoreCase: true, out var parsed)
             ? parsed
             : GraphRunStatus.Running;
