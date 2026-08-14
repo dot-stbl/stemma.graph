@@ -6,7 +6,7 @@ namespace Voluta.Testing.Checkpoint;
 ///     <see cref="ICheckpointer" /> decorator that throws on the N-th <see cref="PutAsync" />
 ///     (1-based) to simulate crash-between-supersteps.
 /// </summary>
-public sealed class FaultInjectingCheckpointer : ICheckpointer
+public sealed class FaultInjectingCheckpointer : ICheckpointer, IThreadDiscovery
 {
     private readonly int failOnPutNumber;
     private readonly Exception fault;
@@ -65,5 +65,13 @@ public sealed class FaultInjectingCheckpointer : ICheckpointer
         CancellationToken cancellationToken = default)
     {
         return inner.ListAsync(threadId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return inner is IThreadDiscovery discovery
+            ? discovery.ListThreadIdsAsync(cancellationToken)
+            : Task.FromResult<IReadOnlyList<string>>([]);
     }
 }

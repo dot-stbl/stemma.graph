@@ -17,7 +17,7 @@ namespace Voluta.Checkpoints.EntityFrameworkCore;
 ///     Channel values must be wire-format v1 allow-listed shapes; unsupported types fail Put with
 ///     <c>checkpoint.unsupported_value_type</c>.
 /// </remarks>
-public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
+public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer, IThreadDiscovery
     where TContext : DbContext, IVolutaCheckpointDbContext
 {
     private readonly IDbContextFactory<TContext> factory;
@@ -122,6 +122,33 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
                 exception);
         }
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Distinct <c>ThreadId</c> values from the checkpoints table (SQL
+    ///     <c>SELECT DISTINCT thread_id … ORDER BY thread_id</c>).
+    /// </remarks>
+    public async Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var db = await factory.CreateDbContextAsync(cancellationToken);
+            return await db.Checkpoints
+                .AsNoTracking()
+                .Select(row => row.ThreadId)
+                .Distinct()
+                .OrderBy(threadId => threadId)
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException
+                                          and not CheckpointStoreException)
+        {
+            throw new CheckpointStoreException(
+                VolutaErrorCodes.CheckpointListFailed,
+                "Failed to list thread identifiers from the checkpoint store.",
+                exception);
+        }
+    }
 }
 
 /// <summary>
@@ -131,7 +158,7 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
 ///     Host registration: <c>v.Checkpoints.UseEntityFrameworkCore()</c>.
 ///     Direct construction is internal for conformance / unit tests only.
 /// </remarks>
-public sealed class EntityFrameworkCoreCheckpointer : ICheckpointer
+public sealed class EntityFrameworkCoreCheckpointer : ICheckpointer, IThreadDiscovery
 {
     private readonly EntityFrameworkCoreCheckpointer<VolutaCheckpointDbContext> inner;
 
@@ -162,5 +189,11 @@ public sealed class EntityFrameworkCoreCheckpointer : ICheckpointer
         CancellationToken cancellationToken = default)
     {
         return inner.ListAsync(threadId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return inner.ListThreadIdsAsync(cancellationToken);
     }
 }

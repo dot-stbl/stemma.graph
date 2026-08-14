@@ -69,4 +69,19 @@ public sealed class InMemoryCheckpointerShould
         list[0].Step.ShouldBe(1);
         list[1].Step.ShouldBe(2);
     }
+
+    [Fact(DisplayName = "Given put threads, when ListThreadIdsAsync, then returns known keys ordered")]
+    public async Task ListThreadIdsFromStore()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        await checkpointer.PutAsync(
+            new CheckpointSnapshot { ThreadId = "z", Step = 1, Status = GraphRunStatus.Running });
+        await checkpointer.PutAsync(
+            new CheckpointSnapshot { ThreadId = "a", Step = 1, Status = GraphRunStatus.Done });
+
+        var ids = await checkpointer.ListThreadIdsAsync();
+
+        ids.ShouldBe(["a", "z"]);
+        checkpointer.ShouldBeAssignableTo<IThreadDiscovery>();
+    }
 }

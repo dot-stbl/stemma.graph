@@ -714,8 +714,8 @@ Stated plainly so you can judge the fit:
 
 - **No published packages.** Source references only until the 0.1 tag.
 - **PublicAPI surface can still move** before `v0.1.0` (tracked with PublicApiAnalyzers).
-- **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE — not multi-host
-  thread discovery or auth.
+- **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE and
+  checkpointer thread discovery (`IThreadDiscovery`) — not auth.
 - **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
 - **No first-party MCP client/server** — samples use a demo HTTP tools surface; real MCP is
   `ModelContextProtocol` (+ AspNetCore) on top of Voluta.

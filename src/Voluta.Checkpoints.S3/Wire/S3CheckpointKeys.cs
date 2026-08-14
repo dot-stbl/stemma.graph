@@ -39,6 +39,55 @@ internal static class S3CheckpointKeys
         return ThreadPrefix(keyPrefix, threadId) + $"{step:D12}.json";
     }
 
+    /// <summary>
+    ///     Prefix used when listing all threads (trailing slash when a key prefix is set).
+    /// </summary>
+    public static string RootPrefix(string? keyPrefix)
+    {
+        if (string.IsNullOrWhiteSpace(keyPrefix))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = keyPrefix.Trim().Trim('/');
+        return string.IsNullOrEmpty(trimmed) ? string.Empty : trimmed + "/";
+    }
+
+    /// <summary>
+    ///     Extracts a thread id segment from a ListObjects CommonPrefix under <paramref name="rootPrefix" />.
+    /// </summary>
+    public static bool TryParseThreadIdFromCommonPrefix(
+        string commonPrefix,
+        string rootPrefix,
+        out string threadId)
+    {
+        threadId = string.Empty;
+        if (string.IsNullOrEmpty(commonPrefix))
+        {
+            return false;
+        }
+
+        var relative = commonPrefix;
+        if (!string.IsNullOrEmpty(rootPrefix))
+        {
+            if (!commonPrefix.StartsWith(rootPrefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            relative = commonPrefix[rootPrefix.Length..];
+        }
+
+        relative = relative.Trim('/');
+        if (string.IsNullOrEmpty(relative) || relative.Contains('/', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        threadId = relative;
+        return true;
+    }
+
     public static bool TryParseStep(string objectKey, out long step)
     {
         step = 0;

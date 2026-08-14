@@ -25,4 +25,13 @@ public sealed class ICheckpointerShould
         method.ShouldNotBeNull();
         method!.ReturnType.ShouldBe(typeof(Task<CheckpointSnapshot?>));
     }
+
+    [Fact(DisplayName = "When the assembly loads, then IThreadDiscovery exposes ListThreadIdsAsync")]
+    public void ExposeThreadDiscoveryContract()
+    {
+        var type = typeof(IThreadDiscovery);
+
+        type.IsInterface.ShouldBeTrue();
+        type.GetMethod(nameof(IThreadDiscovery.ListThreadIdsAsync)).ShouldNotBeNull();
+    }
 }

@@ -15,10 +15,11 @@ namespace Voluta.Checkpoints.S3;
 ///     Key layout: <c>{prefix}/{safeThreadId}/{step:D12}.json</c>.
 ///     Host registration: <c>v.Checkpoints.UseS3(configure)</c>.
 ///     Direct construction is internal for conformance / unit tests only.
-    ///     Channel values must be wire-format v1 allow-listed shapes; unsupported types fail Put with
-    ///     <c>checkpoint.unsupported_value_type</c>.
+///     Channel values must be wire-format v1 allow-listed shapes; unsupported types fail Put with
+///     <c>checkpoint.unsupported_value_type</c>.
+///     Implements <see cref="IThreadDiscovery" /> via prefix listing with delimiter <c>/</c>.
 /// </remarks>
-public sealed class S3Checkpointer : ICheckpointer
+public sealed class S3Checkpointer : ICheckpointer, IThreadDiscovery
 {
     private readonly IAmazonS3 client;
     private readonly S3CheckpointerOptions options;
@@ -155,6 +156,47 @@ public sealed class S3Checkpointer : ICheckpointer
         }
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Lists CommonPrefixes under the configured key prefix with delimiter <c>/</c>
+    ///     (one prefix per thread directory). Thread ids are the sanitized segments used on Put.
+    /// </remarks>
+    public async Task<IReadOnlyList<string>> ListThreadIdsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var rootPrefix = S3CheckpointKeys.RootPrefix(options.KeyPrefix);
+            var commonPrefixes = await S3CheckpointListing.ListCommonPrefixesAsync(
+                client,
+                bucket,
+                rootPrefix,
+                cancellationToken);
+
+            var ids = new List<string>();
+            foreach (var commonPrefix in commonPrefixes)
+            {
+                if (S3CheckpointKeys.TryParseThreadIdFromCommonPrefix(
+                        commonPrefix,
+                        rootPrefix,
+                        out var threadId))
+                {
+                    ids.Add(threadId);
+                }
+            }
+
+            ids.Sort(StringComparer.Ordinal);
+            return ids;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException
+                                          and not CheckpointStoreException)
+        {
+            throw new CheckpointStoreException(
+                VolutaErrorCodes.CheckpointListFailed,
+                "Failed to list thread identifiers from the S3 checkpoint store.",
+                exception);
+        }
+    }
+
     private static string InitBucket(S3CheckpointerOptions checkpointerOptions)
     {
         return string.IsNullOrWhiteSpace(checkpointerOptions.BucketName)
@@ -164,7 +206,7 @@ public sealed class S3Checkpointer : ICheckpointer
 }
 
 /// <summary>
-///     List object keys under a thread prefix (paginated).
+///     List object keys / common prefixes under a prefix (paginated).
 /// </summary>
 file static class S3CheckpointListing
 {
@@ -200,6 +242,39 @@ file static class S3CheckpointListing
         while (continuationToken is not null);
 
         return keys;
+    }
+
+    public static async Task<IReadOnlyList<string>> ListCommonPrefixesAsync(
+        IAmazonS3 client,
+        string bucket,
+        string prefix,
+        CancellationToken cancellationToken)
+    {
+        var prefixes = new List<string>();
+        string? continuationToken = null;
+        do
+        {
+            var response = await client.ListObjectsV2Async(
+                new ListObjectsV2Request
+                {
+                    BucketName = bucket,
+                    Prefix = prefix,
+                    Delimiter = "/",
+                    ContinuationToken = continuationToken,
+                },
+                cancellationToken);
+
+            if (response.CommonPrefixes is not null)
+            {
+                prefixes.AddRange(
+                    response.CommonPrefixes.Where(static entry => !string.IsNullOrEmpty(entry)));
+            }
+
+            continuationToken = response.IsTruncated == true ? response.NextContinuationToken : null;
+        }
+        while (continuationToken is not null);
+
+        return prefixes;
     }
 }
 

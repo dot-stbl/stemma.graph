@@ -57,6 +57,31 @@ internal static class InMemoryAmazonS3
             {
                 var request = callInfo.Arg<ListObjectsV2Request>();
                 var prefix = request.Prefix ?? "";
+                var delimiter = request.Delimiter;
+
+                if (!string.IsNullOrEmpty(delimiter))
+                {
+                    var common = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var key in objects.Keys.Where(key => key.StartsWith(prefix, StringComparison.Ordinal)))
+                    {
+                        var rest = key[prefix.Length..];
+                        var slash = rest.IndexOf(delimiter, StringComparison.Ordinal);
+                        if (slash >= 0)
+                        {
+                            common.Add(prefix + rest[..(slash + delimiter.Length)]);
+                        }
+                    }
+
+                    return Task.FromResult(new ListObjectsV2Response
+                    {
+                        HttpStatusCode = HttpStatusCode.OK,
+                        S3Objects = [],
+                        CommonPrefixes = common.OrderBy(static entry => entry, StringComparer.Ordinal).ToList(),
+                        IsTruncated = false,
+                        KeyCount = 0,
+                    });
+                }
+
                 var matches = objects.Keys
                     .Where(key => key.StartsWith(prefix, StringComparison.Ordinal))
                     .OrderBy(key => key, StringComparer.Ordinal)

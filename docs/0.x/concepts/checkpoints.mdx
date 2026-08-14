@@ -42,6 +42,18 @@ Task<IReadOnlyList<CheckpointSnapshot>> ListAsync(string threadId, CancellationT
 | `GetAsync` | Latest snapshot, or **null** if never written |
 | `ListAsync` | History ascending by step; if you can’t, throw `NotSupportedException` |
 
+Optional **thread discovery** (ops UI, multi-host): implement
+`IThreadDiscovery.ListThreadIdsAsync` on the same type as `ICheckpointer`.
+`VolutaUiSession.ListThreadsAsync` merges discovery ids with in-process
+`TrackThread` so a restarted host can list durable threads without re-tracking.
+
+| Provider | How threads are enumerated |
+|----------|----------------------------|
+| File | Child directories under the checkpointer root (one dir per sanitized thread id) |
+| EF Core | `SELECT DISTINCT ThreadId … ORDER BY ThreadId` on the checkpoints table |
+| S3 | `ListObjectsV2` with `Delimiter=/` under the key prefix (CommonPrefixes) |
+| InMemory | Keys already present in the process-local dictionary |
+
 Your app should depend on the interface. Swap in-memory → file → future store
 without rewriting nodes.
 
