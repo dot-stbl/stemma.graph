@@ -555,6 +555,7 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | [`src/Voluta.Abstractions`](src/Voluta.Abstractions/) |
 | `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | [`src/Voluta`](src/Voluta/) |
 | `Voluta.DependencyInjection` | `AddVoluta(v => { v.Checkpoints…; v.Graph… })` | [`src/Voluta.DependencyInjection`](src/Voluta.DependencyInjection/) |
+| `Voluta.OpenTelemetry` | `AddVolutaInstrumentation()` for OTel Tracer/Meter providers | [`src/Voluta.OpenTelemetry`](src/Voluta.OpenTelemetry/) |
 | `Voluta.Generators` | `[GraphState]` source generator | [`src/Voluta.Generators`](src/Voluta.Generators/) |
 | `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/Voluta.Testing`](src/Voluta.Testing/) |
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
@@ -565,8 +566,32 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
-Checkpoint providers (File / EF / S3), UI, and Agents.AI are regular-CLR packages and do not
-claim AOT.
+Checkpoint providers (File / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
+and do not claim AOT.
+
+### OpenTelemetry
+
+Core `Voluta` always emits BCL `ActivitySource` / `Meter` named `"Voluta"` (no OTel SDK dependency).
+Wire the SDK with `Voluta.OpenTelemetry`:
+
+```csharp
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+using Voluta.OpenTelemetry;
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddVolutaInstrumentation()
+        .AddOtlpExporter())
+    .WithMetrics(metrics => metrics
+        .AddVolutaInstrumentation()
+        .AddOtlpExporter());
+```
+
+Spans: `voluta.superstep`, `voluta.node.execute`, `voluta.checkpoint.put|get|list`.  
+Metrics: `voluta.superstep.duration`, `voluta.node.duration` (ms), `voluta.interrupt.count`,
+`voluta.checkpoint.*.count`. Tags: `node.name`, `run.status`, `error.type`, `provider.name`
+(no raw thread ids).
 
 ## Samples
 

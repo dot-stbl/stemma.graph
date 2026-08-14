@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Voluta.Abstractions.Results;
+using Voluta.Diagnostics;
 using Voluta.Exceptions;
 using Voluta.Exceptions.Run;
 using Voluta.Graph;
@@ -142,6 +144,12 @@ file static class RunEngineExecutionHelpers
             throw new GraphRunFailedException($"Unknown ready node '{readyTask.NodeName}'.");
         }
 
+        var tags = new TagList { { VolutaDiagnostics.TagNodeName, readyTask.NodeName } };
+        using var scope = ActivityScope.Start(
+            VolutaDiagnostics.NodeExecuteActivityName,
+            VolutaDiagnostics.NodeDuration,
+            tags);
+
         var context = new GraphContext(
             readyTask.NodeName,
             snapshot,
@@ -151,6 +159,11 @@ file static class RunEngineExecutionHelpers
         try
         {
             var result = await handler(context, cancellationToken);
+            if (result is InterruptNodeResult)
+            {
+                VolutaDiagnostics.InterruptCount.Add(1, tags);
+            }
+
             return new NodeExecution(readyTask.NodeName, readyTask.TaskId, result);
         }
         catch (OperationCanceledException)
@@ -159,9 +172,15 @@ file static class RunEngineExecutionHelpers
         }
         catch (Exception exception) when (exception is not GraphException)
         {
+            scope.SetError(exception);
             throw new GraphRunFailedException(
                 $"Node '{readyTask.NodeName}' threw: {exception.Message}",
                 exception);
+        }
+        catch (GraphException graphException)
+        {
+            scope.SetError(graphException);
+            throw;
         }
     }
 }

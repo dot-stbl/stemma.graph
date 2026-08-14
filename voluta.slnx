@@ -15,6 +15,7 @@
     <Project Path="src/Voluta.Abstractions/Voluta.Abstractions.csproj" />
     <Project Path="src/Voluta/Voluta.csproj" />
     <Project Path="src/Voluta.DependencyInjection/Voluta.DependencyInjection.csproj" />
+    <Project Path="src/Voluta.OpenTelemetry/Voluta.OpenTelemetry.csproj" />
     <Project Path="src/Voluta.Testing/Voluta.Testing.csproj" />
     <Project Path="src/Voluta.Generators/Voluta.Generators.csproj" />
     <Project Path="src/Voluta.Checkpoints.File/Voluta.Checkpoints.File.csproj" />
@@ -41,6 +42,7 @@
     <Project Path="tests/Voluta.Unit/Voluta.Unit.csproj" />
     <Project Path="tests/Voluta.Abstractions.Unit/Voluta.Abstractions.Unit.csproj" />
     <Project Path="tests/Voluta.DependencyInjection.Unit/Voluta.DependencyInjection.Unit.csproj" />
+    <Project Path="tests/Voluta.OpenTelemetry.Unit/Voluta.OpenTelemetry.Unit.csproj" />
     <Project Path="tests/Voluta.Agents.AI.Unit/Voluta.Agents.AI.Unit.csproj" />
     <Project Path="tests/Voluta.Testing.Unit/Voluta.Testing.Unit.csproj" />
     <Project Path="tests/Voluta.Generators.Unit/Voluta.Generators.Unit.csproj" />
