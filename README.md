@@ -28,9 +28,9 @@ Our design bets:
 ```
 
 > [!IMPORTANT]
-> **Pre-release.** On `main`: Pregel engine, InMemory + File checkpointers, Send / subgraph helpers,
-> source generator, Testing, MicrosoftAi helpers, `MapVolutaUI`, five samples, BenchmarkDotNet.
-> **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
+> **Pre-release.** On `main`: Pregel engine, checkpointers (InMemory · File · EF Core · S3),
+> Send / subgraph helpers, source generator, Testing, MicrosoftAi helpers, `MapVolutaUI`,
+> samples, BenchmarkDotNet. **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
 > ([epic #1](https://github.com/dot-stbl/voluta/issues/1)). Until then, reference projects
 > from source — see [Quick Start](#quick-start).
 
@@ -275,6 +275,82 @@ Swap `InvokeAsync` for `StreamAsync` to observe the run as it happens
 thread to outlive the process. Under a host, `services.AddVoluta(provider => …)` compiles the
 graph once and registers it as a singleton.
 
+## Durable checkpoints
+
+`ICheckpointer` is the only storage seam. Pick a provider at host startup with a fluent builder —
+exactly one `Use*`:
+
+```csharp
+// In-process (tests / samples)
+services.AddVolutaCheckpoints(c => c.UseInMemory());
+
+// JSON files under a directory
+services.AddVolutaCheckpoints(c => c.UseFile("./.voluta/checkpoints"));
+
+// Your app DbContext (any EF provider: Npgsql, SqlServer, SQLite, …)
+services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
+services.AddVolutaCheckpoints(c => c.UseEntityFrameworkCore<AppDbContext>());
+
+// S3 / MinIO / R2 (register IAmazonS3 yourself)
+services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(RegionEndpoint.EUCentral1));
+services.AddVolutaCheckpoints(c => c.UseS3(o =>
+{
+    o.BucketName = "voluta";
+    o.KeyPrefix = "runs";
+}));
+```
+
+Wire the graph with the registered store:
+
+```csharp
+services.AddVoluta(sp =>
+{
+    var checkpointer = sp.GetRequiredService<ICheckpointer>();
+    return new StateGraph()
+        // …nodes, edges, channels…
+        .Compile(checkpointer);
+});
+```
+
+<details>
+<summary><strong>Host DbContext shape (EF)</strong></summary>
+
+```csharp
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
+    : DbContext(options), IVolutaCheckpointDbContext
+{
+    public DbSet<CheckpointRecord> Checkpoints => Set<CheckpointRecord>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyVolutaCheckpointModel(); // table voluta_checkpoints
+        // …your entities…
+    }
+}
+```
+
+Schema ownership is yours: migrations or `EnsureCreated()` in tests. Column names follow
+**your** EF naming convention (no forced snake_case). Snapshot payload is a JSON column via
+EF value conversion — the checkpointer itself does not call `JsonSerializer`.
+
+</details>
+
+<details>
+<summary><strong>Errors and limits</strong></summary>
+
+- **Miss on Get** → `null` (not an exception).
+- **Storage failures** → `CheckpointStoreException` with stable `Code`
+  (`checkpoint.put_failed` / `get_failed` / `list_failed`). Graph logic still uses
+  `GraphException` and friends.
+- **Channel values** should be JSON-friendly (strings, numbers, lists of primitives). Complex
+  CLR graphs may not round-trip — same wire limits for File, EF, and S3.
+- **S3 keys:** `{prefix}/{safeThreadId}/{step:D12}.json`.
+
+Every provider is exercised by `CheckpointerConformance.RunAllAsync` in `Voluta.Testing`
+(InMemory, File, EF SQLite + EF InMemory, S3 with a fake client).
+
+</details>
+
 ## How a superstep works
 
 One tick of the engine, in order: collect every node made ready by the previous tick, run them
@@ -317,18 +393,19 @@ what?". Those three questions are the entire library.
 |---|---|---|
 | `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | on `main` |
 | `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | on `main` |
-| `Voluta.DependencyInjection` | `AddVoluta` for `IServiceCollection` | on `main` |
+| `Voluta.DependencyInjection` | `AddVoluta` + `AddVolutaCheckpoints` | on `main` |
 | `Voluta.Generators` | `[GraphState]` source generator | on `main` |
 | `Voluta.Testing` | Test doubles + checkpointer conformance suite | on `main` |
-| `Voluta.Checkpoints.File` | JSON file-system checkpointer | on `main` |
-| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core checkpointer | on `main` |
-| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible checkpointer | on `main` |
+| `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | on `main` |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | on `main` |
+| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | on `main` |
 | `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | on `main` |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | on `main` |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
-`DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/03-AotSmoke`.
-File checkpoints, UI, and MicrosoftAi are regular-CLR packages and do not claim AOT.
+`DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
+Checkpoint providers (File / EF / S3), UI, and MicrosoftAi are regular-CLR packages and do not
+claim AOT.
 
 ## Samples
 
@@ -345,10 +422,10 @@ File checkpoints, UI, and MicrosoftAi are regular-CLR packages and do not claim 
 Stated plainly so you can judge the fit:
 
 - **No published packages.** Source references only until the 0.1 tag.
-- **No EF / S3 checkpointers.** File + InMemory ship on `main`; EF/S3 still planned.
-- **UI is a first cut.** `MapVolutaUI` covers checkpoint inspect, HITL resume, topology —
-  not live SSE stream or multi-host thread discovery.
-- **PublicAPI ship gate open.** Surface can still move before `v0.1.0`.
+- **PublicAPI surface can still move** before `v0.1.0` (tracked with PublicApiAnalyzers).
+- **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE — not multi-host
+  thread discovery or auth.
+- **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
 
 ## Development
 
