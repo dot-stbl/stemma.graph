@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\Voluta.Tools\Voluta.Tools.csproj" />
     <ProjectReference Include="..\Voluta.Samples.Shared\Voluta.Samples.Shared.csproj" />
   </ItemGroup>
 

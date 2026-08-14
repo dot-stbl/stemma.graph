@@ -1,0 +1,151 @@
+---
+title: Tools and MCP
+description: Invoke tools from graph nodes without an LLM SDK — ITool, ToolGraphNode, optional timeout, light MCP HTTP client.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Tools / MCP
+  order: 17
+  group: Concepts
+---
+
+voluta does **not** ship an LLM client. Tool-calling is still a first-class
+agent loop pattern: a node decides to call a tool, the tool returns text (or a
+soft error), and the graph merges that into channels for the next superstep.
+
+Package **`Voluta.Tools`** productizes that seam:
+
+| Type | Role |
+|------|------|
+| `ITool` / `DelegateTool` | Named invoke surface (local or remote) |
+| `ToolCall` / `ToolResult` | Request + text/`isError` outcome |
+| `ToolGraphNode` | `IGraphNode` that invokes a tool and writes channels |
+| `IMcpClient` / `HttpMcpClient` | List + call against an MCP-shaped HTTP surface |
+| `McpTool` | `ITool` that forwards to `IMcpClient` |
+
+## ReAct-style loop (sketch)
+
+```text
+agent ──(wants tool)──► tool node ──(writes result)──► agent ──► …
+                │
+                └─ optional Interrupt for HITL before side effects
+```
+
+The runtime only schedules nodes and merges channels. Your agent node (chat
+client, MAF agent, or hand-written policy) chooses **which** tool and
+**arguments**; `ToolGraphNode` owns invoke + timeout + channel write.
+
+## Local tool with `DelegateTool`
+
+```csharp
+using Voluta.Tools.Tools;
+
+var weather = DelegateTool.Create(
+    "get_weather",
+    (call, cancellationToken) =>
+    {
+        var city = call.Arguments.TryGetValue("city", out var value)
+            ? value?.ToString() ?? "unknown"
+            : "unknown";
+        return Task.FromResult(ToolResult.Ok($"{city}: 18°C, cloudy"));
+    },
+    description: "Current weather for a city");
+
+var graph = new StateGraph()
+    .AddChannel("tool_out", ChannelKind.LastValue)
+    .AddNode(
+        "weather",
+        ToolGraphNode.Create(
+            weather,
+            "tool_out",
+            new Dictionary<string, object?> { ["city"] = "Berlin" },
+            timeout: TimeSpan.FromSeconds(5)))
+    .AddEdge(GraphConstants.Start, "weather")
+    .AddEdge("weather", GraphConstants.End)
+    .Compile(new InMemoryCheckpointer());
+```
+
+`ToolNodes.Add(...)` is the same registration without extension methods
+(matches `AgentNodes` / `ChatClientNodes` style).
+
+## Build the call from state
+
+```csharp
+ToolGraphNode.Create(
+    weather,
+    "tool_out",
+    context => new ToolCall(
+        "get_weather",
+        new Dictionary<string, object?>
+        {
+            ["city"] = context.Read<string>("city") ?? "Berlin",
+        }));
+```
+
+Or schedule a tool node via `Send` with `TaskPayload` as a `ToolCall` — the node
+uses that when no `callFactory` is set.
+
+## Timeout and soft errors
+
+| Option | Behavior |
+|--------|----------|
+| `Timeout` | Linked CTS; on timeout throws `ToolInvocationException` |
+| `ErrorChannel` | Writes `bool` when the tool returns `IsError` |
+| `ThrowOnError` | Soft `IsError` becomes `ToolInvocationException` |
+
+Soft errors are the MCP-style path: the remote says `isError: true` without an
+HTTP failure. Hard faults (network, timeout) still throw.
+
+## MCP HTTP adapter
+
+`HttpMcpClient` talks to the **demo** surface used by `samples/MockAdMcp`:
+
+- `GET  /mcp/tools`
+- `POST /mcp/tools/call` body `{ "name", "arguments" }`
+
+```csharp
+using Voluta.Tools.Mcp;
+using Voluta.Tools.Tools;
+
+using var mcp = HttpMcpClient.Create("http://localhost:5190");
+var tools = await mcp.ListToolsAsync();
+var result = await mcp.CallAsync(new ToolCall("list_ssps"));
+
+var remote = McpTool.Create(mcp, "list_ssps", "SSP catalog");
+// register ToolGraphNode.Create(remote, "tool_out")
+```
+
+This is **not** a full MCP SDK (stdio/SSE sessions, sampling, resources). It is
+the productized bridge from the MarketingAgent sample so hosts can swap in a
+real transport behind `IMcpClient` later without changing graph nodes.
+
+## Interrupt around tools
+
+For irreversible actions, keep HITL **outside** the tool body:
+
+```csharp
+// policy node
+if (needsApproval)
+{
+    return NodeResult.Interrupt(new { tool = "activate_campaign", campaignId });
+}
+
+// after ResumeAsync — tool node runs only when approved
+return NodeResult.Continue(new ChannelWrite("status", "call_tool"));
+```
+
+See [Interrupts / HITL](./interrupts) for resume payloads.
+
+## Package boundary
+
+- **`Voluta.Tools`** depends on **`Voluta`** only (no MEAI / MAF).
+- Core **`Voluta`** never references Tools (architecture tests enforce this).
+- LLM tool-calling with Microsoft.Extensions.AI stays in **`Voluta.Agents.AI`**;
+  this package is the SDK-free side.
+
+## Samples
+
+| Sample | Role |
+|--------|------|
+| [`MockAdMcp`](../../samples.mdx) | HTTP tool surface (Hybrid-shaped desk) |
+| [`MarketingAgent`](../../samples.mdx) | Graph that calls those tools via `HttpMcpClient` |

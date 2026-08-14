@@ -22,6 +22,7 @@ public sealed class PackageIsolationShould
         "Voluta.Checkpoints.Postgres",
         "Voluta.UI",
         "Voluta.Agents.AI",
+        "Voluta.Tools",
         "Voluta.Generators",
         "Voluta.Testing",
     ];
@@ -69,6 +70,7 @@ public sealed class PackageIsolationShould
             "Voluta.Checkpoints.Postgres",
             "Voluta.UI",
             "Voluta.Agents.AI",
+            "Voluta.Tools",
             "Voluta.Generators",
             "Voluta.Testing",
         };
@@ -126,6 +128,20 @@ public sealed class PackageIsolationShould
         references.ShouldNotContain("Voluta.Checkpoints.Postgres");
     }
 
+    [Fact(DisplayName = "Given Voluta.Tools, when ProjectReferences are read, then Voluta is referenced and UI/EF/Agents are not")]
+    public void ToolsMayReferenceVolutaButNotUiEfOrAgents()
+    {
+        var path = CsprojGraph.SrcProject("Voluta.Tools.csproj");
+        var references = CsprojGraph.ProjectReferenceNames(path);
+
+        references.ShouldContain("Voluta");
+        references.ShouldNotContain("Voluta.UI");
+        references.ShouldNotContain("Voluta.Agents.AI");
+        references.ShouldNotContain("Voluta.Checkpoints.EntityFrameworkCore");
+        references.ShouldNotContain("Voluta.Checkpoints.S3");
+        references.ShouldNotContain("Voluta.Checkpoints.File");
+    }
+
     [Fact(DisplayName = "Given Voluta.Abstractions assembly, when types are scanned, then they do not depend on EF/ASP.NET/AI packages")]
     public void AbstractionsAssemblyHasNoForbiddenTypeDependencies()
     {
@@ -145,7 +161,8 @@ public sealed class PackageIsolationShould
                 "Voluta.Checkpoints.Sqlite",
                 "Voluta.Checkpoints.Postgres",
                 "Voluta.UI",
-                "Voluta.Agents.AI")
+                "Voluta.Agents.AI",
+                "Voluta.Tools")
             .GetResult();
 
         result.IsSuccessful.ShouldBeTrue(
@@ -173,7 +190,8 @@ public sealed class PackageIsolationShould
                 "Voluta.Checkpoints.Sqlite",
                 "Voluta.Checkpoints.Postgres",
                 "Voluta.UI",
-                "Voluta.Agents.AI")
+                "Voluta.Agents.AI",
+                "Voluta.Tools")
             .GetResult();
 
         result.IsSuccessful.ShouldBeTrue(

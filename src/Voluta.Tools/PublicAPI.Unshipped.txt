@@ -1,0 +1,63 @@
+#nullable enable
+Voluta.Tools.Mcp.HttpMcpClient
+Voluta.Tools.Mcp.HttpMcpClient.HttpMcpClient(System.Net.Http.HttpClient! http) -> void
+Voluta.Tools.Mcp.HttpMcpClient.CallAsync(Voluta.Tools.Tools.ToolCall! call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!
+Voluta.Tools.Mcp.HttpMcpClient.Dispose() -> void
+Voluta.Tools.Mcp.HttpMcpClient.ListToolsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Tools.Tools.ToolDefinition!>!>!
+static Voluta.Tools.Mcp.HttpMcpClient.Create(string! baseUrl, System.TimeSpan? timeout = null) -> Voluta.Tools.Mcp.HttpMcpClient!
+Voluta.Tools.Mcp.IMcpClient
+Voluta.Tools.Mcp.IMcpClient.CallAsync(Voluta.Tools.Tools.ToolCall! call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!
+Voluta.Tools.Mcp.IMcpClient.ListToolsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Tools.Tools.ToolDefinition!>!>!
+Voluta.Tools.Mcp.McpTool
+Voluta.Tools.Mcp.McpTool.McpTool(Voluta.Tools.Mcp.IMcpClient! client, Voluta.Tools.Tools.ToolDefinition! definition) -> void
+Voluta.Tools.Mcp.McpTool.Definition.get -> Voluta.Tools.Tools.ToolDefinition!
+Voluta.Tools.Mcp.McpTool.InvokeAsync(Voluta.Tools.Tools.ToolCall! call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!
+static Voluta.Tools.Mcp.McpTool.Create(Voluta.Tools.Mcp.IMcpClient! client, string! name, string? description = null) -> Voluta.Tools.Mcp.McpTool!
+Voluta.Tools.Tools.DelegateTool
+Voluta.Tools.Tools.DelegateTool.DelegateTool(Voluta.Tools.Tools.ToolDefinition! definition, System.Func<Voluta.Tools.Tools.ToolCall!, System.Threading.CancellationToken, System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!>! invoke) -> void
+Voluta.Tools.Tools.DelegateTool.Definition.get -> Voluta.Tools.Tools.ToolDefinition!
+Voluta.Tools.Tools.DelegateTool.InvokeAsync(Voluta.Tools.Tools.ToolCall! call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!
+static Voluta.Tools.Tools.DelegateTool.Create(string! name, System.Func<Voluta.Tools.Tools.ToolCall!, System.Threading.CancellationToken, System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!>! invoke, string? description = null) -> Voluta.Tools.Tools.DelegateTool!
+Voluta.Tools.Tools.ITool
+Voluta.Tools.Tools.ITool.Definition.get -> Voluta.Tools.Tools.ToolDefinition!
+Voluta.Tools.Tools.ITool.InvokeAsync(Voluta.Tools.Tools.ToolCall! call, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Tools.Tools.ToolResult!>!
+Voluta.Tools.Tools.ToolCall
+Voluta.Tools.Tools.ToolCall.ToolCall(string! name, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? arguments = null) -> void
+Voluta.Tools.Tools.ToolCall.Arguments.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Voluta.Tools.Tools.ToolCall.Name.get -> string!
+Voluta.Tools.Tools.ToolDefinition
+Voluta.Tools.Tools.ToolDefinition.ToolDefinition(string! name, string? description = null, object? inputSchema = null) -> void
+Voluta.Tools.Tools.ToolDefinition.Description.get -> string?
+Voluta.Tools.Tools.ToolDefinition.InputSchema.get -> object?
+Voluta.Tools.Tools.ToolDefinition.Name.get -> string!
+Voluta.Tools.Tools.ToolGraphNode
+Voluta.Tools.Tools.ToolGraphNode.ToolGraphNode(Voluta.Tools.Tools.ITool! tool, Voluta.Tools.Tools.ToolNodeOptions! options, System.Func<Voluta.Graph.GraphContext!, Voluta.Tools.Tools.ToolCall!>? callFactory = null) -> void
+Voluta.Tools.Tools.ToolGraphNode.InvokeAsync(Voluta.Graph.GraphContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Results.NodeResult!>!
+static Voluta.Tools.Tools.ToolGraphNode.Create(Voluta.Tools.Tools.ITool! tool, string! outputChannel) -> Voluta.Tools.Tools.ToolGraphNode!
+static Voluta.Tools.Tools.ToolGraphNode.Create(Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? arguments, System.TimeSpan? timeout) -> Voluta.Tools.Tools.ToolGraphNode!
+static Voluta.Tools.Tools.ToolGraphNode.Create(Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, Voluta.Tools.Tools.ToolCall!>! callFactory) -> Voluta.Tools.Tools.ToolGraphNode!
+static Voluta.Tools.Tools.ToolGraphNode.Create(Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, Voluta.Tools.Tools.ToolCall!>! callFactory, System.TimeSpan? timeout) -> Voluta.Tools.Tools.ToolGraphNode!
+Voluta.Tools.Tools.ToolInvocationException
+Voluta.Tools.Tools.ToolInvocationException.ToolInvocationException(string! toolName, string! message, System.Exception? innerException = null) -> void
+Voluta.Tools.Tools.ToolInvocationException.ToolName.get -> string!
+Voluta.Tools.Tools.ToolNodeOptions
+Voluta.Tools.Tools.ToolNodeOptions.ToolNodeOptions() -> void
+Voluta.Tools.Tools.ToolNodeOptions.ErrorChannel.get -> string?
+Voluta.Tools.Tools.ToolNodeOptions.ErrorChannel.init -> void
+Voluta.Tools.Tools.ToolNodeOptions.OutputChannel.get -> string!
+Voluta.Tools.Tools.ToolNodeOptions.OutputChannel.init -> void
+Voluta.Tools.Tools.ToolNodeOptions.ThrowOnError.get -> bool
+Voluta.Tools.Tools.ToolNodeOptions.ThrowOnError.init -> void
+Voluta.Tools.Tools.ToolNodeOptions.Timeout.get -> System.TimeSpan?
+Voluta.Tools.Tools.ToolNodeOptions.Timeout.init -> void
+Voluta.Tools.Tools.ToolNodes
+static Voluta.Tools.Tools.ToolNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, Voluta.Tools.Tools.ITool! tool, string! outputChannel) -> Voluta.Graph.Builder.StateGraph!
+static Voluta.Tools.Tools.ToolNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? arguments, System.TimeSpan? timeout) -> Voluta.Graph.Builder.StateGraph!
+static Voluta.Tools.Tools.ToolNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, Voluta.Tools.Tools.ToolCall!>! callFactory) -> Voluta.Graph.Builder.StateGraph!
+static Voluta.Tools.Tools.ToolNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, Voluta.Tools.Tools.ITool! tool, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, Voluta.Tools.Tools.ToolCall!>! callFactory, System.TimeSpan? timeout) -> Voluta.Graph.Builder.StateGraph!
+Voluta.Tools.Tools.ToolResult
+Voluta.Tools.Tools.ToolResult.ToolResult(string! text, bool isError = false) -> void
+Voluta.Tools.Tools.ToolResult.IsError.get -> bool
+Voluta.Tools.Tools.ToolResult.Text.get -> string!
+static Voluta.Tools.Tools.ToolResult.Error(string! message) -> Voluta.Tools.Tools.ToolResult!
+static Voluta.Tools.Tools.ToolResult.Ok(string! text) -> Voluta.Tools.Tools.ToolResult!
