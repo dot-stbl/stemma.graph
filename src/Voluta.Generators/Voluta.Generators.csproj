@@ -19,22 +19,7 @@
       Not required to compile or run the Voluta runtime.
     </Description>
     <PackageTags>$(PackageTags);source-generator;roslyn;graph-state</PackageTags>
-    <!-- Analyzer package: do not ship as a normal library dependency. -->
     <IncludeSymbols>false</IncludeSymbols>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
-  </ItemGroup>
-
-  <!-- Pack the generator DLL under analyzers/dotnet/cs so NuGet consumers get it as an analyzer. -->
-  <ItemGroup>
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
-
-  <!-- SourceLink is noisy for analyzer packages and worktree builds without a remote. -->
-  <PropertyGroup>
     <PublishRepositoryUrl>false</PublishRepositoryUrl>
     <EmbedUntrackedSources>false</EmbedUntrackedSources>
     <EnableSourceLink>false</EnableSourceLink>
@@ -42,7 +27,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
   </ItemGroup>
+
+  <!-- Analyzer DLL into nupkg. Avoid DependsOnTargets Build (breaks no-build pack smoke). -->
+  <Target Name="AddAnalyzerToPackage" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_AnalyzerDll Condition="'$(TargetPath)' != '' and Exists('$(TargetPath)')">$(TargetPath)</_AnalyzerDll>
+      <_AnalyzerDll Condition="'$(_AnalyzerDll)' == '' and Exists('$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll')">$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll</_AnalyzerDll>
+    </PropertyGroup>
+    <Error
+      Condition="'$(_AnalyzerDll)' == ''"
+      Text="Voluta.Generators: analyzer DLL not found for pack. Build the project before packing." />
+    <ItemGroup>
+      <None Include="$(_AnalyzerDll)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
 
 </Project>
