@@ -1,0 +1,105 @@
+---
+title: Checkpoints
+description: Why every barrier can persist — threads that outlive the process.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Checkpoints
+  order: 15
+  group: Concepts
+---
+
+A **checkpoint** is a coherent snapshot of a thread after a superstep barrier:
+channel values, run status, interrupt payload if any, enough bookkeeping to
+continue.
+
+Without checkpoints, voluta would be an in-process state machine. With them, a
+run can **pause, survive restart, and resume** under the same `ThreadId` —
+including from another process.
+
+## Why after every barrier?
+
+Because that is when state is **consistent**:
+
+- all node tasks for the tick finished  
+- writes were merged through reducers  
+- edges have not yet started the next tick (or the run stopped)
+
+Checkpointing mid-handler would freeze half-thoughts. Checkpointing only at
+process exit loses the “human approved three hours later” story.
+
+## The only storage seam: `ICheckpointer`
+
+```csharp
+Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default);
+Task<CheckpointSnapshot?> GetAsync(string threadId, CancellationToken cancellationToken = default);
+Task<IReadOnlyList<CheckpointSnapshot>> ListAsync(string threadId, CancellationToken cancellationToken = default);
+```
+
+| Method | Contract |
+|--------|----------|
+| `PutAsync` | Persist this snapshot for the thread |
+| `GetAsync` | Latest snapshot, or **null** if never written |
+| `ListAsync` | History ascending by step; if you can’t, throw `NotSupportedException` |
+
+Your app should depend on the interface. Swap in-memory → file → future store
+without rewriting nodes.
+
+## What a snapshot carries
+
+| Field | Why it exists |
+|-------|----------------|
+| `ThreadId` | Isolation between conversations / jobs |
+| `Step` | Superstep index — ordering and debugging |
+| `Status` | `Done` / `Interrupted` / `Failed` / … |
+| `ChannelValues` | The actual graph state |
+| `InterruptPayload` | What to show a human when paused |
+| `PendingSends` / `PendingWrites` | Mid-run recovery details |
+
+You rarely construct these by hand — the runtime does. You *read* them for ops
+UIs, support tools, and tests.
+
+## Providers
+
+| Provider | Package | Registration |
+|----------|---------|--------------|
+| In-memory | `Voluta` | `v.Checkpoints.UseInMemory()` |
+| File (JSON on disk) | `Voluta.Checkpoints.File` | `v.Checkpoints.UseFile(root)` |
+| EF Core | `Voluta.Checkpoints.EntityFrameworkCore` | `v.Checkpoints.UseEntityFrameworkCore<TDb>()` |
+| S3 / compatible | `Voluta.Checkpoints.S3` | `v.Checkpoints.UseS3(o => …)` |
+
+```csharp
+services.AddVoluta(v =>
+{
+    v.Checkpoints.UseFile("/var/lib/myapp/voluta-checkpoints");
+    v.Graph((sp, checkpointer) => /* … */ .Compile(checkpointer));
+});
+```
+
+Provider types (`FileCheckpointer`, EF, S3) are constructed via `Use*` only —
+not `new` from app code. Prefer JSON-friendly channel values (strings, numbers,
+lists of primitives); complex CLR graphs may not round-trip.
+
+In-memory is not “fake voluta.” It is the same protocol with a store that dies
+with the process — fine until durability is a product requirement.
+
+## Testing storage without lying
+
+`Voluta.Testing` exists so you don’t invent half-broken doubles:
+
+- `RecordingCheckpointer` — see every put/get/list  
+- `FaultInjectingCheckpointer` — fail the *n*-th write; assert the run survives or fails cleanly  
+- `CheckpointerConformance.RunAllAsync` — the suite **your** `ICheckpointer` should pass, interrupt fields included  
+
+If you implement a new store, conformance is the bar — not a happy-path unit
+test that never interrupts.
+
+## Operational habits
+
+1. **Stable thread ids** from your domain (ticket id, session id), not random per
+   request unless you truly want a one-shot run.  
+2. **Treat Interrupted as normal** — poll or webhook → `ResumeInvokeAsync`.  
+3. **Don’t hand-edit checkpoint files** in production; use the API and UI.  
+
+Next: [Interrupts](/voluta/0.x/concepts/interrupts) for the pause/resume path
+that makes checkpoints earn their keep.

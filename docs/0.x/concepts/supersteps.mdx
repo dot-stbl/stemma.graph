@@ -1,0 +1,94 @@
+---
+title: Supersteps
+description: Pregel-style ticks — concurrent work, a barrier, then merge and route.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Supersteps
+  order: 14
+  group: Concepts
+---
+
+voluta does not run your graph as an ad-hoc async free-for-all. It runs
+**Pregel-style supersteps**: bulk-synchronous parallel ticks with a barrier in
+the middle.
+
+If you internalize one diagram, make it this one.
+
+## One tick, in order
+
+1. **Ready set** — nodes (and `Send` tasks) from the previous tick  
+2. **Execute** — handlers run **concurrently**, each with a frozen `GraphContext`  
+3. **Barrier** — wait for every task in the set  
+4. **Reduce** — apply `ChannelWrite`s through each channel’s reducer  
+5. **Checkpoint** — `ICheckpointer.PutAsync`  
+6. **Route** — static + conditional edges produce the next ready set  
+
+Then repeat until nothing is ready, something interrupts, something fails, or
+you hit the recursion limit.
+
+## Why this model?
+
+**Determinism under concurrency.** Nodes in the same superstep never see each
+other’s writes. They all see the world as of the last barrier. You can reason
+about parallel tool nodes without inventing locks in user code.
+
+**Routing that cannot race.** Conditional edges run **after** merge, on
+committed state. “Write status, then branch on status” means what it says.
+
+**A natural durability seam.** The barrier is exactly where a checkpoint makes
+sense: work for this tick is done, state is coherent, next tick can be
+recomputed or resumed later.
+
+## What “concurrent” does *not* mean
+
+It does not mean “shared mutable state while handlers run.”  
+It does not mean “edges interleave with writes.”  
+
+It means: several handlers may be in flight; their **effects** land together at
+the barrier under explicit reducers.
+
+## How a run ends
+
+| Outcome | `GraphRunStatus` | Typical cause |
+|---------|------------------|---------------|
+| Success | `Done` | No ready tasks left |
+| HITL pause | `Interrupted` | `NodeResult.Interrupt` |
+| Fault | `Failed` | Node exception, illegal multi-write on `LastValue`, … |
+| Cancel | `Cancelled` | Host cancellation |
+| Out of steps | Failed | Supersteps > `CompileOptions.RecursionLimit` |
+
+`Done` is not “the model said goodbye.” It is “the graph has no next node.”
+Your edge logic decides that — usually by routing to `GraphConstants.End`.
+
+## Thread id and run options
+
+```csharp
+public sealed class RunOptions
+{
+    public required string ThreadId { get; init; }
+    public StreamMode StreamMode { get; init; } = StreamMode.Updates;
+}
+```
+
+`ThreadId` is the isolation key in the checkpointer. Same graph, different
+threads = different conversations / jobs / tickets. Resume always targets a
+thread id, not “whatever was last.”
+
+Pick `StreamMode` for how much of the tick you want to observe — see
+[Streaming](/voluta/0.x/concepts/streaming). The engine does the same work;
+observation is a lens.
+
+## Debugging tip
+
+When a graph “skips” a node, ask:
+
+1. Was it in the ready set? (edges)  
+2. Did a previous tick interrupt or fail? (status)  
+3. Did recursion limit fire?  
+4. Are you looking at stream events from a mode that omits what you expect?
+
+Most “runtime bugs” are topology or channel-kind bugs wearing a superstep mask.
+
+Next: [Checkpoints](/voluta/0.x/concepts/checkpoints) for what is stored at step
+5, and [Streaming](/voluta/0.x/concepts/streaming) for what you can watch.

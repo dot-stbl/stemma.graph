@@ -1,0 +1,136 @@
+---
+title: Install
+description: Add voluta from NuGet or clone the source tree — .NET 10 required.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Install
+  order: 2
+  group: Start
+---
+
+**v0.1.0** is on NuGet. For most apps, packages are enough. Clone the repo when
+you want samples, conformance tests, or to work on the runtime itself.
+
+## What you need
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) — **10.0.100+**
+- A shell where `dotnet --version` prints something ≥ `10.0.100`
+
+Why .NET 10: the packages and samples target current runtime features. Older
+SDKs fail at restore/build.
+
+## NuGet (recommended)
+
+```bash
+dotnet add package Voluta --version 0.1.0
+```
+
+That pulls the runtime and `InMemoryCheckpointer` — enough for HelloWorld-style
+graphs and most unit tests.
+
+Add more packages when a *need* shows up, not “just in case”:
+
+| Package | Add it when… |
+|---------|----------------|
+| `Voluta` | You want any graph execution (required) |
+| `Voluta.Generators` | You’re tired of string channel keys and want `[GraphState]` |
+| `Voluta.DependencyInjection` | A host should compile the graph once and inject it |
+| `Voluta.Checkpoints.File` | Threads must survive process restarts on disk |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Checkpoints in your existing EF database |
+| `Voluta.Checkpoints.S3` | Checkpoints in S3 / MinIO / compatible object store |
+| `Voluta.Testing` | You’re writing checkpointer or stream tests |
+| `Voluta.Agents.AI` | MEAI `IChatClient` or MAF `AIAgent` as graph nodes |
+| `Voluta.UI` | You want the ops console (`MapVolutaUI`) |
+
+## Source (optional)
+
+```bash
+git clone https://github.com/dot-stbl/voluta.git
+cd voluta
+dotnet build voluta.slnx
+```
+
+`TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are on everywhere. A green
+build means you have the same bar CI uses.
+
+```bash
+dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj
+```
+
+## Sanity check: run a sample
+
+```bash
+git clone https://github.com/dot-stbl/voluta.git
+cd voluta
+dotnet run --project samples/HelloWorld
+```
+
+You should see a simulated ReAct loop stream `Updates` until the run finishes.
+If that works, your SDK and tree are fine — jump to
+[Quick Start](/voluta/0.x/quick-start).
+
+## Host DI — `AddVoluta`
+
+Prefer one composition root over raw `new` + ad-hoc factories:
+
+```csharp
+using Voluta.DependencyInjection;
+
+services.AddVoluta(v =>
+{
+    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3
+    v.Graph((sp, checkpointer) => new StateGraph()
+        // …nodes, edges, channels…
+        .Compile(checkpointer, new CompileOptions { Services = sp }));
+});
+
+// Graph only
+services.AddVoluta(prebuiltGraph);
+services.AddVoluta(sp => BuildGraph(sp));
+
+// Checkpoints only
+services.AddVolutaCheckpoints(c => c.UseFile("./.voluta/checkpoints"));
+```
+
+Why not construct a new `StateGraph` per request? Compile validates topology and
+freezes it. Rebuilding every request pays validation cost for nothing and makes
+it easier to ship two slightly different graphs by accident.
+
+### Checkpoint providers
+
+Exactly one `Use*` per host. Provider types are registered via `Use*` — not
+`new` from app code:
+
+```csharp
+v.Checkpoints.UseInMemory();
+v.Checkpoints.UseFile("./.voluta/checkpoints");
+
+// EF — register IDbContextFactory first
+services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
+v.Checkpoints.UseEntityFrameworkCore<AppDbContext>();
+
+// S3 — register IAmazonS3 first
+services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(RegionEndpoint.EUCentral1));
+v.Checkpoints.UseS3(o =>
+{
+    o.BucketName = "voluta";
+    o.KeyPrefix = "runs";
+});
+```
+
+## AOT (when it matters)
+
+Native AOT is for the **core tier** only:
+
+- **Compatible:** `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection`
+- **Regular CLR:** File / EF / S3 checkpointers, UI, Agents.AI
+
+Smoke path if you care about publish size / startup:
+
+```bash
+dotnet publish samples/AotSmoke -c Release
+```
+
+If you only run under the normal runtime, ignore AOT until it becomes a product
+requirement.
