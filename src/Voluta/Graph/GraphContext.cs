@@ -10,11 +10,13 @@ namespace Voluta.Graph;
 /// <param name="channelValues">Snapshot of channel values before this superstep's apply.</param>
 /// <param name="resumePayload">Resume command payload when continuing after interrupt.</param>
 /// <param name="taskPayload">Send/PUSH task payload when this invocation was scheduled via Send.</param>
+/// <param name="services">Optional host <see cref="IServiceProvider" /> (from <see cref="Options.CompileOptions.Services" />).</param>
 public sealed class GraphContext(
     string nodeName,
     IReadOnlyDictionary<string, object?> channelValues,
     object? resumePayload = null,
-    object? taskPayload = null)
+    object? taskPayload = null,
+    IServiceProvider? services = null)
 {
     private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
@@ -32,6 +34,12 @@ public sealed class GraphContext(
     ///     Payload from a <see cref="Abstractions.Runtime.Send" /> that scheduled this task.
     /// </summary>
     public object? TaskPayload { get; } = taskPayload;
+
+    /// <summary>
+    ///     Host service provider when the graph was compiled with
+    ///     <see cref="Options.CompileOptions.Services" />; otherwise <see langword="null" />.
+    /// </summary>
+    public IServiceProvider? Services { get; } = services;
 
     /// <summary>
     ///     Reads a channel value cast to <typeparamref name="T" />, or default when missing/null.
@@ -54,5 +62,23 @@ public sealed class GraphContext(
     public IReadOnlyDictionary<string, object?> Snapshot()
     {
         return channelValues;
+    }
+
+    /// <summary>
+    ///     Resolves <typeparamref name="T" /> from <see cref="Services" /> or throws when missing.
+    /// </summary>
+    /// <typeparam name="T">Service type.</typeparam>
+    /// <returns>Resolved service.</returns>
+    /// <exception cref="InvalidOperationException">When services were not compiled in or type is unregistered.</exception>
+    public T GetRequiredService<T>()
+        where T : notnull
+    {
+        return Services is null
+            ? throw new InvalidOperationException(
+                "GraphContext.Services is null. Pass CompileOptions.Services when compiling the graph (e.g. from AddVoluta factory sp).")
+            : Services.GetService(typeof(T)) is T service
+                ? service
+                : throw new InvalidOperationException(
+                    $"Service '{typeof(T).FullName}' is not registered in GraphContext.Services.");
     }
 }

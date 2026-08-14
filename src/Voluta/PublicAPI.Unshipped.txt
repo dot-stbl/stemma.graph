@@ -29,7 +29,10 @@ Voluta.Graph.Builder.StateGraph.AddChannel(string! name, Voluta.Abstractions.Cha
 Voluta.Graph.Builder.StateGraph.AddConditionalEdges(string! source, System.Func<Voluta.Graph.GraphContext!, string!>! router) -> Voluta.Graph.Builder.StateGraph!
 Voluta.Graph.Builder.StateGraph.AddConditionalEdges(string! source, System.Func<Voluta.Graph.GraphContext!, System.Collections.Generic.IReadOnlyList<string!>!>! router) -> Voluta.Graph.Builder.StateGraph!
 Voluta.Graph.Builder.StateGraph.AddEdge(string! source, string! target) -> Voluta.Graph.Builder.StateGraph!
+Voluta.Graph.Builder.StateGraph.AddNode(string! name, System.Func<System.IServiceProvider!, Voluta.Graph.IGraphNode!>! nodeFactory) -> Voluta.Graph.Builder.StateGraph!
+Voluta.Graph.Builder.StateGraph.AddNode(string! name, Voluta.Graph.IGraphNode! node) -> Voluta.Graph.Builder.StateGraph!
 Voluta.Graph.Builder.StateGraph.AddNode(string! name, Voluta.Graph.Options.NodeHandler! handler) -> Voluta.Graph.Builder.StateGraph!
+Voluta.Graph.Builder.StateGraph.AddNode<TNode>(string! name) -> Voluta.Graph.Builder.StateGraph!
 Voluta.Graph.Builder.StateGraph.Compile(Voluta.Abstractions.Checkpoint.ICheckpointer! checkpointer, Voluta.Graph.Options.CompileOptions? options = null) -> Voluta.Graph.CompiledGraph!
 Voluta.Graph.Builder.StateGraph.StateGraph() -> void
 Voluta.Graph.Builder.StateGraphChannelExtensions
@@ -41,16 +44,22 @@ Voluta.Graph.CompiledGraph.ResumeAsync(string! threadId, Voluta.Abstractions.Run
 Voluta.Graph.CompiledGraph.ResumeInvokeAsync(string! threadId, Voluta.Abstractions.Runtime.Command! command, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Streaming.StreamEvent!>!
 Voluta.Graph.CompiledGraph.StreamAsync(System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! input, Voluta.Abstractions.Runtime.RunOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Voluta.Abstractions.Streaming.StreamEvent!>!
 Voluta.Graph.GraphContext
-Voluta.Graph.GraphContext.GraphContext(string! nodeName, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! channelValues, object? resumePayload = null, object? taskPayload = null) -> void
+Voluta.Graph.GraphContext.GetRequiredService<T>() -> T
+Voluta.Graph.GraphContext.GraphContext(string! nodeName, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! channelValues, object? resumePayload = null, object? taskPayload = null, System.IServiceProvider? services = null) -> void
 Voluta.Graph.GraphContext.NodeName.get -> string!
 Voluta.Graph.GraphContext.Read<T>(string! channelName) -> T?
 Voluta.Graph.GraphContext.ResumePayload.get -> object?
+Voluta.Graph.GraphContext.Services.get -> System.IServiceProvider?
 Voluta.Graph.GraphContext.Snapshot() -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
 Voluta.Graph.GraphContext.TaskPayload.get -> object?
+Voluta.Graph.IGraphNode
+Voluta.Graph.IGraphNode.InvokeAsync(Voluta.Graph.GraphContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Results.NodeResult!>!
 Voluta.Graph.Options.CompileOptions
 Voluta.Graph.Options.CompileOptions.CompileOptions() -> void
 Voluta.Graph.Options.CompileOptions.RecursionLimit.get -> int
 Voluta.Graph.Options.CompileOptions.RecursionLimit.init -> void
+Voluta.Graph.Options.CompileOptions.Services.get -> System.IServiceProvider?
+Voluta.Graph.Options.CompileOptions.Services.init -> void
 Voluta.Graph.Options.NodeHandler
 Voluta.Graph.Subgraph
 Voluta.GraphConstants
