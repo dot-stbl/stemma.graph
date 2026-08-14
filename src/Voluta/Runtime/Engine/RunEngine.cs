@@ -60,11 +60,11 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 null),
             cancellationToken);
 
-        if (options.StreamMode == StreamMode.Events)
+        if (RunEngineStreaming.EmitsLifecycle(options.StreamMode))
         {
             yield return new StreamEvent
             {
-                Mode = StreamMode.Events,
+                Mode = options.StreamMode,
                 Kind = StreamEventKind.Start,
                 Step = step
             };
@@ -131,11 +131,11 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 
         var options = new RunOptions { ThreadId = threadId, StreamMode = streamMode };
 
-        if (streamMode == StreamMode.Events)
+        if (RunEngineStreaming.EmitsLifecycle(streamMode))
         {
             yield return new StreamEvent
             {
-                Mode = StreamMode.Events,
+                Mode = streamMode,
                 Kind = StreamEventKind.Start,
                 Step = checkpoint.Step
             };
@@ -307,23 +307,32 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 throw outOfSteps;
             }
 
-            SuperstepCommit commit;
-            using (var superstep = ActivityScope.Start(
-                       VolutaDiagnostics.SuperstepActivityName,
-                       VolutaDiagnostics.SuperstepDuration))
+            SuperstepCommit? commit = null;
+            await foreach (var item in RunEngineLoopHelpers.RunSuperstepStreamingAsync(
+                               topology,
+                               checkpointer,
+                               options,
+                               store,
+                               readyTasks,
+                               step,
+                               lastNode,
+                               resumeByTaskId: null,
+                               cancellationToken))
             {
-                commit = await RunEngineLoopHelpers.ExecuteSuperstepAsync(
-                    topology,
-                    checkpointer,
-                    options,
-                    store,
-                    readyTasks,
-                    step,
-                    lastNode,
-                    resumeByTaskId: null,
-                    options.ThreadId,
-                    superstep,
-                    cancellationToken);
+                if (item.LiveEvent is { } live)
+                {
+                    yield return live;
+                }
+
+                if (item.Commit is { } done)
+                {
+                    commit = done;
+                }
+            }
+
+            if (commit is null)
+            {
+                throw new InvalidOperationException("Superstep completed without a commit.");
             }
 
             lastNode = commit.LastNode;
@@ -417,43 +426,44 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             var payloadsForStep = isFirstResumeStep ? resumeByTaskId : null;
             isFirstResumeStep = false;
 
-            // Superstep activity must complete before any yield (async iterator rule).
-            SuperstepCommit commit;
-            using (var superstep = ActivityScope.Start(
-                       VolutaDiagnostics.SuperstepActivityName,
-                       VolutaDiagnostics.SuperstepDuration))
+            // Superstep body runs concurrently with live Custom/Messages drain so tokens
+            // surface before the superstep commit (async iterator cannot yield inside using).
+            await foreach (var item in RunEngineLoopHelpers.RunSuperstepStreamingAsync(
+                               topology,
+                               checkpointer,
+                               options,
+                               store,
+                               orderedReady,
+                               step,
+                               lastNode,
+                               payloadsForStep,
+                               cancellationToken))
             {
-                commit = await RunEngineLoopHelpers.ExecuteSuperstepAsync(
-                    topology,
-                    checkpointer,
-                    options,
-                    store,
-                    orderedReady,
-                    step,
-                    lastNode,
-                    payloadsForStep,
-                    options.ThreadId,
-                    superstep,
-                    cancellationToken);
-            }
-
-            lastNode = commit.LastNode;
-            readyTasks = commit.ReadyTasks;
-
-            if (commit.TerminalEvent is { } terminal)
-            {
-                yield return terminal;
-                if (commit.Exception is not null)
+                if (item.Commit is { } commit)
                 {
-                    throw commit.Exception;
+                    lastNode = commit.LastNode;
+                    readyTasks = commit.ReadyTasks;
+
+                    if (commit.TerminalEvent is { } terminal)
+                    {
+                        yield return terminal;
+                        if (commit.Exception is not null)
+                        {
+                            throw commit.Exception;
+                        }
+
+                        yield break;
+                    }
+
+                    foreach (var streamItem in commit.StreamItems)
+                    {
+                        yield return streamItem;
+                    }
                 }
-
-                yield break;
-            }
-
-            foreach (var streamItem in commit.StreamItems)
-            {
-                yield return streamItem;
+                else if (item.LiveEvent is { } live)
+                {
+                    yield return live;
+                }
             }
         }
     }
@@ -476,10 +486,92 @@ file sealed class SuperstepCommit
 }
 
 /// <summary>
+///     Live node stream item or final superstep commit (mutually exclusive).
+/// </summary>
+file sealed class SuperstepStreamItem
+{
+    public StreamEvent? LiveEvent { get; init; }
+
+    public SuperstepCommit? Commit { get; init; }
+}
+
+/// <summary>
 ///     Hot-path helpers for ready-set node name extraction and superstep body (file-static).
 /// </summary>
 file static class RunEngineLoopHelpers
 {
+    public static async IAsyncEnumerable<SuperstepStreamItem> RunSuperstepStreamingAsync(
+        GraphTopology topology,
+        ICheckpointer checkpointer,
+        RunOptions options,
+        ChannelStore store,
+        IReadOnlyList<ReadyTask> orderedReady,
+        long step,
+        string? lastNode,
+        IReadOnlyDictionary<string, object?>? resumeByTaskId,
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken)
+    {
+        var liveChannel = System.Threading.Channels.Channel.CreateUnbounded<StreamEvent>(
+            new System.Threading.Channels.UnboundedChannelOptions
+            {
+                SingleReader = true,
+                SingleWriter = false,
+            });
+
+        Func<string, IStreamWriter>? streamWriterFactory = null;
+        if (RunEngineStreaming.ForwardsNodeStreamItems(options.StreamMode))
+        {
+            streamWriterFactory = nodeName =>
+                new ChannelStreamWriter(liveChannel.Writer, nodeName, step);
+        }
+
+        var executeTask = ExecuteSuperstepAsync(
+            topology,
+            checkpointer,
+            options,
+            store,
+            orderedReady,
+            step,
+            lastNode,
+            resumeByTaskId,
+            options.ThreadId,
+            streamWriterFactory,
+            cancellationToken);
+
+        while (!executeTask.IsCompleted)
+        {
+            while (liveChannel.Reader.TryRead(out var live))
+            {
+                yield return new SuperstepStreamItem { LiveEvent = live };
+            }
+
+            if (executeTask.IsCompleted)
+            {
+                break;
+            }
+
+            var waitRead = liveChannel.Reader.WaitToReadAsync(cancellationToken).AsTask();
+            var completed = await Task.WhenAny(executeTask, waitRead);
+            if (completed == waitRead && await waitRead)
+            {
+                while (liveChannel.Reader.TryRead(out var live))
+                {
+                    yield return new SuperstepStreamItem { LiveEvent = live };
+                }
+            }
+        }
+
+        var commit = await executeTask;
+        liveChannel.Writer.TryComplete();
+        while (liveChannel.Reader.TryRead(out var remaining))
+        {
+            yield return new SuperstepStreamItem { LiveEvent = remaining };
+        }
+
+        yield return new SuperstepStreamItem { Commit = commit };
+    }
+
     public static async Task<SuperstepCommit> ExecuteSuperstepAsync(
         GraphTopology topology,
         ICheckpointer checkpointer,
@@ -490,9 +582,13 @@ file static class RunEngineLoopHelpers
         string? lastNode,
         IReadOnlyDictionary<string, object?>? resumeByTaskId,
         string threadId,
-        ActivityScope superstep,
+        Func<string, IStreamWriter>? streamWriterFactory,
         CancellationToken cancellationToken)
     {
+        using var superstep = ActivityScope.Start(
+            VolutaDiagnostics.SuperstepActivityName,
+            VolutaDiagnostics.SuperstepDuration);
+
         var preApplySnapshot = store.SnapshotValues();
         var executionOutcome = await RunEngineExecution.TryExecuteReadyAsync(
             topology,
@@ -500,6 +596,7 @@ file static class RunEngineLoopHelpers
             preApplySnapshot,
             resumeByTaskId,
             threadId,
+            streamWriterFactory,
             cancellationToken);
 
         if (executionOutcome.Cancelled)

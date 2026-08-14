@@ -43,5 +43,15 @@ public enum StreamEventKind
     /// <summary>
     ///     Run cancelled.
     /// </summary>
-    Cancelled = 7
+    Cancelled = 7,
+
+    /// <summary>
+    ///     Custom progress or structured payload written by a node via <see cref="IStreamWriter" />.
+    /// </summary>
+    Custom = 8,
+
+    /// <summary>
+    ///     LLM token / message fragment written by a node via <see cref="IStreamWriter" />.
+    /// </summary>
+    Messages = 9
 }

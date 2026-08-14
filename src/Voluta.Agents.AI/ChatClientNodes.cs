@@ -17,14 +17,18 @@ public static class ChatClientNodes
     /// <param name="outputChannel">Channel for assistant text.</param>
     /// <param name="messages">Message factory.</param>
     /// <param name="chatClient">Optional client; when null, resolved from <see cref="GraphContext.Services" />.</param>
+    /// <param name="stream">When true, stream tokens into the graph stream.</param>
     /// <returns>The same <paramref name="graph" /> for chaining.</returns>
     public static StateGraph Add(
         StateGraph graph,
         string name,
         string outputChannel,
         Func<GraphContext, IEnumerable<ChatMessage>> messages,
-        IChatClient? chatClient = null)
+        IChatClient? chatClient = null,
+        bool stream = false)
     {
-        return graph.AddNode(name, ChatClientGraphNode.Create(outputChannel, messages, chatClient));
+        return graph.AddNode(
+            name,
+            ChatClientGraphNode.Create(outputChannel, messages, chatClient, stream));
     }
 }

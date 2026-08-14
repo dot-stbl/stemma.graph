@@ -1,1 +1,5 @@
 #nullable enable
+static Voluta.Agents.AI.ChatClientGraphNode.Create(string! outputChannel, System.Func<Voluta.Graph.GraphContext!, System.Collections.Generic.IEnumerable<Microsoft.Extensions.AI.ChatMessage!>!>! messagesFactory, Microsoft.Extensions.AI.IChatClient? chatClient = null, bool stream = false) -> Voluta.Agents.AI.ChatClientGraphNode!
+static Voluta.Agents.AI.ChatClientNodes.Add(Voluta.Graph.Builder.StateGraph! graph, string! name, string! outputChannel, System.Func<Voluta.Graph.GraphContext!, System.Collections.Generic.IEnumerable<Microsoft.Extensions.AI.ChatMessage!>!>! messages, Microsoft.Extensions.AI.IChatClient? chatClient = null, bool stream = false) -> Voluta.Graph.Builder.StateGraph!
+Voluta.Agents.AI.ChatClientNodeOptions.Stream.get -> bool
+Voluta.Agents.AI.ChatClientNodeOptions.Stream.init -> void

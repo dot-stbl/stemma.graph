@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Streaming;
 using Voluta.Diagnostics;
 using Voluta.Exceptions;
 using Voluta.Exceptions.Run;
@@ -19,6 +20,7 @@ internal static class RunEngineExecution
         IReadOnlyDictionary<string, object?> snapshot,
         IReadOnlyDictionary<string, object?>? resumeByTaskId,
         string threadId,
+        Func<string, IStreamWriter>? streamWriterFactory,
         CancellationToken cancellationToken)
     {
         try
@@ -31,6 +33,7 @@ internal static class RunEngineExecution
                     snapshot,
                     RunEngineExecutionHelpers.ResolveResumePayload(resumeByTaskId, orderedReady[0].TaskId),
                     threadId,
+                    streamWriterFactory,
                     cancellationToken);
                 return new ReadyExecutionOutcome { Executions = [single] };
             }
@@ -46,6 +49,7 @@ internal static class RunEngineExecution
                     snapshot,
                     RunEngineExecutionHelpers.ResolveResumePayload(resumeByTaskId, readyTask.TaskId),
                     threadId,
+                    streamWriterFactory,
                     cancellationToken);
             }
 
@@ -151,6 +155,7 @@ file static class RunEngineExecutionHelpers
         IReadOnlyDictionary<string, object?> snapshot,
         object? resumePayload,
         string threadId,
+        Func<string, IStreamWriter>? streamWriterFactory,
         CancellationToken cancellationToken)
     {
         if (!topology.Nodes.TryGetValue(readyTask.NodeName, out var handler))
@@ -164,6 +169,7 @@ file static class RunEngineExecutionHelpers
             VolutaDiagnostics.NodeDuration,
             tags);
 
+        var streamWriter = streamWriterFactory?.Invoke(readyTask.NodeName);
         var context = new GraphContext(
             readyTask.NodeName,
             snapshot,
@@ -171,7 +177,8 @@ file static class RunEngineExecutionHelpers
             readyTask.TaskPayload,
             topology.Services,
             threadId,
-            readyTask.TaskId);
+            readyTask.TaskId,
+            streamWriter);
         try
         {
             var result = await handler(context, cancellationToken);

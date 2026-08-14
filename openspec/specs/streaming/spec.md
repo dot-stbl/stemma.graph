@@ -7,7 +7,7 @@ Defines multi-mode streaming as the primary observation API for graph runs, with
 ## Requirements
 
 ### Requirement: Multi-mode stream
-The runtime MUST support streaming modes at least: `values` (state snapshots), `updates` (per-superstep or per-node deltas), and `events` (lifecycle/control events such as start, interrupt, end).
+The runtime MUST support streaming modes at least: `values` (state snapshots), `updates` (per-superstep or per-node deltas), `events` (lifecycle/control events such as start, interrupt, end), and `messages` (lifecycle plus node-emitted custom/token items).
 
 #### Scenario: Subscribe to updates
 - **WHEN** a host streams with mode `updates`
@@ -17,8 +17,30 @@ The runtime MUST support streaming modes at least: `values` (state snapshots), `
 - **WHEN** a host streams with mode `values`
 - **THEN** it receives successive full (or projected) state snapshots after supersteps commit
 
+#### Scenario: Subscribe to messages
+- **WHEN** a host streams with mode `messages`
+- **THEN** it receives Start/End lifecycle events and any Custom/Messages items written by nodes, without Values or Updates dumps
+
+### Requirement: Node stream writer
+Nodes MUST be able to emit custom progress payloads and LLM token fragments while executing, via `GraphContext.Stream` (`IStreamWriter`). The runtime MUST inject a writer that forwards items into the live `IAsyncEnumerable<StreamEvent>` for all stream modes (values, updates, events, messages).
+
+#### Scenario: Custom progress during node body
+- **WHEN** a node calls `context.Stream.WriteCustomAsync(payload)` mid-execution
+- **THEN** the host receives a `StreamEvent` with `Kind = Custom` and the payload before (or as part of) that superstep’s commit events
+
+#### Scenario: Token fragments during node body
+- **WHEN** a node calls `context.Stream.WriteMessageAsync(text)` mid-execution
+- **THEN** the host receives a `StreamEvent` with `Kind = Messages` and the text as `Payload`
+
+### Requirement: MEAI token bridge
+`Voluta.Agents.AI` chat nodes MUST optionally bridge `IChatClient.GetStreamingResponseAsync` deltas into the graph stream as `Messages` events, while still writing the full assistant text to the configured output channel at node completion.
+
+#### Scenario: Streaming chat client
+- **WHEN** `ChatClientGraphNode` is configured with `Stream = true` and the host runs `StreamAsync`
+- **THEN** each non-empty text delta appears as a `Messages` stream item and the channel receives the concatenated text
+
 ### Requirement: Async enumerable surface
-Streaming MUST be exposed as an asynchronous sequence consumable with cancellation, suitable for ASP.NET SSE/gRPC bridging.
+Streaming MUST be exposed as an asynchronous sequence consumable with cancellation, suitable for ASP.NET SSE/gRPC bridging. Existing UI SSE writers that serialize `StreamEvent` already surface Custom/Messages kinds without a separate protocol.
 
 #### Scenario: Cancellation mid-run
 - **WHEN** the consumer cancels the stream token mid-run

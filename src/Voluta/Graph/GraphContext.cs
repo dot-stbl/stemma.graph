@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Streaming;
+
 namespace Voluta.Graph;
 
 /// <summary>
@@ -13,6 +15,7 @@ namespace Voluta.Graph;
 /// <param name="services">Optional host <see cref="IServiceProvider" /> (from <see cref="Options.CompileOptions.Services" />).</param>
 /// <param name="threadId">Parent run thread id (for nested checkpoint namespaces).</param>
 /// <param name="taskId">Stable task id (node name for pull tasks; Send task id for PUSH).</param>
+/// <param name="stream">Optional stream writer for custom / message events during the node body.</param>
 public sealed class GraphContext(
     string nodeName,
     IReadOnlyDictionary<string, object?> channelValues,
@@ -20,7 +23,8 @@ public sealed class GraphContext(
     object? taskPayload = null,
     IServiceProvider? services = null,
     string? threadId = null,
-    string? taskId = null)
+    string? taskId = null,
+    IStreamWriter? stream = null)
 {
     private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
@@ -55,6 +59,12 @@ public sealed class GraphContext(
     ///     nested child thread id (default: <c>{ThreadId}/{NodeName}</c>).
     /// </summary>
     public string? ThreadId { get; } = threadId;
+
+    /// <summary>
+    ///     Writer for custom progress and LLM token fragments into the live graph stream.
+    ///     No-op when the runtime did not attach a writer (e.g. unit tests constructing a bare context).
+    /// </summary>
+    public IStreamWriter Stream { get; } = stream ?? GraphContextNullStream.Instance;
 
     /// <summary>
     ///     Reads a channel value cast to <typeparamref name="T" />, or default when missing/null.
@@ -95,5 +105,23 @@ public sealed class GraphContext(
                 ? service
                 : throw new InvalidOperationException(
                     $"Service '{typeof(T).FullName}' is not registered in GraphContext.Services.");
+    }
+}
+
+/// <summary>
+///     File-local no-op stream for bare <see cref="GraphContext" /> construction without a runtime writer.
+/// </summary>
+file sealed class GraphContextNullStream : IStreamWriter
+{
+    public static GraphContextNullStream Instance { get; } = new();
+
+    public ValueTask WriteCustomAsync(object? payload, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask WriteMessageAsync(string text, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
     }
 }

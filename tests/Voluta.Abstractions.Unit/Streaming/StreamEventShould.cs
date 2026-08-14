@@ -42,7 +42,7 @@ public sealed class StreamEventShould
         item.Writes.ShouldBeSameAs(writes);
     }
 
-    [Fact(DisplayName = "When StreamMode is enumerated, then includes Values, Updates, Events")]
+    [Fact(DisplayName = "When StreamMode is enumerated, then includes Values, Updates, Events, Messages")]
     public void ExposeStreamModes()
     {
         var names = Enum.GetNames<StreamMode>();
@@ -50,5 +50,15 @@ public sealed class StreamEventShould
         names.ShouldContain(nameof(StreamMode.Values));
         names.ShouldContain(nameof(StreamMode.Updates));
         names.ShouldContain(nameof(StreamMode.Events));
+        names.ShouldContain(nameof(StreamMode.Messages));
+    }
+
+    [Fact(DisplayName = "When StreamEventKind is enumerated, then includes Custom and Messages")]
+    public void ExposeCustomAndMessagesKinds()
+    {
+        var names = Enum.GetNames<StreamEventKind>();
+
+        names.ShouldContain(nameof(StreamEventKind.Custom));
+        names.ShouldContain(nameof(StreamEventKind.Messages));
     }
 }

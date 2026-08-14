@@ -18,5 +18,11 @@ public enum StreamMode
     /// <summary>
     ///     Lifecycle / control events (start, interrupt, end, failed, cancelled).
     /// </summary>
-    Events = 2
+    Events = 2,
+
+    /// <summary>
+    ///     Lifecycle events plus node-emitted custom and message (token) items.
+    ///     Prefer when the host only needs tokens / progress without Values or Updates dumps.
+    /// </summary>
+    Messages = 3
 }
