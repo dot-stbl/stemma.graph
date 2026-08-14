@@ -1,16 +1,9 @@
-<p align="center">
-  <a href="https://github.com/dot-stbl/voluta">
-    <img src="https://raw.githubusercontent.com/dot-stbl/voluta/main/assets/banner.png"
-         alt="Voluta — stateful, cyclic, durable agent graphs for .NET">
-  </a>
-</p>
+[![Voluta — stateful, cyclic, durable agent graphs for .NET](https://raw.githubusercontent.com/dot-stbl/voluta/main/assets/banner.png)](https://github.com/dot-stbl/voluta)
 
-<p align="center">
-  <a href="https://github.com/dot-stbl/voluta/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dot-stbl/voluta/actions/workflows/ci.yml/badge.svg" /></a>
-  <a href="https://dotnet.microsoft.com/download/dotnet/10.0"><img alt=".NET 10" src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white" /></a>
-  <a href="https://github.com/dot-stbl/voluta/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
-  <a href="https://github.com/dot-stbl/voluta/issues/1"><img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-orange?style=flat-square" /></a>
-</p>
+[![CI](https://github.com/dot-stbl/voluta/actions/workflows/ci.yml/badge.svg)](https://github.com/dot-stbl/voluta/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/Voluta.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/Voluta)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/dot-stbl/voluta/blob/main/LICENSE)
 
 **Stateful agent graphs for .NET** — cycles, typed channels, checkpoints, streaming, and
 human-in-the-loop. You describe nodes and edges; Voluta runs them in Pregel-style supersteps and
@@ -24,13 +17,8 @@ can pause a thread for days, then resume in another process.
 → AOT-ready core not a kitchen sink
 ```
 
-> [!IMPORTANT]
-> **Pre-release.** On `main`: Pregel engine, checkpointers (InMemory · File · EF Core · S3),
-> Send / subgraph helpers, source generator, Testing, Agents.AI (MEAI/MAF), `MapVolutaUI`,
-> samples, BenchmarkDotNet. **Nothing is on NuGet yet**; the 0.1 tag is the next milestone
-> ([epic #1](https://github.com/dot-stbl/voluta/issues/1)). Until then, reference projects
-> from source — see [Quick Start](#quick-start).
-
+> **v0.1.0** is on NuGet. Public API is frozen (`PublicAPI.Shipped.txt`).
+> `dotnet add package Voluta --version 0.1.0` — see [Quick Start](#quick-start).
 ## See it in action
 
 A ReAct-style loop (agent ⇄ tools) with no LLM — pure simulation so you can run it offline.
