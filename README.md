@@ -17,8 +17,8 @@ can pause a thread for days, then resume in another process.
 → AOT-ready core not a kitchen sink
 ```
 
-> **v0.1.0** is on NuGet. Public API is frozen (`PublicAPI.Shipped.txt`).
-> `dotnet add package Voluta --version 0.1.0` — see [Quick Start](#quick-start).
+> **v0.2.0** is on NuGet. Public API is frozen (`PublicAPI.Shipped.txt`).
+> `dotnet add package Voluta --version 0.2.0` — see [Quick Start](#quick-start).
 ## See it in action
 
 A ReAct-style loop (agent ⇄ tools) with no LLM — pure simulation so you can run it offline.
@@ -753,7 +753,7 @@ dotnet run --project samples/UiHost             # http://localhost:5188/voluta
 Stated plainly so you can judge the fit:
 
 - **No published packages.** Source references only until the 0.1 tag.
-- **PublicAPI surface can still move** before `v0.1.0` (tracked with PublicApiAnalyzers).
+- **PublicAPI surface can still move** before a major bump (tracked with PublicApiAnalyzers).
 - **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE and
   checkpointer thread discovery (`IThreadDiscovery`) — not auth.
 - **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
