@@ -19,7 +19,7 @@ public sealed class VolutaBuilder(IServiceCollection services)
     public IServiceCollection Services { get; } = services;
 
     /// <summary>
-    ///     Checkpoint store registration (<c>UseInMemory</c> / <c>UseFile</c> / EF / S3 / Postgres).
+    ///     Checkpoint store registration (<c>UseInMemory</c> / <c>UseFile</c> / Sqlite / EF / S3 / Postgres).
     /// </summary>
     public VolutaCheckpointBuilder Checkpoints { get; } = new(services);
 
