@@ -1,0 +1,110 @@
+---
+title: State and channels
+description: Multi-writer state is a policy — channels and reducers make that policy explicit.
+product: voluta
+version: "0.x"
+sidebar:
+  label: State & Channels
+  order: 13
+  group: Concepts
+---
+
+Graph state is not “a dictionary we hope nobody races.” It is a map of **named
+channels**, each with a **merge kind**. When several nodes in the same superstep
+write the same channel, the kind decides the outcome — or fails the run on
+purpose.
+
+That is the whole point: multi-writer state becomes a **defined policy**, not a
+timing accident.
+
+## Two kinds (on purpose)
+
+```csharp
+public enum ChannelKind
+{
+    LastValue = 0,  // at most one write per superstep
+    Append = 1,     // multiple writes combined
+}
+```
+
+| Kind | Behavior | Reach for it when… |
+|------|----------|---------------------|
+| `LastValue` | Replace. Concurrent multi-write in one superstep **fails** the run. | There is a single current value: status, score, verdict, cursor. |
+| `Append` | Accumulate into a list. | History matters: messages, notes, tool traces. |
+
+Why fail on concurrent `LastValue` multi-write? Because “last” under concurrency
+is not a value you can reason about — it depends on scheduling. Better a loud
+failure than a silent wrong status that routes the agent into the void.
+
+## Declaring channels
+
+```csharp
+.AddChannel("messages", ChannelKind.Append)
+.AddChannel("status", ChannelKind.LastValue)
+// or, from source gen:
+.AddChannels(ReviewState.CreateSchema())
+```
+
+Declare **before** nodes run. The schema is part of the compiled contract;
+surprise channels mid-flight are not a feature.
+
+## Reading
+
+```csharp
+var status = context.Read<string>("status");
+var rounds = context.Read<int?>("tool_rounds") ?? 0;
+```
+
+You always read **committed** state (last barrier). Sibling writes from the same
+superstep are invisible until after merge — by design.
+
+## Writing (partial updates)
+
+```csharp
+new ChannelWrite("messages", "agent: hello");
+```
+
+- Leave a channel out → it stays as it was  
+- Write `null` explicitly → clear  
+
+This pairs with how you design nodes: emit only what changed. Huge “replace
+entire state” blobs fight both reducers and checkpoints.
+
+## Typed state with `[GraphState]` (optional)
+
+String keys work. They also typo. When a graph grows, annotate a **partial**
+class and let `Voluta.Generators` emit the schema + update type:
+
+```csharp
+[GraphState]
+public partial class ReviewState
+{
+    [Channel(ChannelKind.Append)]
+    public IList<object?> Notes { get; set; } = new List<object?>();
+
+    [Channel(ChannelKind.LastValue)]
+    public string? Verdict { get; set; }
+}
+```
+
+You get `CreateSchema()` and an update type with `.ToWrites()`:
+
+- **Unset** properties → no write  
+- **Explicit null** → clear  
+
+Interface-typed properties need `OptionalValue<...>.Of(value)` — C# won’t let
+user conversions invent that away. The generator refuses non-partial classes
+and empty schemas; it would rather yell at compile time than emit nonsense.
+
+## Choosing kinds without overthinking
+
+Ask for each field:
+
+1. Is this a **history** or a **current**? → Append vs LastValue  
+2. Could two nodes write it in one superstep? → If LastValue, redesign so only
+   one does, or accept failure as the alarm  
+3. Do I need it for **routing**? → Prefer a small LastValue signal (`status`)
+   over parsing an Append list in the edge function  
+
+Next: [Supersteps](/voluta/0.x/concepts/supersteps) for when merge happens, and
+[Checkpoints](/voluta/0.x/concepts/checkpoints) for what of that state is saved.

@@ -1,4 +1,6 @@
 # Publish Voluta NuGet packages on a v*.*.* tag.
+# Also packs product docs into docs.tgz and attaches it to the GitHub Release
+# so docs.stbl.space can pull without duplicating markdown elsewhere.
 # Trust flow: GitHub Actions OIDC -> nuget.org trusted publishing.
 
 name: publish
@@ -20,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -33,6 +35,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: pack docs.tgz
+        run: |
+          set -euo pipefail
+          test -f docs/product.md
+          test -n "$(find docs -type f \( -name '*.mdx' -o -name '*.md' \) ! -path 'docs/product.md' | head -1)"
+          tar -czf "${RUNNER_TEMP}/docs.tgz" -C docs .
+          echo "docs.tgz contents:"
+          tar -tzf "${RUNNER_TEMP}/docs.tgz"
+          ls -la "${RUNNER_TEMP}/docs.tgz"
 
       - name: setup-dotnet
         uses: actions/setup-dotnet@v4
@@ -99,8 +111,41 @@ jobs:
               --skip-duplicate
           fi
 
+      - name: upload docs.tgz to GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --generate-notes --verify-tag
+          fi
+          gh release upload "$tag" "${RUNNER_TEMP}/docs.tgz" --clobber
+
+      # Optional: rebuild docs.stbl.space after docs.tgz is on the release.
+      # Secret DOCS_DISPATCH_TOKEN = PAT/fine-grained with repo scope on
+      # dot-stbl/vironima.internal (contents:write not required; only actions
+      # dispatch). If unset, skip — docs CI still runs on lock file bumps.
+      - name: dispatch docs site rebuild
+        if: github.event_name == 'push' && secrets.DOCS_DISPATCH_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api repos/dot-stbl/vironima.internal/dispatches \
+            -f event_type=product-docs-published \
+            -f "client_payload[product]=voluta" \
+            -f "client_payload[tag]=${GITHUB_REF_NAME}" \
+            -f "client_payload[repo]=dot-stbl/voluta" \
+            -f "client_payload[asset]=docs.tgz"
+          echo "dispatched product-docs-published → vironima.internal"
+
       - name: dry-run summary
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         run: |
-          echo "Dry run — packages packed but NOT pushed:"
+          echo "Dry run — packages packed but NOT pushed; docs.tgz packed but NOT uploaded:"
           ls -la "${RUNNER_TEMP}/packages"
+          echo "--- docs.tgz ---"
+          ls -la "${RUNNER_TEMP}/docs.tgz"
+          tar -tzf "${RUNNER_TEMP}/docs.tgz"

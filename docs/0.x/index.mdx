@@ -1,0 +1,160 @@
+---
+title: Introduction
+description: Why voluta exists — agent loops that outlive the process, with typed state and durable checkpoints.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Introduction
+  order: 1
+  group: Start
+  badge: "0.1"
+---
+
+Most “agent frameworks” assume a happy path: call the model, maybe run a tool,
+print the answer, exit. Real agents are messier. They **loop** (think → act →
+observe → think again). They need a human mid-flight. They must survive a
+deploy, a crash, or a process recycle without losing the thread.
+
+**voluta** is a low-level orchestration runtime for that world. You describe a
+**graph** of nodes and edges — including cycles — and the runtime executes it in
+Pregel-style **supersteps** with:
+
+- named **channels** and explicit merge rules (so multi-writer state is defined,
+  not hoped for)
+- durable **checkpoints** after every barrier (so a thread can pause and resume
+  later, even in another process)
+- multi-mode **streaming** (watch state, deltas, or lifecycle)
+- **human-in-the-loop** as a first-class result (`Interrupt` + `Resume`), not a
+  thrown exception
+
+Formerly **StemmaGraph** / **stemma.graph**. Same ideas, new name.
+
+## The problem voluta is for
+
+If your agent is a straight pipeline, you probably don’t need voluta — a
+function and a queue are enough.
+
+You start needing a graph runtime when:
+
+1. **The control flow is a loop**, not a list. “Call tools until the model stops
+   asking” is a cycle with a conditional exit.
+2. **State has multiple writers.** Agent and tools both append messages; status
+   is a single current value. Without reducers you get races and silent
+   overwrites.
+3. **The run must outlive the process.** Approval comes from an HTTP handler
+   tomorrow. The worker restarts overnight. Checkpoint or lose the thread.
+4. **You want observation without rewriting the graph.** Stream updates for a
+   UI, or just `InvokeAsync` for a batch job — same compiled graph.
+
+voluta is the **engine** for those constraints. It is not a chat product, not an
+LLM SDK, and not a workflow tool for invoices. Put your model client, tools, and
+business rules *inside* nodes; voluta owns scheduling, state merge, and
+persistence.
+
+## Design bets (and why they matter)
+
+```text
+→ cycles not DAGs
+→ typed channels not dictionary soup
+→ checkpoints not in-process memory
+→ .NET-native not a Python port
+→ AOT-ready core not a kitchen sink
+```
+
+**Cycles, not DAGs.** Agents that reconsider are loops. Pretending every agent
+is an acyclic pipeline forces awkward workarounds. Conditional edges plus
+`CompileOptions.RecursionLimit` make loops terminate *on purpose* — high enough
+for real multi-round tool use, low enough to fail runaway graphs.
+
+**Typed channels, not dictionary soup.** Multi-writer state is a policy, not a
+bug. `Append` accumulates; `LastValue` replaces. Concurrent double-writes to
+`LastValue` fail the run instead of picking a random winner. Optional
+`[GraphState]` source gen gives you schemas without reflection soup.
+
+**Checkpoints, not in-process memory.** Every superstep barrier can persist a
+snapshot. Interrupt, inspect, resume, recover — the seam is `ICheckpointer`.
+In-memory for samples; file / EF Core / S3 when durability matters.
+
+**.NET-native, not a Python port.** Generics, `IAsyncEnumerable`, primary
+constructors, AOT surface on the core. Inspired by LangGraph’s *model*
+(supersteps, channels, checkpoint-first) — rebuilt for .NET, not translated line
+by line.
+
+**AOT-ready core, not a kitchen sink.** Runtime and abstractions stay small:
+`IsAotCompatible`, no LLM SDK, no logging framework in the hot path. Hosting,
+checkpointer providers, Agents.AI, and UI live in separate packages.
+
+## Mental model: one superstep
+
+Think of the engine as a drum machine, not a free-for-all async soup:
+
+1. Collect every node made ready by the previous tick  
+2. Run those nodes **concurrently**, each with a frozen view of state  
+3. **Barrier** — wait for all of them  
+4. Merge their writes through channel reducers  
+5. Persist a checkpoint  
+6. Evaluate edges → next ready set  
+
+Two consequences worth internalizing:
+
+- Nodes in the same superstep **never** see each other’s writes. They see state
+  as of the last barrier. That is what makes concurrency reason-able.
+- Conditional edges run **after** the merge, on committed state — so routing
+  cannot race the writes it depends on.
+
+## Packages
+
+| Package | What it’s for |
+|---------|----------------|
+| `Voluta.Abstractions` | Contracts: channels, checkpoints, results, streaming |
+| `Voluta` | Pregel runtime, in-memory checkpointer, graphs, `Subgraph.AsNode` |
+| `Voluta.DependencyInjection` | `AddVoluta(v => { v.Checkpoints…; v.Graph… })` |
+| `Voluta.Generators` | `[GraphState]` source generator |
+| `Voluta.Testing` | Doubles + checkpointer conformance suite |
+| `Voluta.Checkpoints.File` | JSON on disk (`UseFile`) |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) |
+| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) |
+| `Voluta.Agents.AI` | MAF `AIAgent` + MEAI `IChatClient` as graph nodes |
+| `Voluta.UI` | Ops console: inspect / resume / topology (`MapVolutaUI`) |
+
+Core tier (`Voluta`, `Abstractions`, `DependencyInjection`) is
+`IsAotCompatible`. Checkpoint providers, UI, and Agents.AI are regular CLR.
+
+## Status
+
+**v0.1.0 is on NuGet.** Public API is frozen (`PublicAPI.Shipped.txt`).
+
+```bash
+dotnet add package Voluta --version 0.1.0
+```
+
+Still early product surface:
+
+- **UI is a first cut** — inspect / HITL / topology / SSE; not multi-host thread
+  discovery or auth  
+- **Checkpoint serde** is best-effort JSON for channel values  
+- **No first-party MCP** — samples use a demo HTTP tools surface; real MCP sits
+  on top of voluta  
+- **No built-in coding agent** — voluta is the graph runtime, not Claude Code  
+
+Track the repo and [releases](https://github.com/dot-stbl/voluta/releases).
+
+## Compared to tools you might already know
+
+**LangGraph** — Peer model (supersteps, channels, checkpoint-first). Richest
+ecosystem in Python. voluta is the .NET-native peer, not a port.
+
+**Microsoft Agent Framework** — Strong for multi-agent *chat* composition.
+Compose MAF (or any chat client) *inside* voluta nodes when you need graph
+control, durability, and HITL — `Voluta.Agents.AI` ships adapters.
+
+**Durable Functions / workflow engines** — Excellent for long-running *business*
+workflows with storage you already trust. voluta is graph + channels for
+**agent loops** where the interesting part is state merge, cycles, and
+interrupts — not BPMN.
+
+## Next
+
+- [Install](/voluta/0.x/install) — NuGet or source  
+- [Quick Start](/voluta/0.x/quick-start) — walk the ReAct sample with “why”  
+- [Samples](/voluta/0.x/samples) — which sample teaches which idea  

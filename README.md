@@ -561,6 +561,19 @@ Stated plainly so you can judge the fit:
   `ModelContextProtocol` (+ AspNetCore) on top of Voluta.
 - **No built-in coding agent** (bash/edit/permissions) — Voluta is the graph runtime, not Claude Code.
 
+## Documentation
+
+Product docs live in [`docs/`](docs/) (`product.md` + version trees such as `0.x/**/*.mdx`).
+On every `v*.*.*` tag the publish workflow packs them into **`docs.tgz`** (tarball root =
+`product.md` + `0.x/…`, not nested under an extra `docs/` folder) and attaches the asset to
+the GitHub Release for that tag. Public site: [docs.stbl.space/voluta](https://docs.stbl.space/voluta).
+
+```bash
+# local dry-run of the release asset layout
+tar -czf docs.tgz -C docs .
+tar -tzf docs.tgz | head
+```
+
 ## Development
 
 ```bash

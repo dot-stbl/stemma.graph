@@ -1,0 +1,100 @@
+---
+title: Nodes
+description: Nodes are async work with a frozen view of state — and results, not exceptions, for control flow.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Nodes
+  order: 11
+  group: Concepts
+---
+
+A **node** is a named async function the graph can schedule. It reads committed
+state, does work (model call, tool, validation, whatever), and returns a
+**result** describing writes — or an interrupt.
+
+The important mental shift: you do **not** “call the next node.” You return
+partial state updates (and maybe sends). The runtime merges, checkpoints, and
+routes. That separation is what keeps concurrency and durability sane.
+
+## Signature
+
+```csharp
+// Voluta.Graph.Options.NodeHandler
+public delegate Task<NodeResult> NodeHandler(
+    GraphContext context,
+    CancellationToken cancellationToken);
+```
+
+Always honor `cancellationToken`. Long tool calls that ignore cancellation are
+how hosts hang on shutdown.
+
+## What `GraphContext` is (and isn’t)
+
+`GraphContext` is a **frozen pre-barrier view** for one task. It is not a live
+shared bag other nodes mutate while you run.
+
+| Member | Why it’s there |
+|--------|----------------|
+| `NodeName` | Know who you are (logging, multi-role handlers) |
+| `Read<T>(channel)` | Typed read; missing → `default` |
+| `Snapshot()` | Full map when you need more than one field |
+| `ResumePayload` | Set when re-entering after `ResumeAsync` |
+| `TaskPayload` | Set when this task was scheduled via `Send` |
+
+Nodes in the **same superstep** never see each other’s writes. If that feels
+restrictive, good — it is the rule that makes parallel nodes deterministic to
+reason about. Write what you know; merge happens at the barrier.
+
+## Results are data
+
+Interrupt is a **result**, not a control-flow exception. Exceptions mean faults;
+interrupts mean “pause with a payload.”
+
+| Factory | Meaning |
+|---------|---------|
+| `NodeResult.Continue(writes...)` | Apply these channel updates |
+| `NodeResult.Continue(writes, sends)` | Updates + schedule dynamic tasks |
+| `NodeResult.ContinueWithSends(...)` | Only schedule `Send`s |
+| `NodeResult.Interrupt(payload)` | Stop the run; payload lands on the checkpoint |
+
+```csharp
+return NodeResult.Continue(
+    new ChannelWrite("status", "tools"),
+    new ChannelWrite("messages", "agent: call get_weather"));
+```
+
+## Channel writes: partial by design
+
+```csharp
+new ChannelWrite("messages", "agent: hello");
+```
+
+- **Omitted** channels → unchanged after merge  
+- **Explicit `null`** value → **clear** that channel  
+
+That distinction matters for source-generated updates too: “unset” is not the
+same as “set null.” Unset means silence; null means erase.
+
+## Dynamic work: `Send`
+
+```csharp
+new Send(node: "worker", payload: item);
+```
+
+Schedules a PUSH task for the **next** superstep. The payload shows up as
+`GraphContext.TaskPayload` on the worker.
+
+Use `Send` when fan-out is data-dependent (N documents → N extractors) and a
+static edge list would be a lie. Don’t use it as a substitute for ordinary
+edges — those are clearer for fixed topology.
+
+## Habits that scale
+
+1. **Signal intent through state**, then let edges route (`status == "tools"`).  
+2. **Keep handlers boring** — IO and decisions, not custom schedulers.  
+3. **Prefer small writes** over rewriting the whole world every step.  
+4. **Use Interrupt for humans / external gates**, not for ordinary branches.
+
+Next: [Edges](/voluta/0.x/concepts/edges) for how the next ready set is chosen,
+and [Interrupts](/voluta/0.x/concepts/interrupts) for the pause/resume path.

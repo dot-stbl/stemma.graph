@@ -1,0 +1,98 @@
+---
+title: Streaming
+description: Same run, different lenses — values, updates, or lifecycle events.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Streaming
+  order: 17
+  group: Concepts
+---
+
+Streaming is how you **watch** a run without changing what the run means. The
+engine always supersteps, merges, and checkpoints the same way. `StreamMode`
+only chooses which observations fall out of `IAsyncEnumerable<StreamEvent>`.
+
+If you treat streaming as “optional logging,” you’ll underuse it. If you treat
+it as a second control plane, you’ll overcomplicate it. It’s a lens.
+
+## Three modes
+
+| Mode | What you get | Good for |
+|------|----------------|----------|
+| `Values` | Successive **full state** snapshots after commits | Debugging “what does the world look like now?” |
+| `Updates` | Per-step / per-node **write deltas** | UIs, sample walkthroughs, “who wrote what?” |
+| `Events` | Lifecycle: start, interrupt, end, failed, cancelled | Host metrics, HITL wait loops, coarse progress |
+
+Default in `RunOptions` is `Updates` — the most useful while learning and for
+many operator consoles.
+
+## One event shape
+
+`StreamEvent` carries enough to render without re-querying storage every time:
+
+| Property | Role |
+|----------|------|
+| `Mode` | Which lens produced this item |
+| `Kind` | `Start` · `Values` · `Updates` · `Interrupt` · `End` · `Failed` · `Cancelled` |
+| `Step` | Superstep index |
+| `NodeNames` | Who contributed (when relevant) |
+| `Writes` | Channel deltas (`Updates`) |
+| `State` | Channel map (`Values`) |
+| `Payload` | Interrupt or fault payload |
+
+You don’t need every field on every kind — check `Kind` first, then read the
+payload that kind implies.
+
+## APIs: stream, invoke, resume
+
+```csharp
+IAsyncEnumerable<StreamEvent> stream = graph.StreamAsync(input, options, cancellationToken);
+
+StreamEvent terminal = await graph.InvokeAsync(input, options, cancellationToken);
+
+IAsyncEnumerable<StreamEvent> resumed = graph.ResumeAsync(
+    threadId, command, StreamMode.Updates);
+```
+
+| API | Intent |
+|-----|--------|
+| `StreamAsync` | Observe the whole journey |
+| `InvokeAsync` | Drain the stream; return the last terminal event |
+| `ResumeAsync` | Continue an interrupted thread; still streamable |
+
+`InvokeAsync` is not a different engine path for “batch mode” philosophy — it’s
+convenience when you don’t want to write the foreach. Prefer `StreamAsync` when
+building anything interactive.
+
+## Choosing a mode without regret
+
+- Building a **token-ish / step UI** → `Updates`  
+- Writing a **support tool** that dumps state → `Values`  
+- Waiting for **interrupt or end** in a worker → `Events` (then fetch snapshot if
+  you need fields)  
+- Unsure → start with `Updates`; switch when the noise or sparsity annoys you  
+
+You can run the same `ThreadId` again only according to checkpointer rules —
+streaming mode does not create a new thread by itself.
+
+## Testing streams
+
+`Voluta.Testing.Streaming.StreamCapture` drains streams in tests so you assert
+on kinds and writes without brittle console scraping.
+
+`GraphFixtures.Linear()` / `.Cycle()` give you known topologies when the thing
+under test is the observer, not your production graph.
+
+## Common footguns
+
+1. **Assuming every event has `Writes`** — only update-shaped kinds do.  
+2. **Using stream order as a distributed lock** — it’s observation, not
+   coordination between services.  
+3. **Ignoring `Interrupt`** — your UI will hang waiting for `End` that never
+   comes until resume.  
+4. **Logging `Values` every step in prod** — full snapshots can be large; sample
+   or use `Updates`/`Events` under load.
+
+Next: [Supersteps](/voluta/0.x/concepts/supersteps) for what each step means, and
+[Interrupts](/voluta/0.x/concepts/interrupts) for the event that means “wait.”
