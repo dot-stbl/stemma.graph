@@ -52,6 +52,7 @@ public sealed class VolutaBuilder(IServiceCollection services)
     /// <summary>
     ///     Registers a graph factory with full service provider access.
     ///     Call <see cref="Checkpoints" /> first when the factory resolves <see cref="ICheckpointer" />.
+    ///     Pass <c>new CompileOptions { Services = sp }</c> into <c>Compile</c> for DI nodes / MAF.
     /// </summary>
     /// <param name="factory">Builds and compiles the graph once per process.</param>
     /// <returns>This builder for chaining.</returns>

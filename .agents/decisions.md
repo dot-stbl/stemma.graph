@@ -261,6 +261,19 @@ auth, full graph canvas editor.
 
 Both pass `CheckpointerConformance.RunAllAsync`. PublicAPI ship gate enabled. Same polymorphic JSON limits as File (D-023 open serde question).
 
+### D-028 — Graph DI + Voluta.Agents.AI (native MEAI/MAF)
+
+**Decision (2026-08-14):** Prefer **instance / DI composition** over extension-method glue.
+
+| Piece | API |
+|-------|-----|
+| Core A | `CompileOptions.Services` → `GraphContext.Services` / `GetRequiredService<T>()` |
+| Core B | `IGraphNode`, `StateGraph.AddNode<T>()`, `AddNode(IGraphNode)`, `AddNode(sp => IGraphNode)` |
+| Package C | **`Voluta.Agents.AI`** — `AgentGraphNode` / `ChatClientGraphNode` + static `AgentNodes` / `ChatClientNodes` (not `this StateGraph` extensions) |
+| Legacy | `Voluta.MicrosoftAi.ChatClientNode` static helpers remain until samples migrate |
+
+Host pattern: `Compile(checkpointer, new CompileOptions { Services = sp })` inside `AddVoluta` graph factory. MAF package deps: `Microsoft.Agents.AI.Abstractions` 1.17 + `Microsoft.Extensions.AI.Abstractions` 10.9. Core stays AOT and AI-free.
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.

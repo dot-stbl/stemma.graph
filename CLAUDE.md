@@ -38,7 +38,7 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 | Runtime | .NET 10 |
 | Тесты | xUnit + Shouldly + NSubstitute + Bogus |
 | Streaming | `IAsyncEnumerable<T>` (values / updates / events) |
-| AI helpers | `Microsoft.Extensions.AI` (`IChatClient`) via `Voluta.MicrosoftAi` |
+| AI helpers | MEAI/MAF via `Voluta.Agents.AI` (`IGraphNode`); legacy `Voluta.MicrosoftAi` |
 | Benches | BenchmarkDotNet (`benchmarks/`) |
 | Публикация | NuGet через GitHub Actions OIDC trusted publishing |
 
@@ -55,7 +55,8 @@ voluta/
 │   ├── Voluta.Checkpoints.File/        ← UseFile
 │   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
-│   ├── Voluta.MicrosoftAi/             ← IChatClient helpers
+│   ├── Voluta.MicrosoftAi/             ← legacy IChatClient static helpers
+│   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
 │   └── Voluta.UI/                      ← MapVolutaUI ops console
 ├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost
 ├── benchmarks/  ← Voluta.Benchmarks

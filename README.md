@@ -370,14 +370,33 @@ static Task<NodeResult> CritiqueAsync(GraphContext context, CancellationToken ca
 Swap `InvokeAsync` for `StreamAsync` (`StreamMode.Values` / `Updates` / `Events`). Under a host:
 `services.AddVoluta(provider => …)`.
 
-### Chat helpers (optional)
+### DI nodes + Microsoft AI (optional)
+
+Native path — no extension-method glue:
 
 ```csharp
-// Voluta.MicrosoftAi — thin IChatClient wrapper for nodes
-var text = await ChatClientNode.CompleteTextAsync(chatClient, messages, cancellationToken: ct);
-// or write assistant text into a channel:
-return await ChatClientNode.CompleteToChannelAsync(
-    chatClient, "answer", messages, cancellationToken: ct);
+// 1) IGraphNode + DI (core)
+services.AddSingleton<PlanNode>();
+services.AddVoluta(v =>
+{
+    v.Checkpoints.UseInMemory();
+    v.Graph((sp, checkpointer) => new StateGraph()
+        .AddNode<PlanNode>("plan")
+        .AddEdge(GraphConstants.Start, "plan")
+        .AddEdge("plan", GraphConstants.End)
+        .Compile(checkpointer, new CompileOptions { Services = sp }));
+});
+
+// 2) MEAI IChatClient as a node (Voluta.Agents.AI)
+ChatClientNodes.Add(
+    graph, "answer", "answer",
+    context => [new ChatMessage(ChatRole.User, context.Read<string>("question") ?? "")]);
+
+// 3) Microsoft Agent Framework AIAgent as a node
+AgentNodes.Add(graph, "research", agent, outputChannel: "draft", inputChannel: "question");
+
+// Legacy thin helpers still in Voluta.MicrosoftAi:
+// ChatClientNode.CompleteTextAsync / CompleteToChannelAsync
 ```
 
 ## Host DI — `AddVoluta`
@@ -392,7 +411,7 @@ services.AddVoluta(v =>
     v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3
     v.Graph((sp, checkpointer) => new StateGraph()
         // …nodes, edges, channels…
-        .Compile(checkpointer));
+        .Compile(checkpointer, new CompileOptions { Services = sp }));
 });
 
 // Graph only (already compiled, or factory that owns its own checkpointer)
@@ -506,7 +525,8 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
 | `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
-| `Voluta.MicrosoftAi` | `IChatClient` helpers for `Microsoft.Extensions.AI` | [`src/Voluta.MicrosoftAi`](src/Voluta.MicrosoftAi/) |
+| `Voluta.MicrosoftAi` | Legacy static `IChatClient` helpers | [`src/Voluta.MicrosoftAi`](src/Voluta.MicrosoftAi/) |
+| `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and

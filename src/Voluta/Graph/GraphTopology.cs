@@ -14,7 +14,8 @@ internal sealed class GraphTopology(
     IReadOnlyDictionary<string, ChannelKind> channels,
     IReadOnlyDictionary<string, IReadOnlyList<string>> staticEdges,
     IReadOnlyDictionary<string, Func<GraphContext, IReadOnlyList<string>>> conditionalEdges,
-    int recursionLimit)
+    int recursionLimit,
+    IServiceProvider? services = null)
 {
     /// <summary>
     ///     Node name → handler.
@@ -41,4 +42,9 @@ internal sealed class GraphTopology(
     ///     Maximum supersteps before out-of-steps failure.
     /// </summary>
     public int RecursionLimit { get; } = recursionLimit;
+
+    /// <summary>
+    ///     Host services snapshotted at compile time (same instance for the process).
+    /// </summary>
+    public IServiceProvider? Services { get; } = services;
 }

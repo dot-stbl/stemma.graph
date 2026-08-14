@@ -146,7 +146,8 @@ file static class RunEngineExecutionHelpers
             readyTask.NodeName,
             snapshot,
             resumePayload,
-            readyTask.TaskPayload);
+            readyTask.TaskPayload,
+            topology.Services);
         try
         {
             var result = await handler(context, cancellationToken);

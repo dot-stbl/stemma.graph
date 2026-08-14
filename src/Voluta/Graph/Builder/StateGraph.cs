@@ -58,6 +58,61 @@ public sealed class StateGraph
     }
 
     /// <summary>
+    ///     Registers a DI-resolved <see cref="IGraphNode" />. The type must be registered in
+    ///     <see cref="CompileOptions.Services" /> (or the host provider passed at compile).
+    /// </summary>
+    /// <typeparam name="TNode">Node implementation type.</typeparam>
+    /// <param name="name">Node name (not START/END).</param>
+    /// <returns>This builder for chaining.</returns>
+    public StateGraph AddNode<TNode>(string name)
+        where TNode : class, IGraphNode
+    {
+        return AddNode(
+            name,
+            static async (context, cancellationToken) =>
+            {
+                var node = context.GetRequiredService<TNode>();
+                return await node.InvokeAsync(context, cancellationToken);
+            });
+    }
+
+    /// <summary>
+    ///     Registers a pre-built <see cref="IGraphNode" /> instance (singleton for the graph lifetime).
+    /// </summary>
+    /// <param name="name">Node name (not START/END).</param>
+    /// <param name="node">Node implementation.</param>
+    /// <returns>This builder for chaining.</returns>
+    public StateGraph AddNode(string name, IGraphNode node)
+    {
+        return AddNode(
+            name,
+            (context, cancellationToken) => node.InvokeAsync(context, cancellationToken));
+    }
+
+    /// <summary>
+    ///     Registers a node created from the host <see cref="IServiceProvider" /> on each invocation.
+    /// </summary>
+    /// <param name="name">Node name (not START/END).</param>
+    /// <param name="nodeFactory">Factory receiving <see cref="GraphContext.Services" />.</param>
+    /// <returns>This builder for chaining.</returns>
+    public StateGraph AddNode(string name, Func<IServiceProvider, IGraphNode> nodeFactory)
+    {
+        return AddNode(
+            name,
+            async (context, cancellationToken) =>
+            {
+                if (context.Services is null)
+                {
+                    throw new InvalidOperationException(
+                        "AddNode(factory) requires CompileOptions.Services.");
+                }
+
+                var node = nodeFactory(context.Services);
+                return await node.InvokeAsync(context, cancellationToken);
+            });
+    }
+
+    /// <summary>
     ///     Registers a static edge from source (node or START) to target (node or END).
     /// </summary>
     /// <param name="source">Source node name or <see cref="GraphConstants.Start" />.</param>
@@ -135,7 +190,8 @@ public sealed class StateGraph
             new Dictionary<string, Func<GraphContext, IReadOnlyList<string>>>(
                 conditionalEdges,
                 StringComparer.Ordinal),
-            options.RecursionLimit);
+            options.RecursionLimit,
+            options.Services);
 
         return new CompiledGraph(topology, checkpointer);
     }

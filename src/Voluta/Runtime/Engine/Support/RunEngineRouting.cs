@@ -16,7 +16,7 @@ internal static class RunEngineRouting
     {
         if (topology.ConditionalEdges.TryGetValue(source, out var router))
         {
-            var context = new GraphContext(source, channelValues, resumePayload);
+            var context = new GraphContext(source, channelValues, resumePayload, services: topology.Services);
             return [.. router(context)];
         }
 
