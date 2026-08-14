@@ -15,13 +15,14 @@ Runnable demos for the Voluta runtime. All projects are in `voluta.slnx` under
 | [`MarketingAgent`](MarketingAgent/) | Hybrid desk: brief → creative → create RK/SSP/banner → review |
 | [`MockAdMcp`](MockAdMcp/) | Hybrid-shaped MCP tools (Campaign/SSP/DirectDeal/AdLibrary) |
 | [`UiHost`](UiHost/) | ASP.NET host for `Voluta.UI` + seeded multi-thread demo |
+| [`WorkerHost`](WorkerHost/) | Durable `BackgroundService` runner: wake → run → park/complete/fail |
 
 Shared helpers live in [`Voluta.Samples.Shared`](Voluta.Samples.Shared/):
 `CliUi` (Claude Code-style terminal chrome), sandbox FS, chat client, CLI flags.
 CLI harnesses use `CliUi`. AotSmoke stays minimal (publish smoke only).
 
-Suggested order for first read: HelloWorld → InterruptResume → ReviewBot →
-DocQ → MarketingAgent (+ MockAdMcp) → UiHost.
+Suggested order for first read: HelloWorld → InterruptResume → WorkerHost →
+ReviewBot → DocQ → MarketingAgent (+ MockAdMcp) → UiHost.
 
 ## Quick start
 
@@ -37,6 +38,7 @@ dotnet run --project samples/MockAdMcp
 dotnet run --project samples/MarketingAgent -- --offline
 
 dotnet run --project samples/UiHost   # then open http://localhost:5188/voluta
+dotnet run --project samples/WorkerHost
 ```
 
 Live chat for ReviewBot / DocQ (optional):
