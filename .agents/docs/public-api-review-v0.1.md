@@ -163,7 +163,7 @@ These **should ship**, but owners should treat them as **semver-hard** after Uns
 
 ## Ready to tag?
 
-### Answer: **Almost — owner OK + optional P0/P1 hygiene**
+### Answer: **Yes — owner OK + P0/P1 hygiene applied; surface moved to Shipped for v0.1.0**
 
 | Check | Status |
 |-------|--------|
@@ -172,8 +172,8 @@ These **should ship**, but owners should treat them as **semver-hard** after Uns
 | `Voluta.MicrosoftAi` gone; `Voluta.Agents.AI` present | ✅ #18 |
 | Unified `AddVoluta` builder | ✅ #17 |
 | Owner sign-off on this review | ❌ **blocker** |
-| P0 markers → internal (recommended) | ❌ optional but cheap |
-| P1 `CheckpointRecordConfiguration` → internal | ❌ optional |
+| P0 markers → internal (recommended) | ✅ removed |
+| P1 `CheckpointRecordConfiguration` → internal | ✅ done (v0.1 hygiene) |
 | Unshipped → Shipped move after publish | ⏳ post-tag process |
 | Arch tests (package isolation) | ❌ deferred — **not** a tag blocker |
 | Docs site | ❌ deferred — not a tag blocker |

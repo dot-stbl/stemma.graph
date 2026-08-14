@@ -1,1 +1,7 @@
 #nullable enable
+static Voluta.Checkpoints.File.VolutaCheckpointBuilderExtensions.UseFile(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder, string! rootDirectory) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
+Voluta.Checkpoints.File.FileCheckpointer
+Voluta.Checkpoints.File.FileCheckpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
+Voluta.Checkpoints.File.FileCheckpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
+Voluta.Checkpoints.File.FileCheckpointer.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Checkpoints.File.VolutaCheckpointBuilderExtensions

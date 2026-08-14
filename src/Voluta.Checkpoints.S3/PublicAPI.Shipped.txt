@@ -1,1 +1,13 @@
 #nullable enable
+static Voluta.Checkpoints.S3.VolutaCheckpointBuilderExtensions.UseS3(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder, System.Action<Voluta.Checkpoints.S3.S3CheckpointerOptions!>! configure) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
+Voluta.Checkpoints.S3.S3Checkpointer
+Voluta.Checkpoints.S3.S3Checkpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
+Voluta.Checkpoints.S3.S3Checkpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
+Voluta.Checkpoints.S3.S3Checkpointer.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Checkpoints.S3.S3CheckpointerOptions
+Voluta.Checkpoints.S3.S3CheckpointerOptions.BucketName.get -> string!
+Voluta.Checkpoints.S3.S3CheckpointerOptions.BucketName.init -> void
+Voluta.Checkpoints.S3.S3CheckpointerOptions.KeyPrefix.get -> string?
+Voluta.Checkpoints.S3.S3CheckpointerOptions.KeyPrefix.init -> void
+Voluta.Checkpoints.S3.S3CheckpointerOptions.S3CheckpointerOptions() -> void
+Voluta.Checkpoints.S3.VolutaCheckpointBuilderExtensions

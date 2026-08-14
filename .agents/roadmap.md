@@ -19,8 +19,8 @@
 | UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample UiHost |
 | EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
-| PublicAPI owner review | 📝 decision draft — [docs/public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) (381 unshipped lines / 8 pkgs; P0 markers + P1 EF config → internal) |
-| NuGet 0.1 tag | ❌ owner OK on review → optional hygiene PR → tag `v0.1.0` + publish |
+| PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
+| NuGet 0.1 tag | 🔜 `v0.1.0` after this PR (Unshipped → Shipped) |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 | OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
 
@@ -41,7 +41,7 @@
 
 ## Ближайшие шаги
 
-1. **Owner OK** on [public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) → optional P0/P1 internals → tag **`v0.1.0`** + nuget.org publish
+1. Tag **`v0.1.0`** + nuget.org publish (surface frozen in PublicAPI.Shipped)
 2. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
 3. Docs site (D-011)
 
