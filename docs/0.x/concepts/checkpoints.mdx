@@ -77,6 +77,7 @@ UIs, support tools, and tests.
 |----------|---------|--------------|
 | In-memory | `Voluta` | `v.Checkpoints.UseInMemory()` |
 | File (JSON on disk) | `Voluta.Checkpoints.File` | `v.Checkpoints.UseFile(root)` |
+| SQLite (single file) | `Voluta.Checkpoints.Sqlite` | `v.Checkpoints.UseSqlite(path)` |
 | EF Core | `Voluta.Checkpoints.EntityFrameworkCore` | `v.Checkpoints.UseEntityFrameworkCore<TDb>()` |
 | S3 / compatible | `Voluta.Checkpoints.S3` | `v.Checkpoints.UseS3(o => …)` |
 

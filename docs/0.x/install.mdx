@@ -37,6 +37,7 @@ Add more packages when a *need* shows up, not “just in case”:
 | `Voluta.Generators` | You’re tired of string channel keys and want `[GraphState]` |
 | `Voluta.DependencyInjection` | A host should compile the graph once and inject it |
 | `Voluta.Checkpoints.File` | Threads must survive process restarts on disk |
+| `Voluta.Checkpoints.Sqlite` | Single-file SQLite store (laptop demos) |
 | `Voluta.Checkpoints.EntityFrameworkCore` | Checkpoints in your existing EF database |
 | `Voluta.Checkpoints.S3` | Checkpoints in S3 / MinIO / compatible object store |
 | `Voluta.Testing` | You’re writing checkpointer or stream tests |
@@ -79,7 +80,7 @@ using Voluta.DependencyInjection;
 
 services.AddVoluta(v =>
 {
-    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3
+    v.Checkpoints.UseInMemory(); // or UseFile / UseSqlite / UseEntityFrameworkCore / UseS3
     v.Graph((sp, checkpointer) => new StateGraph()
         // …nodes, edges, channels…
         .Compile(checkpointer, new CompileOptions { Services = sp }));
@@ -105,6 +106,7 @@ Exactly one `Use*` per host. Provider types are registered via `Use*` — not
 ```csharp
 v.Checkpoints.UseInMemory();
 v.Checkpoints.UseFile("./.voluta/checkpoints");
+v.Checkpoints.UseSqlite("./.voluta/checkpoints.db");
 
 // EF — register IDbContextFactory first
 services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
@@ -124,7 +126,7 @@ v.Checkpoints.UseS3(o =>
 Native AOT is for the **core tier** only:
 
 - **Compatible:** `Voluta`, `Voluta.Abstractions`, `Voluta.DependencyInjection`
-- **Regular CLR:** File / EF / S3 checkpointers, UI, Agents.AI
+- **Regular CLR:** File / SQLite / EF / S3 checkpointers, UI, Agents.AI
 
 Smoke path if you care about publish size / startup:
 

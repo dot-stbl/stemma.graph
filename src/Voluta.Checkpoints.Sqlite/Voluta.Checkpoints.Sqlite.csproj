@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      SQLite file-based C-shape checkpointer for Voluta (single-file store for laptop demos).
+    </Description>
+    <PackageTags>$(PackageTags);checkpoint;sqlite;persistence</PackageTags>
+    <RootNamespace>Voluta.Checkpoints.Sqlite</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
+    <ProjectReference Include="..\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+    <ProjectReference Include="..\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Voluta.Checkpoints.Sqlite.Unit" />
+  </ItemGroup>
+
+</Project>

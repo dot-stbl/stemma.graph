@@ -78,6 +78,7 @@
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Sqlite'
                          or '$(MSBuildProjectName)' == 'Voluta.Agents.AI'
                          or '$(MSBuildProjectName)' == 'Voluta.UI')">
         <VolutaEnablePublicApi>true</VolutaEnablePublicApi>
