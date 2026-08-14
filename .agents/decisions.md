@@ -338,6 +338,31 @@ calls `GetStreamingResponseAsync` and `WriteMessageAsync` per non-empty
 UI SSE already serializes `StreamEvent` — no separate wire protocol for v1.
 Issue #39.
 
+### D-032 — Cross-thread Store (`IVolutaStore`) — InMemory first (#75)
+
+**Решение (2026-08-15):** ship LangGraph-class **BaseStore** parity as a host-scoped
+KV independent of `ICheckpointer`:
+
+| Piece | Location |
+|-------|----------|
+| `IVolutaStore` / `StoreItem` | `Voluta.Abstractions.Store` |
+| `InMemoryVolutaStore` | `Voluta.Store` (core) |
+| DI | `VolutaBuilder.Store.UseInMemory()` · `AddVolutaStore` |
+
+- Addressing: hierarchical `IReadOnlyList<string>` namespace + string key; List is
+  exact-namespace (not prefix); Get/Delete miss = null / no-op.
+- Not wired into Pregel by default — nodes resolve via `GraphContext.Services`.
+- Concurrent Put/Get safe; InMemory holds values by reference (same policy as
+  InMemory checkpointer).
+
+**Deferred (same issue #75):** subgraph stream namespaces; task journal (A3);
+durable store providers + wire allow-list; checkpoint format migration.
+
+**Почему Store first:** isolated surface (mirrors ICheckpointer package map), no
+engine surgery; task journal needs Continue / pending-write path changes.
+
+OpenSpec: `openspec/specs/cross-thread-store/`.
+
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
@@ -348,6 +373,8 @@ Issue #39.
 6. **UI next** — multi-thread discovery beyond process-tracked ids; richer inspector.
 7. **AOT CI** — optional `dotnet publish` smoke on schedule vs every PR (slow).
 8. **0.1 NuGet** — owner review of `PublicAPI.Unshipped.txt` then tag (D-026).
+9. **Durable IVolutaStore** — File / EF / S3 when hosts need multi-process memory.
+10. **Task journal (A3)** — completed task ids for stronger Continue (#75 remainder).
 
 ## GitHub tracking
 

@@ -2,12 +2,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.DependencyInjection.Checkpoints;
+using Voluta.DependencyInjection.Store;
 using Voluta.Graph;
 
 namespace Voluta.DependencyInjection;
 
 /// <summary>
-///     Fluent composition root for Voluta host registration: checkpoints + compiled graph.
+///     Fluent composition root for Voluta host registration: checkpoints, cross-thread store, graph.
 /// </summary>
 public sealed class VolutaBuilder(IServiceCollection services)
 {
@@ -21,6 +22,11 @@ public sealed class VolutaBuilder(IServiceCollection services)
     ///     Checkpoint store registration (<c>UseInMemory</c> / <c>UseFile</c> / EF / S3).
     /// </summary>
     public VolutaCheckpointBuilder Checkpoints { get; } = new(services);
+
+    /// <summary>
+    ///     Cross-thread key-value store registration (<c>UseInMemory</c>). Optional — independent of checkpoints.
+    /// </summary>
+    public VolutaStoreBuilder Store { get; } = new(services);
 
     /// <summary>
     ///     Registers a pre-built <see cref="CompiledGraph" /> as a singleton.

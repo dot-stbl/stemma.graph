@@ -86,4 +86,29 @@ public static class ServiceCollectionExtensions
             }
         });
     }
+
+    /// <summary>
+    ///     Configures only the process-wide <see cref="Abstractions.Store.IVolutaStore" />
+    ///     (cross-thread KV, independent of checkpoints).
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    /// <param name="configure">Provider selection (e.g. <c>s =&gt; s.UseInMemory()</c>).</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when no <c>Use*</c> was called, or more than one was called.
+    /// </exception>
+    public static IServiceCollection AddVolutaStore(
+        this IServiceCollection services,
+        Action<Store.VolutaStoreBuilder> configure)
+    {
+        return services.AddVoluta(builder =>
+        {
+            configure(builder.Store);
+            if (!builder.Store.IsProviderConfigured)
+            {
+                throw new InvalidOperationException(
+                    "AddVolutaStore requires exactly one Use* provider (UseInMemory).");
+            }
+        });
+    }
 }

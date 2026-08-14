@@ -44,7 +44,14 @@
 
 1. docs.stbl.space sync to 0.2.x (#43)
 2. SPA ops console (React+Vite) — replace/augment Razor UI
-3. LangGraph parity gaps (tooling, more providers, Studio-like UX)
+3. Engine parity #75 remainder — subgraph stream namespaces · task journal A3 · durable Store · checkpoint migration
+4. LangGraph parity gaps (tooling, more providers, Studio-like UX)
+
+## Shipped recently
+
+| Item | Notes |
+|------|--------|
+| Cross-thread Store | `IVolutaStore` + `InMemoryVolutaStore` + DI (D-032 / #75 partial) |
 
 ## Не в планах
 

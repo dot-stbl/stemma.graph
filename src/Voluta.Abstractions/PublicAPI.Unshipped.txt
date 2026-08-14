@@ -84,3 +84,19 @@ Voluta.Abstractions.Streaming.IStreamWriter.WriteMessageAsync(string! text, Syst
 Voluta.Abstractions.Streaming.StreamEventKind.Custom = 8 -> Voluta.Abstractions.Streaming.StreamEventKind
 Voluta.Abstractions.Streaming.StreamEventKind.Messages = 9 -> Voluta.Abstractions.Streaming.StreamEventKind
 Voluta.Abstractions.Streaming.StreamMode.Messages = 3 -> Voluta.Abstractions.Streaming.StreamMode
+
+Voluta.Abstractions.Store.IVolutaStore
+Voluta.Abstractions.Store.IVolutaStore.DeleteAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Abstractions.Store.IVolutaStore.GetAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Store.StoreItem?>!
+Voluta.Abstractions.Store.IVolutaStore.ListAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Store.StoreItem!>!>!
+Voluta.Abstractions.Store.IVolutaStore.PutAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, object? value, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Abstractions.Store.StoreItem
+Voluta.Abstractions.Store.StoreItem.Key.get -> string!
+Voluta.Abstractions.Store.StoreItem.Key.init -> void
+Voluta.Abstractions.Store.StoreItem.Namespace.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Voluta.Abstractions.Store.StoreItem.Namespace.init -> void
+Voluta.Abstractions.Store.StoreItem.StoreItem() -> void
+Voluta.Abstractions.Store.StoreItem.UpdatedAt.get -> System.DateTimeOffset
+Voluta.Abstractions.Store.StoreItem.UpdatedAt.init -> void
+Voluta.Abstractions.Store.StoreItem.Value.get -> object?
+Voluta.Abstractions.Store.StoreItem.Value.init -> void
