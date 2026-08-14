@@ -1,3 +1,40 @@
 #nullable enable
+const Voluta.UI.StudioApiOptions.SectionName = "StudioApi" -> string!
+const Voluta.UI.Studio.StudioApiKeyMiddleware.HeaderName = "X-Api-Key" -> string!
+static Voluta.UI.Studio.StudioApiEndpointRouteBuilderExtensions.MapStudioApi(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, System.Action<Voluta.UI.StudioApiOptions!>! configure) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Voluta.UI.Studio.StudioApiEndpointRouteBuilderExtensions.MapStudioApi(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, Voluta.UI.StudioApiOptions! options) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Voluta.UI.Studio.StudioApiEndpointRouteBuilderExtensions.MapStudioApi(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Voluta.UI.Studio.StudioApiKeyMiddleware.IsAuthorized(Microsoft.AspNetCore.Http.HttpRequest! request, string? requiredApiKey) -> bool
+static Voluta.UI.Studio.StudioApiKeyMiddleware.WriteUnauthorizedAsync(Microsoft.AspNetCore.Http.HttpResponse! response, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Voluta.UI.Studio.StudioResumeCommand.Resolve(string? kind, object? payload = null, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? values = null, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? resumes = null) -> Voluta.Abstractions.Runtime.Command!
+Voluta.UI.Studio.StudioApiEndpointRouteBuilderExtensions
+Voluta.UI.Studio.StudioApiKeyMiddleware
+Voluta.UI.Studio.StudioChannelWrite
+Voluta.UI.Studio.StudioChannelWrite.ChannelName.get -> string!
+Voluta.UI.Studio.StudioChannelWrite.ChannelName.init -> void
+Voluta.UI.Studio.StudioChannelWrite.StudioChannelWrite() -> void
+Voluta.UI.Studio.StudioChannelWrite.Value.get -> object?
+Voluta.UI.Studio.StudioChannelWrite.Value.init -> void
+Voluta.UI.Studio.StudioForkRequest
+Voluta.UI.Studio.StudioForkRequest.NewThreadId.get -> string!
+Voluta.UI.Studio.StudioForkRequest.NewThreadId.init -> void
+Voluta.UI.Studio.StudioForkRequest.Step.get -> long
+Voluta.UI.Studio.StudioForkRequest.Step.init -> void
+Voluta.UI.Studio.StudioForkRequest.StudioForkRequest() -> void
+Voluta.UI.Studio.StudioResumeCommand
+Voluta.UI.Studio.StudioUpdateStateRequest
+Voluta.UI.Studio.StudioUpdateStateRequest.StudioUpdateStateRequest() -> void
+Voluta.UI.Studio.StudioUpdateStateRequest.Writes.get -> System.Collections.Generic.IReadOnlyList<Voluta.UI.Studio.StudioChannelWrite!>?
+Voluta.UI.Studio.StudioUpdateStateRequest.Writes.init -> void
+Voluta.UI.StudioApiOptions
+Voluta.UI.StudioApiOptions.ApiKey.get -> string?
+Voluta.UI.StudioApiOptions.ApiKey.set -> void
+Voluta.UI.StudioApiOptions.PathPrefix.get -> string!
+Voluta.UI.StudioApiOptions.PathPrefix.set -> void
+Voluta.UI.StudioApiOptions.StudioApiOptions() -> void
+Voluta.UI.VolutaUiSession.ContinueAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Streaming.StreamEvent!>!
+Voluta.UI.VolutaUiSession.ForkAsync(string! sourceThreadId, long step, string! newThreadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!
 Voluta.UI.VolutaUiSession.GetHistoryAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!>!
 Voluta.UI.VolutaUiSession.GetStateAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot?>!
+Voluta.UI.VolutaUiSession.StreamContinueAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Voluta.Abstractions.Streaming.StreamEvent!>!
+Voluta.UI.VolutaUiSession.UpdateStateAsync(string! threadId, System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! writes, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!

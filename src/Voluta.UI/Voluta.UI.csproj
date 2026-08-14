@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Voluta.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="wwwroot\**\*" />
   </ItemGroup>
 

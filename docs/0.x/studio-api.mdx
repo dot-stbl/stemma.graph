@@ -1,0 +1,204 @@
+---
+title: Studio HTTP/SSE API
+description: Versioned /api/v1 contract for SPA Studio and ops tooling — topology, threads, HITL, SSE.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Studio API
+  order: 5
+  group: Start
+  badge: "0.3"
+---
+
+The **Studio API** is a stable HTTP + SSE contract for inspecting and driving a
+compiled Voluta graph from a browser SPA or any HTTP client. It is **not** tied
+to the Razor ops shell (`MapVolutaUI`).
+
+Package: **Voluta.UI** · Map: **`MapStudioApi`** · Sample:
+[`samples/StudioHost`](https://github.com/dot-stbl/voluta/tree/main/samples/StudioHost)
+
+OpenSpec: [`openspec/specs/studio-host/spec.md`](../../openspec/specs/studio-host/spec.md)
+
+## Quick host
+
+```csharp
+var session = new VolutaUiSession(graph, checkpointer);
+builder.Services.AddVolutaUI(session);
+
+var app = builder.Build();
+app.MapStudioApi(); // → /api/v1/...
+// or:
+app.MapStudioApi(options =>
+{
+    options.PathPrefix = "/api/v1";
+    options.ApiKey = builder.Configuration["StudioApi:ApiKey"]; // optional
+});
+```
+
+## Endpoints
+
+Base prefix default: **`/api/v1`**.
+
+| Method | Path | Runtime |
+|--------|------|---------|
+| GET | `/topology` | `CompiledGraph.Describe()` |
+| GET | `/threads` | `IThreadDiscovery` + session track → summaries |
+| GET | `/threads/{id}` | `GetStateAsync` → `ThreadSnapshot` |
+| GET | `/threads/{id}/history` | `GetHistoryAsync` (501 if list unsupported) |
+| POST | `/threads/{id}/resume` | `ResumeInvokeAsync` + `Command` |
+| POST | `/threads/{id}/continue` | `ContinueInvokeAsync` |
+| POST | `/threads/{id}/update` | `UpdateStateAsync` |
+| POST | `/threads/{id}/fork` | `ForkAsync` |
+| GET | `/threads/{id}/stream` | SSE `StreamEvent` frames |
+| GET | `/hitl` | Interrupted thread queue |
+
+## JSON shapes (camelCase)
+
+### Topology
+
+```json
+{
+  "nodes": ["intake", "plan", "risk_gate"],
+  "channels": { "goal": "LastValue", "messages": "Append" },
+  "staticEdges": [{ "source": "__start__", "target": "intake" }],
+  "conditionalSources": ["risk_gate"],
+  "recursionLimit": 32
+}
+```
+
+### Thread summary (list)
+
+```json
+{
+  "threadId": "payment-hitl",
+  "status": "Interrupted",
+  "step": 4,
+  "lastNode": "risk_gate",
+  "goal": "wire transfer $4,200 to vendor ACME"
+}
+```
+
+### Thread state (`ThreadSnapshot` wire)
+
+```json
+{
+  "threadId": "payment-hitl",
+  "step": 4,
+  "status": "Interrupted",
+  "lastNode": "risk_gate",
+  "nextNodes": ["risk_gate"],
+  "interruptPayload": "{ gate = risk_gate, ... }",
+  "pendingInterrupts": [],
+  "values": { "goal": "...", "status": "risk" }
+}
+```
+
+### Resume body
+
+```json
+{ "kind": "approve", "payload": "ok" }
+```
+
+`kind`: `approve` (default) | `reject` | `update` (update requires channel values via SDK; Studio sample uses approve/reject).
+
+### Update body
+
+```json
+{
+  "writes": [
+    { "channelName": "status", "value": "synthesize" }
+  ]
+}
+```
+
+### Fork body
+
+```json
+{ "step": 2, "newThreadId": "payment-fork-1" }
+```
+
+### Terminal event (resume / continue)
+
+```json
+{
+  "kind": "End",
+  "step": 8,
+  "payload": null,
+  "nodeNames": ["notify"]
+}
+```
+
+### HITL row
+
+```json
+{
+  "threadId": "payment-hitl",
+  "step": 4,
+  "lastNode": "risk_gate",
+  "interruptPayload": "..."
+}
+```
+
+### Error envelope
+
+```json
+{ "error": "human message", "code": "studio.invalid_command" }
+```
+
+Stable codes: `studio.unauthorized`, `studio.invalid_command`,
+`studio.invalid_request`, `checkpoint.list_not_supported`.
+
+## SSE stream
+
+`GET /api/v1/threads/{id}/stream?mode=checkpoint|resume|continue|invoke`
+
+- Content-Type: `text/event-stream`
+- Frames: `event: stream` + `data: {stream event wire}`
+- End: `event: done` + `data: {}`
+- Errors: `event: error` + `data: { "message": "..." }`
+
+Stream event wire (abbreviated):
+
+```json
+{
+  "mode": "Events",
+  "kind": "Interrupt",
+  "step": 4,
+  "nodeNames": ["risk_gate"],
+  "writes": [],
+  "state": { "goal": "..." },
+  "payload": "..."
+}
+```
+
+Query params for resume: `kind`, `payload`, optional `auto=1` with checkpoint
+mode to auto-resume interrupted threads.
+
+## Optional API key
+
+| Config | Meaning |
+|--------|---------|
+| `StudioApi:ApiKey` empty / null | Auth **off** (default, single-tenant) |
+| non-empty | Require `X-Api-Key: <key>` or `Authorization: Bearer <key>` |
+
+Unauthorized → **401** `{ "error": "unauthorized", "code": "studio.unauthorized" }`.
+
+## Relation to MapVolutaUI
+
+| | MapVolutaUI | MapStudioApi |
+|--|-------------|--------------|
+| Path | `/voluta/api/...` | `/api/v1/...` |
+| Shell HTML/JS | yes | no |
+| continue / update / fork | no | yes |
+| SPA contract | internal | **stable v1** |
+
+You can map both on one host if needed; prefixes must not collide.
+
+## Sample
+
+```bash
+dotnet run --project samples/StudioHost
+curl http://localhost:5189/api/v1/topology
+curl http://localhost:5189/api/v1/threads
+curl http://localhost:5189/api/v1/hitl
+```

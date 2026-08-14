@@ -35,6 +35,7 @@
     <Project Path="samples/MarketingAgent/MarketingAgent.csproj" />
     <Project Path="samples/MockAdMcp/MockAdMcp.csproj" />
     <Project Path="samples/UiHost/UiHost.csproj" />
+    <Project Path="samples/StudioHost/StudioHost.csproj" />
     <Project Path="samples/WorkerHost/WorkerHost.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">

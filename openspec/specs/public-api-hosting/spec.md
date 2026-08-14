@@ -98,3 +98,13 @@ Microsoft Extensions AI chat clients and Microsoft Agent Framework agents MUST i
 #### Scenario: Core package stays free of AI dependencies
 - **WHEN** a consumer references only the core runtime and abstractions packages
 - **THEN** no Microsoft Agents AI or Microsoft Extensions AI packages are required to compile or run non-AI graphs
+
+### Requirement: Versioned Studio HTTP/SSE surface
+ASP.NET hosts MUST be able to expose a versioned Studio API (`MapStudioApi`,
+default prefix `/api/v1`) that maps topology, thread discovery, state/history,
+resume/continue/update/fork, HITL list, and SSE stream onto `CompiledGraph` /
+session operations. Full contract: `openspec/specs/studio-host/spec.md`.
+
+#### Scenario: Studio sample host
+- **WHEN** a host registers `MapStudioApi` with a bound `VolutaUiSession`
+- **THEN** clients can list threads and read topology over HTTP without the Razor UI shell
