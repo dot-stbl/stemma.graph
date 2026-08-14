@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Diagnostics;
@@ -79,4 +80,77 @@ public sealed class VolutaEventIdsShould
         eventId.Id.ShouldBe(2999);
         eventId.Name.ShouldBe("host.custom_error");
     }
+
+    [Fact(DisplayName = "Given empty code, when GetEventId is called, then returns voluta.unknown fallback")]
+    public void FallbackForEmptyCode()
+    {
+        var eventId = VolutaExceptionLogging.GetEventId(string.Empty);
+
+        eventId.Id.ShouldBe(2999);
+        eventId.Name.ShouldBe("voluta.unknown");
+    }
+
+    [Theory(DisplayName = "Given known GraphException subtypes, when GetEventId is called, then names match codes")]
+    [MemberData(nameof(GraphExceptionCases))]
+    public void ResolveEventIdForKnownGraphExceptionSubtypes(GraphException exception, EventId expected)
+    {
+        var eventId = VolutaExceptionLogging.GetEventId(exception);
+
+        eventId.ShouldBe(expected);
+        eventId.Name.ShouldBe(exception.Code);
+        VolutaErrorCodes.All.ShouldContain(exception.Code);
+    }
+
+    [Fact(DisplayName = "Given hitl.invalid_command, when GetEventId is called, then returns unknown fallback")]
+    public void InvalidCommandCodeUsesFallbackUntilCataloged()
+    {
+        var exception = new GraphInvalidCommandException("bad kind");
+
+        var eventId = VolutaExceptionLogging.GetEventId(exception);
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+        eventId.Id.ShouldBe(2999);
+        eventId.Name.ShouldBe("hitl.invalid_command");
+    }
+
+    public static TheoryData<GraphException, EventId> GraphExceptionCases =>
+        new()
+        {
+            {
+                new GraphOutOfStepsException(limit: 2, step: 3),
+                VolutaEventIds.GraphOutOfSteps
+            },
+            {
+                new GraphRunFailedException("failed"),
+                VolutaEventIds.GraphRunFailed
+            },
+            {
+                new GraphInvalidResumeException("not interrupted"),
+                VolutaEventIds.GraphInvalidResume
+            },
+            {
+                new GraphConcurrentUpdateException("two writers"),
+                VolutaEventIds.ChannelConcurrentUpdate
+            },
+            {
+                new GraphCompileException(VolutaErrorCodes.GraphNoNodes, "empty"),
+                VolutaEventIds.GraphNoNodes
+            },
+            {
+                new GraphCompileException(VolutaErrorCodes.GraphDuplicateNode, "dup"),
+                VolutaEventIds.GraphDuplicateNode
+            },
+            {
+                new GraphCompileException(VolutaErrorCodes.GraphUnknownEndpoint, "missing"),
+                VolutaEventIds.GraphUnknownEndpoint
+            },
+            {
+                new GraphCompileException(VolutaErrorCodes.GraphInvalidEdge, "end source"),
+                VolutaEventIds.GraphInvalidEdge
+            },
+            {
+                new GraphCompileException(VolutaErrorCodes.GraphMissingStart, "no start"),
+                VolutaEventIds.GraphMissingStart
+            },
+        };
 }

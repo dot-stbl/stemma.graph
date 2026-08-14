@@ -95,6 +95,36 @@ public sealed class VolutaDiagnosticsShould
         box.Value.ShouldBeGreaterThan(0);
     }
 
+    [Fact(DisplayName = "Given ActivityListener, when node throws, then superstep activity still starts before failure")]
+    public async Task EmitActivitiesOnFailedRun()
+    {
+        var started = new List<string>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == VolutaDiagnostics.SourceName,
+            Sample = static (ref ActivityCreationOptions<ActivityContext> _) =>
+                ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStarted = activity => started.Add(activity.OperationName),
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        var graph = new StateGraph()
+            .AddNode(
+                "boom",
+                static (_, _) => throw new InvalidOperationException("otel boom"))
+            .AddEdge(GraphConstants.Start, "boom")
+            .AddEdge("boom", GraphConstants.End)
+            .Compile(new InMemoryCheckpointer());
+
+        await Should.ThrowAsync<Exception>(async () =>
+        {
+            await graph.InvokeAsync([], new RunOptions { ThreadId = "otel-fail-1" });
+        });
+
+        started.ShouldContain(VolutaDiagnostics.SuperstepActivityName);
+        started.ShouldContain(VolutaDiagnostics.NodeExecuteActivityName);
+    }
+
     [Fact(DisplayName = "Given MeterListener, when checkpoint put, then put counter records")]
     public async Task RecordCheckpointPutMetric()
     {

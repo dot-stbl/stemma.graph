@@ -83,6 +83,58 @@ public sealed class FileCheckpointValueAllowListShould
         }
     }
 
+    [Fact(DisplayName = "Given nesting deeper than max depth 8, when Put, then throws unsupported_value_type")]
+    public async Task RejectNestingBeyondMaxDepth()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "voluta-file-depth-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var checkpointer = new FileCheckpointer(root);
+            object nested = "leaf";
+            for (var index = 0; index < 10; index++)
+            {
+                nested = new Dictionary<string, object?>(StringComparer.Ordinal) { ["c"] = nested };
+            }
+
+            var exception = await Should.ThrowAsync<CheckpointStoreException>(
+                () => checkpointer.PutAsync(CreateSnapshot("reject-depth", nested)));
+
+            exception.Code.ShouldBe(CheckpointWireFormat.UnsupportedValueTypeCode);
+            exception.Message.ShouldContain("max depth");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact(DisplayName = "Given dictionary with non-string key, when Put, then throws unsupported_value_type")]
+    public async Task RejectNonStringDictionaryKey()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "voluta-file-key-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var checkpointer = new FileCheckpointer(root);
+            var bad = new Dictionary<object, object?> { [42] = "value" };
+
+            var exception = await Should.ThrowAsync<CheckpointStoreException>(
+                () => checkpointer.PutAsync(CreateSnapshot("reject-key", bad)));
+
+            exception.Code.ShouldBe(CheckpointWireFormat.UnsupportedValueTypeCode);
+            exception.Message.ShouldContain("string dictionary keys");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     public static TheoryData<string, object?> AllowListedCases =>
         new()
         {
@@ -94,6 +146,9 @@ public sealed class FileCheckpointValueAllowListShould
             { "double", 1.5d },
             { "decimal", 1.25m },
             { "guid", Guid.Parse("11111111-1111-1111-1111-111111111111") },
+            { "byte-array", new byte[] { 1, 2, 3 } },
+            { "empty-list", new List<object?>() },
+            { "empty-dict", new Dictionary<string, object?>(StringComparer.Ordinal) },
             { "list-of-strings", new List<object?> { "a", "b" } },
             {
                 "string-dict",
