@@ -19,7 +19,8 @@
 | UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample UiHost |
 | EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
-| NuGet 0.1 tag | ❌ owner review of Unshipped surface → tag `v0.1.0` + publish |
+| PublicAPI owner review | 📝 decision draft — [docs/public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) (381 unshipped lines / 8 pkgs; P0 markers + P1 EF config → internal) |
+| NuGet 0.1 tag | ❌ owner OK on review → optional hygiene PR → tag `v0.1.0` + publish |
 | Arch tests (package isolation) | ❌ later |
 
 ## Shipped package map
@@ -39,7 +40,7 @@
 
 ## Ближайшие шаги
 
-1. **Owner review of PublicAPI.Unshipped.txt** → tag **`v0.1.0`** + nuget.org publish
+1. **Owner OK** on [public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) → optional P0/P1 internals → tag **`v0.1.0`** + nuget.org publish
 2. Architecture tests: Abstractions isolation, core ↛ UI/EF
 3. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
 4. Docs site (D-011)
