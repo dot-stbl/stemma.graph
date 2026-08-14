@@ -310,6 +310,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     step,
                     lastNode,
                     payloadForStep: null,
+                    options.ThreadId,
                     superstep,
                     cancellationToken);
             }
