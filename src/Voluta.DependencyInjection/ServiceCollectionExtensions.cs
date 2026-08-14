@@ -5,24 +5,52 @@ using Voluta.Graph;
 namespace Voluta.DependencyInjection;
 
 /// <summary>
-///     DI registration helpers for a compiled Voluta and checkpoint stores.
+///     DI registration helpers for Voluta (graph + checkpoints).
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     Registers an already-compiled graph as a singleton.
+    ///     Configures Voluta via a fluent builder: checkpoints and/or compiled graph.
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    /// <param name="configure">Builder configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <example>
+    ///     <code>
+    ///     services.AddVoluta(v =>
+    ///     {
+    ///         v.Checkpoints.UseInMemory();
+    ///         v.Graph((sp, checkpointer) => new StateGraph()
+    ///             .AddNode("a", …)
+    ///             .AddEdge(GraphConstants.Start, "a")
+    ///             .AddEdge("a", GraphConstants.End)
+    ///             .Compile(checkpointer));
+    ///     });
+    ///     </code>
+    /// </example>
+    public static IServiceCollection AddVoluta(
+        this IServiceCollection services,
+        Action<VolutaBuilder> configure)
+    {
+        var builder = new VolutaBuilder(services);
+        configure(builder);
+        builder.Complete();
+        return services;
+    }
+
+    /// <summary>
+    ///     Registers an already-compiled graph as a singleton (no checkpoint registration).
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="graph">Compiled graph instance.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddVoluta(this IServiceCollection services, CompiledGraph graph)
     {
-        services.AddSingleton(graph);
-        return services;
+        return services.AddVoluta(builder => builder.Graph(graph));
     }
 
     /// <summary>
-    ///     Compiles a graph via factory and registers it as a singleton.
+    ///     Compiles a graph via factory and registers it as a singleton (no checkpoint registration).
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="factory">Factory that builds and compiles the graph once.</param>
@@ -31,13 +59,12 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Func<IServiceProvider, CompiledGraph> factory)
     {
-        services.AddSingleton(factory);
-        return services;
+        return services.AddVoluta(builder => builder.Graph(factory));
     }
 
     /// <summary>
-    ///     Configures the process-wide <see cref="Abstractions.Checkpoint.ICheckpointer" /> via a fluent builder.
-    ///     Call exactly one <c>Use*</c> (InMemory / File / EF / S3) inside <paramref name="configure" />.
+    ///     Configures only the process-wide <see cref="Abstractions.Checkpoint.ICheckpointer" />.
+    ///     Prefer <see cref="AddVoluta(IServiceCollection, Action{VolutaBuilder})" /> when also registering a graph.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="configure">Provider selection (e.g. <c>c =&gt; c.UseInMemory()</c>).</param>
@@ -45,23 +72,18 @@ public static class ServiceCollectionExtensions
     /// <exception cref="InvalidOperationException">
     ///     Thrown when no <c>Use*</c> was called, or more than one was called.
     /// </exception>
-    /// <example>
-    ///     <code>
-    ///     services.AddVolutaCheckpoints(c => c.UseInMemory());
-    ///     services.AddVolutaCheckpoints(c => c.UseFile("./.voluta/checkpoints"));
-    ///     services.AddVolutaCheckpoints(c => c.UseEntityFrameworkCore&lt;AppDbContext&gt;());
-    ///     services.AddVolutaCheckpoints(c => c.UseS3(o => { o.BucketName = "voluta"; }));
-    ///     </code>
-    /// </example>
     public static IServiceCollection AddVolutaCheckpoints(
         this IServiceCollection services,
         Action<VolutaCheckpointBuilder> configure)
     {
-        var builder = new VolutaCheckpointBuilder(services);
-        configure(builder);
-        return builder.IsProviderConfigured
-            ? services
-            : throw new InvalidOperationException(
-                "AddVolutaCheckpoints requires exactly one Use* provider (UseInMemory, UseFile, UseEntityFrameworkCore, UseS3).");
+        return services.AddVoluta(builder =>
+        {
+            configure(builder.Checkpoints);
+            if (!builder.Checkpoints.IsProviderConfigured)
+            {
+                throw new InvalidOperationException(
+                    "AddVolutaCheckpoints requires exactly one Use* provider (UseInMemory, UseFile, UseEntityFrameworkCore, UseS3).");
+            }
+        });
     }
 }
