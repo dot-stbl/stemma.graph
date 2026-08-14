@@ -19,6 +19,7 @@ public sealed class PackageIsolationShould
         "Voluta.Checkpoints.S3",
         "Voluta.Checkpoints.File",
         "Voluta.Checkpoints.Sqlite",
+        "Voluta.Checkpoints.Postgres",
         "Voluta.UI",
         "Voluta.Agents.AI",
         "Voluta.Generators",
@@ -65,6 +66,7 @@ public sealed class PackageIsolationShould
             "Voluta.Checkpoints.S3",
             "Voluta.Checkpoints.File",
             "Voluta.Checkpoints.Sqlite",
+            "Voluta.Checkpoints.Postgres",
             "Voluta.UI",
             "Voluta.Agents.AI",
             "Voluta.Generators",
@@ -121,6 +123,7 @@ public sealed class PackageIsolationShould
         references.ShouldNotContain("Voluta.Checkpoints.S3");
         references.ShouldNotContain("Voluta.Checkpoints.File");
         references.ShouldNotContain("Voluta.Checkpoints.Sqlite");
+        references.ShouldNotContain("Voluta.Checkpoints.Postgres");
     }
 
     [Fact(DisplayName = "Given Voluta.Abstractions assembly, when types are scanned, then they do not depend on EF/ASP.NET/AI packages")]
@@ -133,12 +136,14 @@ public sealed class PackageIsolationShould
                 "Microsoft.EntityFrameworkCore",
                 "Microsoft.AspNetCore",
                 "Amazon.S3",
+                "Npgsql",
                 "Microsoft.Agents.AI",
                 "Microsoft.Extensions.AI",
                 "Voluta.Checkpoints.EntityFrameworkCore",
                 "Voluta.Checkpoints.S3",
                 "Voluta.Checkpoints.File",
                 "Voluta.Checkpoints.Sqlite",
+                "Voluta.Checkpoints.Postgres",
                 "Voluta.UI",
                 "Voluta.Agents.AI")
             .GetResult();
@@ -159,12 +164,14 @@ public sealed class PackageIsolationShould
                 "Microsoft.EntityFrameworkCore",
                 "Microsoft.AspNetCore",
                 "Amazon.S3",
+                "Npgsql",
                 "Microsoft.Agents.AI",
                 "Microsoft.Extensions.AI",
                 "Voluta.Checkpoints.EntityFrameworkCore",
                 "Voluta.Checkpoints.S3",
                 "Voluta.Checkpoints.File",
                 "Voluta.Checkpoints.Sqlite",
+                "Voluta.Checkpoints.Postgres",
                 "Voluta.UI",
                 "Voluta.Agents.AI")
             .GetResult();

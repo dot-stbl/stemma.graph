@@ -499,6 +499,7 @@ One composition root: checkpoints + graph (and later UI hooks). Prefer this over
 services.AddVoluta(v =>
 {
     v.Checkpoints.UseInMemory(); // or UseFile / UseSqlite / UseEntityFrameworkCore / UseS3
+    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3 / UsePostgres
     v.Graph((sp, checkpointer) => new StateGraph()
         // …nodes, edges, channels…
         .Compile(checkpointer, new CompileOptions { Services = sp }));
@@ -532,7 +533,51 @@ v.Checkpoints.UseS3(o =>
     o.BucketName = "voluta";
     o.KeyPrefix = "runs";
 });
+
+// Postgres-native (Npgsql) — optional auto-CREATE TABLE IF NOT EXISTS
+v.Checkpoints.UsePostgres(o =>
+{
+    o.ConnectionString = "Host=localhost;Database=voluta;Username=voluta;Password=…";
+    // o.Schema = "public"; o.Table = "voluta_checkpoints";
+    // o.EnsureSchemaOnStartup = false; // when ops apply Schema/voluta_checkpoints.sql
+});
 ```
+
+<details>
+<summary><strong>Postgres schema + docker-compose</strong></summary>
+
+Default table (idempotent SQL also embedded as
+`Voluta.Checkpoints.Postgres.Schema.voluta_checkpoints.sql`):
+
+```sql
+CREATE TABLE IF NOT EXISTS public.voluta_checkpoints (
+    thread_id   text        NOT NULL,
+    step        bigint      NOT NULL,
+    status      text        NOT NULL,
+    snapshot    jsonb       NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (thread_id, step)
+);
+CREATE INDEX IF NOT EXISTS ix_voluta_checkpoints_thread_step
+    ON public.voluta_checkpoints (thread_id, step DESC);
+```
+
+```yaml
+# docker-compose snippet
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voluta
+      POSTGRES_PASSWORD: voluta
+      POSTGRES_DB: voluta
+    ports: ["5432:5432"]
+```
+
+Connection string example:
+`Host=localhost;Port=5432;Database=voluta;Username=voluta;Password=voluta`
+
+</details>
 
 <details>
 <summary><strong>Host DbContext shape (EF)</strong></summary>
@@ -688,12 +733,14 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Checkpoints.Sqlite` | SQLite file checkpointer (`UseSqlite`) | [`src/Voluta.Checkpoints.Sqlite`](src/Voluta.Checkpoints.Sqlite/) |
 | `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
+| `Voluta.Checkpoints.Postgres` | Postgres-native Npgsql (`UsePostgres`) | [`src/Voluta.Checkpoints.Postgres`](src/Voluta.Checkpoints.Postgres/) |
 | `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
 Checkpoint providers (File / SQLite / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
+Checkpoint providers (File / EF / S3 / Postgres), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
 and do not claim AOT.
 
 ### OpenTelemetry
