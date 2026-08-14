@@ -166,3 +166,11 @@ Activity names (`voluta.superstep`, `voluta.node.execute`, `voluta.checkpoint.*`
 
 - Dashboard `uid` is stable: **`voluta-overview`**. Re-import with overwrite to update.
 - When renaming metrics in `VolutaDiagnostics`, update this JSON and the table above in the same PR.
+
+---
+
+## Also shipped in docs.tgz
+
+Release assets pack `docs/` (including `docs/ops/grafana/voluta-overview.json`).
+Same JSON as this folder — use either path. Product docs:
+[Observability](../../docs/0.x/concepts/observability.mdx#grafana-dashboard-download).
