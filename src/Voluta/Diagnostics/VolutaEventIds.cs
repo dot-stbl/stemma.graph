@@ -45,6 +45,15 @@ public static class VolutaEventIds
     /// <summary><see cref="VolutaErrorCodes.GraphInvalidResume" />.</summary>
     public static readonly EventId GraphInvalidResume = new(2022, VolutaErrorCodes.GraphInvalidResume);
 
+    /// <summary><see cref="VolutaErrorCodes.GraphInvalidContinue" />.</summary>
+    public static readonly EventId GraphInvalidContinue = new(2023, VolutaErrorCodes.GraphInvalidContinue);
+
+    /// <summary><see cref="VolutaErrorCodes.GraphThreadNotFound" />.</summary>
+    public static readonly EventId GraphThreadNotFound = new(2024, VolutaErrorCodes.GraphThreadNotFound);
+
+    /// <summary><see cref="VolutaErrorCodes.GraphStepNotFound" />.</summary>
+    public static readonly EventId GraphStepNotFound = new(2025, VolutaErrorCodes.GraphStepNotFound);
+
     /// <summary><see cref="VolutaErrorCodes.ChannelConcurrentUpdate" />.</summary>
     public static readonly EventId ChannelConcurrentUpdate = new(2040, VolutaErrorCodes.ChannelConcurrentUpdate);
 
@@ -89,6 +98,9 @@ public static class VolutaEventIds
         GraphOutOfSteps,
         GraphRunFailed,
         GraphInvalidResume,
+        GraphInvalidContinue,
+        GraphThreadNotFound,
+        GraphStepNotFound,
         ChannelConcurrentUpdate,
         CheckpointPutFailed,
         CheckpointGetFailed,

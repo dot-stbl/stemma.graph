@@ -92,6 +92,30 @@ The compiled graph MUST expose host-facing time-travel reads that wrap checkpoin
 - **WHEN** the host calls `GetStateAsync` for a thread that was never put
 - **THEN** the result indicates not found without treating it as a storage outage
 
+### Requirement: Host update state and fork
+The compiled graph MUST expose host-facing mutation APIs that apply channel writes and branch threads without reopening the engine-only C-shape surface.
+
+- `UpdateStateAsync(threadId, writes)` MUST load the latest checkpoint, apply writes through the same channel reducers as runtime input seeding (LastValue / Append / etc.), and Put a **new** history step at `latest.Step + 1` with updated channel values and versions.
+- Status policy after update: `Failed` / `Cancelled` become `Running` (so continue can re-drive); `Interrupted` stays `Interrupted` (resume via command); `Done` / `Running` keep their status; NextNodes / interrupt payload / pending sends are preserved when status remains non-terminal.
+- `ForkAsync(sourceThreadId, step, newThreadId)` MUST list source history, copy the snapshot at the requested step onto `newThreadId` **keeping the same step index** as the fork root, and leave the source thread unchanged. Missing source thread → stable `graph.thread_not_found`; missing step → `graph.step_not_found`.
+- `ContinueAsync` / `ContinueInvokeAsync` MUST re-enter the superstep loop from a **Running** latest checkpoint (NextNodes and/or pending sends). Interrupted threads MUST use `ResumeAsync` instead. Side-effect re-execution of nodes in NextNodes is host responsibility (document; no automatic dedup).
+
+#### Scenario: Update then resume interrupt
+- **WHEN** a thread is Interrupted and the host calls `UpdateStateAsync` with append writes then `ResumeInvokeAsync`
+- **THEN** the patched channel values are visible after resume and the run can complete
+
+#### Scenario: Fork preserves source independence
+- **WHEN** the host forks step N to a new thread and updates only the new thread
+- **THEN** the source thread history does not contain the new thread’s writes
+
+#### Scenario: Missing step on fork
+- **WHEN** the host forks a step that does not exist on the source thread
+- **THEN** the operation fails with `graph.step_not_found`
+
+#### Scenario: Continue after fork Running
+- **WHEN** the host forks a Running checkpoint with next nodes and calls `ContinueInvokeAsync` on the new thread
+- **THEN** the run continues and can reach Done
+
 ### Requirement: File EF and S3 provider packages
 Durable checkpoint providers for local JSON files, EF Core (provider-agnostic relational), and S3-compatible object storage MUST ship as separate packages that implement the shared checkpointer contract and pass the same conformance suite as InMemory for put/get/list semantics.
 

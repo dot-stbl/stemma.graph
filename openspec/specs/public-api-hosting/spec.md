@@ -77,6 +77,17 @@ Standalone and DI hosts MUST be able to inspect current state and step history t
 - **WHEN** a host invokes a graph and then calls `GetStateAsync` with the same thread id
 - **THEN** the returned `ThreadSnapshot` reflects the latest checkpoint status and values
 
+### Requirement: Host update state, fork, and continue
+Standalone hosts MUST be able to patch channel state, branch a thread from a history step, and continue a Running thread through `CompiledGraph` without using the checkpointer API directly.
+
+#### Scenario: Host patches then continues
+- **WHEN** a host has a Running thread (e.g. after fork of a mid-run step), calls `UpdateStateAsync`, then `ContinueInvokeAsync`
+- **THEN** the run proceeds from the updated values and can reach a terminal status
+
+#### Scenario: Host forks missing step
+- **WHEN** a host calls `ForkAsync` with a step not present in source history
+- **THEN** the call fails with a stable graph step-not-found error code
+
 ### Requirement: Optional Agents AI package
 Microsoft Extensions AI chat clients and Microsoft Agent Framework agents MUST integrate as optional package nodes that write assistant or agent text into channels, without adding AI package dependencies to the AOT core runtime packages.
 

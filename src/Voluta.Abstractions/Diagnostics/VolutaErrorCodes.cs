@@ -47,6 +47,15 @@ public static class VolutaErrorCodes
     /// <summary>Resume requested for a thread that is not interrupted.</summary>
     public const string GraphInvalidResume = "graph.invalid_resume";
 
+    /// <summary>Continue requested for a thread that is not in Running status.</summary>
+    public const string GraphInvalidContinue = "graph.invalid_continue";
+
+    /// <summary>Thread id has no checkpoint (update / continue / fork source miss).</summary>
+    public const string GraphThreadNotFound = "graph.thread_not_found";
+
+    /// <summary>Requested history step is missing for the thread.</summary>
+    public const string GraphStepNotFound = "graph.step_not_found";
+
     /// <summary>LastValue channel received multiple writers in one superstep.</summary>
     public const string ChannelConcurrentUpdate = "channel.concurrent_update";
 
@@ -91,6 +100,9 @@ public static class VolutaErrorCodes
         GraphOutOfSteps,
         GraphRunFailed,
         GraphInvalidResume,
+        GraphInvalidContinue,
+        GraphThreadNotFound,
+        GraphStepNotFound,
         ChannelConcurrentUpdate,
         CheckpointPutFailed,
         CheckpointGetFailed,
