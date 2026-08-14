@@ -41,6 +41,12 @@ public sealed class ThreadSnapshot
 
     /// <summary>
     ///     HITL interrupt payload when <see cref="Status" /> is <see cref="GraphRunStatus.Interrupted" />.
+    ///     For multi-interrupt, the first pending payload (compat); see <see cref="PendingInterrupts" />.
     /// </summary>
     public object? InterruptPayload { get; init; }
+
+    /// <summary>
+    ///     All pending HITL interrupts (empty when none or legacy single-payload snapshots).
+    /// </summary>
+    public IReadOnlyList<PendingInterrupt> PendingInterrupts { get; init; } = [];
 }

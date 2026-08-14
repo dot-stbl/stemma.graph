@@ -42,6 +42,13 @@ internal static class VolutaUiJson
             lastNode = snapshot.LastNode,
             nextNodes = snapshot.NextNodes,
             interruptPayload = FormatValue(snapshot.InterruptPayload),
+            pendingInterrupts = snapshot.PendingInterrupts.Select(static item => new
+            {
+                taskId = item.TaskId,
+                nodeName = item.NodeName,
+                payload = FormatValue(item.Payload),
+                taskPayload = FormatValue(item.TaskPayload),
+            }),
             channelValues = snapshot.ChannelValues.ToDictionary(
                 static pair => pair.Key,
                 static pair => FormatValue(pair.Value),
@@ -73,6 +80,13 @@ internal static class VolutaUiJson
             lastNode = state.LastNode,
             nextNodes = state.NextNodes,
             interruptPayload = FormatValue(state.InterruptPayload),
+            pendingInterrupts = state.PendingInterrupts.Select(static item => new
+            {
+                taskId = item.TaskId,
+                nodeName = item.NodeName,
+                payload = FormatValue(item.Payload),
+                taskPayload = FormatValue(item.TaskPayload),
+            }),
             values = state.Values.ToDictionary(
                 static pair => pair.Key,
                 static pair => FormatValue(pair.Value),

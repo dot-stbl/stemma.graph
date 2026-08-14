@@ -17,7 +17,8 @@ internal static class RunEngineSnapshots
         IReadOnlyList<string> nextNodes,
         IReadOnlyList<PendingSend> pendingSends,
         object? interruptPayload,
-        IReadOnlyDictionary<string, object?>? channelValues = null)
+        IReadOnlyDictionary<string, object?>? channelValues = null,
+        IReadOnlyList<PendingInterrupt>? pendingInterrupts = null)
     {
         var versions = store.Versions;
         var channelVersions = new Dictionary<string, long>(versions.Count, StringComparer.Ordinal);
@@ -38,7 +39,10 @@ internal static class RunEngineSnapshots
             PendingSends = [.. pendingSends],
             LastNode = lastNode,
             NextNodes = [.. nextNodes],
-            InterruptPayload = interruptPayload
+            InterruptPayload = interruptPayload,
+            PendingInterrupts = pendingInterrupts is { Count: > 0 }
+                ? [.. pendingInterrupts]
+                : [],
         };
     }
 }

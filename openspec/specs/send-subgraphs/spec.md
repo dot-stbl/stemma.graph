@@ -22,6 +22,13 @@ Checkpoints MUST carry `PendingSends` (node name, payload, task id) so scheduled
 - **WHEN** a checkpoint without pending Send tasks is loaded by a version that supports Send
 - **THEN** the checkpoint still loads and runs without migration failure
 
+### Requirement: Parallel Send interrupts resume by task id
+When multiple Send-scheduled tasks interrupt in the same superstep, each pending interrupt MUST retain the Send task id and task payload so hosts can approve/reject per task via `Command.Resumes`. Single-interrupt Send paths keep working with `Command.Payload` alone.
+
+#### Scenario: Map fan-out with dual approval gates
+- **WHEN** two Send workers interrupt with distinct task ids
+- **THEN** the host resumes with a map id → payload and both workers continue; channel writes merge via reducers after the barrier
+
 ### Requirement: Subgraph as compiled unit
 A parent graph MUST be able to treat another compiled graph as a node (subgraph) with defined input/output channel mapping. Library helper: `Subgraph.AsNode(child, inputChannels, outputChannels, threadIdFactory?)`.
 

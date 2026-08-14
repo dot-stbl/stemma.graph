@@ -1,3 +1,4 @@
+using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Diagnostics;
 using Voluta.Abstractions.Runtime;
 using Voluta.Exceptions.Run;
@@ -36,6 +37,40 @@ public static class CommandTaxonomy
             throw new GraphInvalidCommandException(
                 VolutaErrorCodes.CommandInvalidPayload,
                 "Resume command kind 'update' requires non-empty Values (channel writes).");
+        }
+    }
+
+    /// <summary>
+    ///     When multiple interrupts are pending, <see cref="Command.Resumes"/> must cover every task id.
+    ///     Single-interrupt threads may use <see cref="Command.Payload"/> alone.
+    /// </summary>
+    /// <param name="command">Resume command from the host.</param>
+    /// <param name="pendingInterrupts">Pending interrupts from the interrupted checkpoint.</param>
+    /// <exception cref="GraphInvalidCommandException">When multi-interrupt map is incomplete.</exception>
+    public static void EnsureMultiInterruptResumes(
+        Command command,
+        IReadOnlyList<PendingInterrupt> pendingInterrupts)
+    {
+        if (pendingInterrupts.Count <= 1)
+        {
+            return;
+        }
+
+        if (command.Resumes is not { Count: > 0 } resumes)
+        {
+            throw new GraphInvalidCommandException(
+                VolutaErrorCodes.CommandInvalidPayload,
+                "Multiple pending interrupts require Command.Resumes (map of task id → payload).");
+        }
+
+        foreach (var pending in pendingInterrupts)
+        {
+            if (!resumes.ContainsKey(pending.TaskId))
+            {
+                throw new GraphInvalidCommandException(
+                    VolutaErrorCodes.CommandInvalidPayload,
+                    $"Resume map is missing task id '{pending.TaskId}' (node '{pending.NodeName}').");
+            }
         }
     }
 }

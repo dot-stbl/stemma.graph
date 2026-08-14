@@ -68,6 +68,14 @@ public sealed class CheckpointSnapshot
 
     /// <summary>
     ///     HITL interrupt payload when <see cref="Status" /> is <see cref="GraphRunStatus.Interrupted" />.
+    ///     For a single interrupt this is the node payload; for multi-interrupt it is the first pending
+    ///     interrupt's payload (compat). Prefer <see cref="PendingInterrupts" /> for the full set.
     /// </summary>
     public object? InterruptPayload { get; init; }
+
+    /// <summary>
+    ///     All pending HITL interrupts for this step (empty when not interrupted or legacy single-path
+    ///     snapshots that only set <see cref="InterruptPayload" />). Additive wire field — empty default.
+    /// </summary>
+    public IReadOnlyList<PendingInterrupt> PendingInterrupts { get; init; } = [];
 }

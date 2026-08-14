@@ -12,6 +12,8 @@ using Voluta.Runtime.Engine.Streaming;
 using Voluta.Runtime.Engine.Support;
 using Voluta.Runtime.Engine.Tasks;
 
+// PendingInterrupt lives in Voluta.Abstractions.Checkpoint.
+
 // GraphConstants lives in root Voluta namespace.
 // CommandTaxonomy lives in Voluta.Runtime (parent of this namespace).
 
@@ -71,10 +73,10 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         await foreach (var item in RunLoopAsync(
                            options,
                            store,
-                           nextNodes,
+                           RunEngineRouting.ToPullTasks(topology, nextNodes),
                            step,
                            lastNode,
-                           null,
+                           resumeByTaskId: null,
                            cancellationToken))
         {
             yield return item;
@@ -102,6 +104,9 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 $"Thread '{threadId}' is not interrupted (status={checkpoint.Status}).");
         }
 
+        var pendingInterrupts = RunEngineLoopHelpers.ResolvePendingInterrupts(checkpoint);
+        Runtime.CommandTaxonomy.EnsureMultiInterruptResumes(command, pendingInterrupts);
+
         var store = new ChannelStore(topology.Channels);
         store.Restore(checkpoint.ChannelValues, checkpoint.ChannelVersions, checkpoint.VersionsSeen);
 
@@ -110,13 +115,19 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             store.ApplyInputWrites(values.Select(pair => new ChannelWrite(pair.Key, pair.Value)));
         }
 
-        var nextNodes = checkpoint.NextNodes.Count > 0
-            ? checkpoint.NextNodes
-            : RunEngineRouting.ResolveNextNodes(
-                topology,
-                GraphConstants.Start,
-                store.SnapshotValues(),
-                command.Payload);
+        var resumeByTaskId = RunEngineLoopHelpers.BuildResumeMap(command, pendingInterrupts);
+        var readyTasks = RunEngineLoopHelpers.ToResumeReadyTasks(pendingInterrupts);
+        if (readyTasks.Count == 0)
+        {
+            var nextNodes = checkpoint.NextNodes.Count > 0
+                ? checkpoint.NextNodes
+                : RunEngineRouting.ResolveNextNodes(
+                    topology,
+                    GraphConstants.Start,
+                    store.SnapshotValues(),
+                    command.Payload);
+            readyTasks = RunEngineRouting.ToPullTasks(topology, nextNodes);
+        }
 
         var options = new RunOptions { ThreadId = threadId, StreamMode = streamMode };
 
@@ -133,10 +144,10 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         await foreach (var item in RunLoopAsync(
                            options,
                            store,
-                           nextNodes,
+                           readyTasks,
                            checkpoint.Step,
                            checkpoint.LastNode,
-                           command.Payload,
+                           resumeByTaskId,
                            cancellationToken))
         {
             yield return item;
@@ -205,10 +216,10 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         await foreach (var item in RunLoopAsync(
                            options,
                            store,
-                           nextNodes,
+                           RunEngineRouting.ToPullTasks(topology, nextNodes),
                            checkpoint.Step,
                            checkpoint.LastNode,
-                           resumePayload: null,
+                           resumeByTaskId: null,
                            cancellationToken))
         {
             yield return item;
@@ -309,7 +320,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     readyTasks,
                     step,
                     lastNode,
-                    payloadForStep: null,
+                    resumeByTaskId: null,
                     options.ThreadId,
                     superstep,
                     cancellationToken);
@@ -339,15 +350,15 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
     private async IAsyncEnumerable<StreamEvent> RunLoopAsync(
         RunOptions options,
         ChannelStore store,
-        IReadOnlyList<string> nextNodes,
+        IReadOnlyList<ReadyTask> initialReady,
         long step,
         string? lastNode,
-        object? resumePayload,
+        IReadOnlyDictionary<string, object?>? resumeByTaskId,
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken)
     {
-        var readyTasks = RunEngineRouting.ToPullTasks(topology, nextNodes);
-        var isFirstResumeStep = resumePayload is not null;
+        var readyTasks = initialReady;
+        var isFirstResumeStep = resumeByTaskId is not null;
 
         while (true)
         {
@@ -403,7 +414,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 
             // readyTasks from ToPullTasks are already sorted; re-sort only when sends merge in.
             var orderedReady = readyTasks;
-            var payloadForStep = isFirstResumeStep ? resumePayload : null;
+            var payloadsForStep = isFirstResumeStep ? resumeByTaskId : null;
             isFirstResumeStep = false;
 
             // Superstep activity must complete before any yield (async iterator rule).
@@ -420,7 +431,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     orderedReady,
                     step,
                     lastNode,
-                    payloadForStep,
+                    payloadsForStep,
                     options.ThreadId,
                     superstep,
                     cancellationToken);
@@ -477,7 +488,7 @@ file static class RunEngineLoopHelpers
         IReadOnlyList<ReadyTask> orderedReady,
         long step,
         string? lastNode,
-        object? payloadForStep,
+        IReadOnlyDictionary<string, object?>? resumeByTaskId,
         string threadId,
         ActivityScope superstep,
         CancellationToken cancellationToken)
@@ -487,7 +498,7 @@ file static class RunEngineLoopHelpers
             topology,
             orderedReady,
             preApplySnapshot,
-            payloadForStep,
+            resumeByTaskId,
             threadId,
             cancellationToken);
 
@@ -554,10 +565,15 @@ file static class RunEngineLoopHelpers
         }
 
         var executions = executionOutcome.Executions!;
-        if (executions.FirstOrDefault(item => item.Result is InterruptNodeResult) is { } interrupted)
+        var pendingInterrupts = CollectPendingInterrupts(orderedReady, executions);
+        if (pendingInterrupts.Count > 0)
         {
-            var interruptResult = (InterruptNodeResult)interrupted.Result;
-            lastNode = interrupted.NodeName;
+            // When any task interrupts, continue results from the same superstep are not applied
+            // (barrier holds until all pending interrupts resume).
+            lastNode = pendingInterrupts[^1].NodeName;
+            var nextNodeNames = DistinctNames(
+                pendingInterrupts.Select(static item => item.NodeName).ToList());
+            var primaryPayload = pendingInterrupts[0].Payload;
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
                     options.ThreadId,
@@ -565,13 +581,14 @@ file static class RunEngineLoopHelpers
                     GraphRunStatus.Interrupted,
                     store,
                     lastNode,
-                    [interrupted.NodeName],
+                    nextNodeNames,
                     [],
-                    interruptResult.Payload),
+                    primaryPayload,
+                    pendingInterrupts: pendingInterrupts),
                 cancellationToken);
 
             superstep.SetTag(VolutaDiagnostics.TagRunStatus, nameof(GraphRunStatus.Interrupted));
-            superstep.SetTag(VolutaDiagnostics.TagNodeName, interrupted.NodeName);
+            superstep.SetTag(VolutaDiagnostics.TagNodeName, lastNode);
             return new SuperstepCommit
             {
                 LastNode = lastNode,
@@ -581,8 +598,10 @@ file static class RunEngineLoopHelpers
                     Mode = options.StreamMode,
                     Kind = StreamEventKind.Interrupt,
                     Step = step,
-                    NodeNames = [interrupted.NodeName],
-                    Payload = interruptResult.Payload,
+                    NodeNames = nextNodeNames,
+                    Payload = pendingInterrupts.Count == 1
+                        ? primaryPayload
+                        : pendingInterrupts,
                     State = options.StreamMode == StreamMode.Values ? store.SnapshotValues() : null,
                 },
             };
@@ -771,5 +790,102 @@ file static class RunEngineLoopHelpers
         }
 
         return distinct;
+    }
+
+    public static IReadOnlyList<PendingInterrupt> ResolvePendingInterrupts(CheckpointSnapshot checkpoint)
+    {
+        if (checkpoint.PendingInterrupts is { Count: > 0 } pending)
+        {
+            return pending;
+        }
+
+        // Legacy single-path: only InterruptPayload + NextNodes/LastNode.
+        if (checkpoint.InterruptPayload is null && checkpoint.NextNodes.Count == 0)
+        {
+            return [];
+        }
+
+        var nodeName = checkpoint.NextNodes.Count > 0
+            ? checkpoint.NextNodes[0]
+            : checkpoint.LastNode ?? GraphConstants.Start;
+        return
+        [
+            new PendingInterrupt
+            {
+                TaskId = nodeName,
+                NodeName = nodeName,
+                Payload = checkpoint.InterruptPayload,
+            },
+        ];
+    }
+
+    public static Dictionary<string, object?> BuildResumeMap(
+        Command command,
+        IReadOnlyList<PendingInterrupt> pendingInterrupts)
+    {
+        if (command.Resumes is { Count: > 0 } resumes)
+        {
+            return new Dictionary<string, object?>(resumes, StringComparer.Ordinal);
+        }
+
+        // Single-path: same payload for every pending interrupt (typically one).
+        var map = new Dictionary<string, object?>(pendingInterrupts.Count, StringComparer.Ordinal);
+        foreach (var pending in pendingInterrupts)
+        {
+            map[pending.TaskId] = command.Payload;
+        }
+
+        return map;
+    }
+
+    public static IReadOnlyList<ReadyTask> ToResumeReadyTasks(IReadOnlyList<PendingInterrupt> pendingInterrupts)
+    {
+        if (pendingInterrupts.Count == 0)
+        {
+            return [];
+        }
+
+        var tasks = new List<ReadyTask>(pendingInterrupts.Count);
+        foreach (var pending in pendingInterrupts)
+        {
+            tasks.Add(new ReadyTask(pending.NodeName, pending.TaskId, pending.TaskPayload));
+        }
+
+        tasks.Sort(static (left, right) =>
+        {
+            var nodeCompare = string.CompareOrdinal(left.NodeName, right.NodeName);
+            return nodeCompare != 0
+                ? nodeCompare
+                : string.CompareOrdinal(left.TaskId, right.TaskId);
+        });
+        return tasks;
+    }
+
+    public static IReadOnlyList<PendingInterrupt> CollectPendingInterrupts(
+        IReadOnlyList<ReadyTask> orderedReady,
+        IReadOnlyList<NodeExecution> executions)
+    {
+        // Executions preserve orderedReady order (WhenAll / single path).
+        List<PendingInterrupt>? pending = null;
+        for (var index = 0; index < executions.Count; index++)
+        {
+            if (executions[index].Result is not InterruptNodeResult interruptResult)
+            {
+                continue;
+            }
+
+            pending ??= [];
+            var ready = orderedReady[index];
+            pending.Add(
+                new PendingInterrupt
+                {
+                    TaskId = ready.TaskId,
+                    NodeName = ready.NodeName,
+                    Payload = interruptResult.Payload,
+                    TaskPayload = ready.TaskPayload,
+                });
+        }
+
+        return pending is null ? [] : pending;
     }
 }

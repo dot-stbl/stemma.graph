@@ -18,6 +18,7 @@ internal static class ThreadSnapshotMapping
             LastNode = snapshot.LastNode,
             NextNodes = snapshot.NextNodes,
             InterruptPayload = snapshot.InterruptPayload,
+            PendingInterrupts = snapshot.PendingInterrupts,
         };
     }
 }

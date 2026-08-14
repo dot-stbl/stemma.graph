@@ -27,6 +27,8 @@ internal sealed class S3CheckpointDocument
 
     public List<S3PendingSendDocument> PendingSends { get; set; } = [];
 
+    public List<S3PendingInterruptDocument> PendingInterrupts { get; set; } = [];
+
     public string? LastNode { get; set; }
 
     public List<string> NextNodes { get; set; } = [];
@@ -66,6 +68,16 @@ internal sealed class S3CheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = S3CheckpointJson.ToElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. snapshot.PendingInterrupts.Select(static item => new S3PendingInterruptDocument
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = S3CheckpointJson.ToElement(item.Payload),
+                    TaskPayload = S3CheckpointJson.ToElement(item.TaskPayload),
                 })
             ],
             LastNode = snapshot.LastNode,
@@ -115,6 +127,16 @@ internal sealed class S3CheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = S3CheckpointJson.FromElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. PendingInterrupts.Select(static item => new PendingInterrupt
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = S3CheckpointJson.FromElement(item.Payload),
+                    TaskPayload = S3CheckpointJson.FromElement(item.TaskPayload),
                 })
             ],
             LastNode = LastNode,

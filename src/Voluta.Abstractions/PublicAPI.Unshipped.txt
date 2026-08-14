@@ -40,6 +40,18 @@ Voluta.Abstractions.Runtime.Command.Kinds
 
 Voluta.Abstractions.Checkpoint.IThreadDiscovery
 Voluta.Abstractions.Checkpoint.IThreadDiscovery.ListThreadIdsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Voluta.Abstractions.Checkpoint.PendingInterrupt
+Voluta.Abstractions.Checkpoint.PendingInterrupt.NodeName.get -> string!
+Voluta.Abstractions.Checkpoint.PendingInterrupt.NodeName.init -> void
+Voluta.Abstractions.Checkpoint.PendingInterrupt.Payload.get -> object?
+Voluta.Abstractions.Checkpoint.PendingInterrupt.Payload.init -> void
+Voluta.Abstractions.Checkpoint.PendingInterrupt.PendingInterrupt() -> void
+Voluta.Abstractions.Checkpoint.PendingInterrupt.TaskId.get -> string!
+Voluta.Abstractions.Checkpoint.PendingInterrupt.TaskId.init -> void
+Voluta.Abstractions.Checkpoint.PendingInterrupt.TaskPayload.get -> object?
+Voluta.Abstractions.Checkpoint.PendingInterrupt.TaskPayload.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingInterrupts.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.PendingInterrupt!>!
+Voluta.Abstractions.Checkpoint.CheckpointSnapshot.PendingInterrupts.init -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.get -> object?
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.InterruptPayload.init -> void
@@ -47,6 +59,8 @@ Voluta.Abstractions.Checkpoint.ThreadSnapshot.LastNode.get -> string?
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.LastNode.init -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.NextNodes.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.NextNodes.init -> void
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.PendingInterrupts.get -> System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.PendingInterrupt!>!
+Voluta.Abstractions.Checkpoint.ThreadSnapshot.PendingInterrupts.init -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.Status.get -> Voluta.Abstractions.Runtime.GraphRunStatus
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.Status.init -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.Step.get -> long
@@ -56,3 +70,10 @@ Voluta.Abstractions.Checkpoint.ThreadSnapshot.ThreadId.init -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.ThreadSnapshot() -> void
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.Values.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
 Voluta.Abstractions.Checkpoint.ThreadSnapshot.Values.init -> void
+static Voluta.Abstractions.Runtime.Command.ApproveResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.ApproveResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.RejectResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.RejectResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.UpdateResumes(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! resumes) -> Voluta.Abstractions.Runtime.Command!
+Voluta.Abstractions.Runtime.Command.Resumes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>?
+Voluta.Abstractions.Runtime.Command.Resumes.init -> void
