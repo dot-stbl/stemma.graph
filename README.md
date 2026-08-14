@@ -380,40 +380,47 @@ return await ChatClientNode.CompleteToChannelAsync(
     chatClient, "answer", messages, cancellationToken: ct);
 ```
 
-## Durable checkpoints
+## Host DI — `AddVoluta`
 
-`ICheckpointer` is the only storage seam. Pick a provider at host startup with a fluent builder —
-exactly one `Use*`:
+One composition root: checkpoints + graph (and later UI hooks). Prefer this over raw
+`AddSingleton<ICheckpointer>(…)` / ad-hoc factories.
 
 ```csharp
-// In-process (tests / samples)
-services.AddVolutaCheckpoints(c => c.UseInMemory());
+// Recommended: checkpoints + graph in one call
+services.AddVoluta(v =>
+{
+    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3
+    v.Graph((sp, checkpointer) => new StateGraph()
+        // …nodes, edges, channels…
+        .Compile(checkpointer));
+});
 
-// JSON files under a directory
+// Graph only (already compiled, or factory that owns its own checkpointer)
+services.AddVoluta(prebuiltGraph);
+services.AddVoluta(sp => BuildGraph(sp));
+
+// Checkpoints only (resolve ICheckpointer yourself)
 services.AddVolutaCheckpoints(c => c.UseFile("./.voluta/checkpoints"));
+```
 
-// Your app DbContext (any EF provider: Npgsql, SqlServer, SQLite, …)
+### Checkpoint providers (`v.Checkpoints.Use*`)
+
+Exactly one `Use*` per host:
+
+```csharp
+v.Checkpoints.UseInMemory();
+v.Checkpoints.UseFile("./.voluta/checkpoints");
+
+// EF — register IDbContextFactory first (any provider: Npgsql, SqlServer, SQLite, …)
 services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
-services.AddVolutaCheckpoints(c => c.UseEntityFrameworkCore<AppDbContext>());
+v.Checkpoints.UseEntityFrameworkCore<AppDbContext>();
 
-// S3 / MinIO / R2 (register IAmazonS3 yourself)
+// S3 — register IAmazonS3 first
 services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(RegionEndpoint.EUCentral1));
-services.AddVolutaCheckpoints(c => c.UseS3(o =>
+v.Checkpoints.UseS3(o =>
 {
     o.BucketName = "voluta";
     o.KeyPrefix = "runs";
-}));
-```
-
-Wire the graph with the registered store:
-
-```csharp
-services.AddVoluta(sp =>
-{
-    var checkpointer = sp.GetRequiredService<ICheckpointer>();
-    return new StateGraph()
-        // …nodes, edges, channels…
-        .Compile(checkpointer);
 });
 ```
 
@@ -493,7 +500,7 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 |---------|------|--------|
 | `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | [`src/Voluta.Abstractions`](src/Voluta.Abstractions/) |
 | `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | [`src/Voluta`](src/Voluta/) |
-| `Voluta.DependencyInjection` | `AddVoluta` + `AddVolutaCheckpoints` | [`src/Voluta.DependencyInjection`](src/Voluta.DependencyInjection/) |
+| `Voluta.DependencyInjection` | `AddVoluta(v => { v.Checkpoints…; v.Graph… })` | [`src/Voluta.DependencyInjection`](src/Voluta.DependencyInjection/) |
 | `Voluta.Generators` | `[GraphState]` source generator | [`src/Voluta.Generators`](src/Voluta.Generators/) |
 | `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/Voluta.Testing`](src/Voluta.Testing/) |
 | `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
