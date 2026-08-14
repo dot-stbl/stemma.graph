@@ -81,6 +81,7 @@
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Sqlite'
                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Postgres'
                          or '$(MSBuildProjectName)' == 'Voluta.Agents.AI'
+                         or '$(MSBuildProjectName)' == 'Voluta.Tools'
                          or '$(MSBuildProjectName)' == 'Voluta.UI')">
         <VolutaEnablePublicApi>true</VolutaEnablePublicApi>
     </PropertyGroup>

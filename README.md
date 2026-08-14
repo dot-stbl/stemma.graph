@@ -735,12 +735,14 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
 | `Voluta.Checkpoints.Postgres` | Postgres-native Npgsql (`UsePostgres`) | [`src/Voluta.Checkpoints.Postgres`](src/Voluta.Checkpoints.Postgres/) |
 | `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
+| `Voluta.Tools` | Tool nodes + light MCP HTTP client (no LLM SDK) | [`src/Voluta.Tools`](src/Voluta.Tools/) |
 | `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
 Checkpoint providers (File / SQLite / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
 Checkpoint providers (File / EF / S3 / Postgres), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
+Checkpoint providers (File / EF / S3), UI, Agents.AI, Tools, and OpenTelemetry are regular-CLR packages
 and do not claim AOT.
 
 ### OpenTelemetry

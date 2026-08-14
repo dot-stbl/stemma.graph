@@ -24,6 +24,7 @@
     <Project Path="src/Voluta.Checkpoints.Sqlite/Voluta.Checkpoints.Sqlite.csproj" />
     <Project Path="src/Voluta.Checkpoints.Postgres/Voluta.Checkpoints.Postgres.csproj" />
     <Project Path="src/Voluta.Agents.AI/Voluta.Agents.AI.csproj" />
+    <Project Path="src/Voluta.Tools/Voluta.Tools.csproj" />
     <Project Path="src/Voluta.UI/Voluta.UI.csproj" />
   </Folder>
   <Folder Name="/samples/">
@@ -51,6 +52,7 @@
     <Project Path="tests/Voluta.DependencyInjection.Unit/Voluta.DependencyInjection.Unit.csproj" />
     <Project Path="tests/Voluta.OpenTelemetry.Unit/Voluta.OpenTelemetry.Unit.csproj" />
     <Project Path="tests/Voluta.Agents.AI.Unit/Voluta.Agents.AI.Unit.csproj" />
+    <Project Path="tests/Voluta.Tools.Unit/Voluta.Tools.Unit.csproj" />
     <Project Path="tests/Voluta.Testing.Unit/Voluta.Testing.Unit.csproj" />
     <Project Path="tests/Voluta.Generators.Unit/Voluta.Generators.Unit.csproj" />
     <Project Path="tests/Voluta.Integration/Voluta.Integration.csproj" />
