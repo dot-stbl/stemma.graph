@@ -38,6 +38,9 @@
     <Project Path="samples/StudioHost/StudioHost.csproj" />
     <Project Path="samples/WorkerHost/WorkerHost.csproj" />
   </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/Voluta.Templates/Voluta.Templates.csproj" />
+  </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Voluta.Benchmarks/Voluta.Benchmarks.csproj" />
   </Folder>

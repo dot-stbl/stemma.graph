@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>VolutaAgent</RootNamespace>
+    <Description>
+      Voluta HITL agent scaffold: AddVoluta + InMemory checkpoint + interrupt gate + optional MEAI chat stub.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.*" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
+    <PackageReference Include="Voluta" Version="VOLUTA_PACKAGE_VERSION" />
+    <PackageReference Include="Voluta.DependencyInjection" Version="VOLUTA_PACKAGE_VERSION" />
+    <PackageReference Include="Voluta.Agents.AI" Version="VOLUTA_PACKAGE_VERSION" />
+  </ItemGroup>
+
+  <!--
+    In-repo development (optional): replace PackageReference with ProjectReference
+    to your local Voluta clone, for example:
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+      <ProjectReference Include="..\..\src\Voluta.DependencyInjection\Voluta.DependencyInjection.csproj" />
+      <ProjectReference Include="..\..\src\Voluta.Agents.AI\Voluta.Agents.AI.csproj" />
+    </ItemGroup>
+  -->
+
+</Project>

@@ -59,6 +59,48 @@ build means you have the same bar CI uses.
 dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj
 ```
 
+## Scaffold: `dotnet new voluta-agent`
+
+Fastest path to a runnable HITL graph without cloning samples:
+
+```bash
+# from NuGet (when Voluta.Templates is published)
+dotnet new install Voluta.Templates
+
+dotnet new voluta-agent -n MyAgent
+cd MyAgent
+dotnet run
+```
+
+What you get:
+
+- `AddVoluta` + **InMemory** checkpointer (swap to File / EF / S3 later)
+- One **interrupt** node + automatic `Command.Approve` demo resume
+- Optional **MEAI** chat node via `Voluta.Agents.AI` with an **offline stub**
+  (`IChatClient`) so the project builds **without an API key**
+
+### Install the template pack from a local pack / path
+
+Contributors and pre-release:
+
+```bash
+# pack from a clone
+dotnet pack templates/Voluta.Templates -c Release -o ./artifacts/templates
+dotnet new install ./artifacts/templates/Voluta.Templates.*.nupkg
+
+# or install the content folder directly (no pack)
+dotnet new install ./templates/Voluta.Templates/content
+```
+
+Uninstall: `dotnet new uninstall Voluta.Templates` (or the path you passed to
+`install`).
+
+Pin Voluta package versions at scaffold time:
+
+```bash
+dotnet new voluta-agent -n MyAgent --volutaVersion 0.2.0
+```
+
 ## Sanity check: run a sample
 
 ```bash
