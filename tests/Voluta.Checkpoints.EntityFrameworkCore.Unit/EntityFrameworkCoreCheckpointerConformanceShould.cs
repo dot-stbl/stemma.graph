@@ -51,6 +51,26 @@ public sealed class EntityFrameworkCoreCheckpointerConformanceShould
         var checkpointer = new EntityFrameworkCoreCheckpointer(factory);
         await CheckpointerConformance.RunAllAsync(checkpointer);
     }
+
+    [Fact(DisplayName = "Given EF InMemory provider, when conformance runs, then all scenarios pass")]
+    public async Task PassesConformanceOnEfInMemory()
+    {
+        var databaseName = $"voluta-checkpoints-{Guid.NewGuid():N}";
+        var services = new ServiceCollection();
+        services.AddDbContextFactory<HostDbContext>(options => options.UseInMemoryDatabase(databaseName));
+        services.AddVolutaCheckpoints(static checkpoints => checkpoints.UseEntityFrameworkCore<HostDbContext>());
+
+        await using var provider = services.BuildServiceProvider();
+        await using (var setup = await provider
+                         .GetRequiredService<IDbContextFactory<HostDbContext>>()
+                         .CreateDbContextAsync())
+        {
+            await setup.Database.EnsureCreatedAsync();
+        }
+
+        var checkpointer = provider.GetRequiredService<ICheckpointer>();
+        await CheckpointerConformance.RunAllAsync(checkpointer);
+    }
 }
 
 /// <summary>
