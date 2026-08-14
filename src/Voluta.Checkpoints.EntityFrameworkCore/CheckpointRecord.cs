@@ -1,7 +1,11 @@
+using Voluta.Abstractions.Checkpoint;
+using Voluta.Abstractions.Runtime;
+
 namespace Voluta.Checkpoints.EntityFrameworkCore;
 
 /// <summary>
 ///     EF entity for one C-shape checkpoint row (composite key thread + step).
+///     <see cref="Snapshot" /> is mapped with a JSON value converter (no hand-serialize in the checkpointer).
 /// </summary>
 public sealed class CheckpointRecord
 {
@@ -11,9 +15,9 @@ public sealed class CheckpointRecord
     /// <summary>Superstep number (part of composite key).</summary>
     public long Step { get; set; }
 
-    /// <summary>Graph run status name (e.g. Running, Done, Interrupted).</summary>
-    public required string Status { get; set; }
+    /// <summary>Run status at this step.</summary>
+    public GraphRunStatus Status { get; set; }
 
-    /// <summary>Full C-shape JSON document (same wire shape as the file provider).</summary>
-    public required string PayloadJson { get; set; }
+    /// <summary>Full C-shape snapshot (EF converts to/from JSON column).</summary>
+    public required CheckpointSnapshot Snapshot { get; set; }
 }

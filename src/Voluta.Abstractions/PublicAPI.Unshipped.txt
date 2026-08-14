@@ -40,6 +40,9 @@ Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ThreadId.get -> string!
 Voluta.Abstractions.Checkpoint.CheckpointSnapshot.ThreadId.init -> void
 Voluta.Abstractions.Checkpoint.CheckpointSnapshot.VersionsSeen.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Collections.Generic.IReadOnlyDictionary<string!, long>!>!
 Voluta.Abstractions.Checkpoint.CheckpointSnapshot.VersionsSeen.init -> void
+Voluta.Abstractions.Checkpoint.CheckpointStoreException
+Voluta.Abstractions.Checkpoint.CheckpointStoreException.CheckpointStoreException(string! code, string! message, System.Exception? innerException = null) -> void
+Voluta.Abstractions.Checkpoint.CheckpointStoreException.Code.get -> string!
 Voluta.Abstractions.Checkpoint.ICheckpointer
 Voluta.Abstractions.Checkpoint.ICheckpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
 Voluta.Abstractions.Checkpoint.ICheckpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!

@@ -39,6 +39,7 @@ public static class VolutaCheckpointBuilderExtensions
             throw new ArgumentException("BucketName is required.", nameof(configure));
         }
 
+        builder.MarkProviderConfigured();
         builder.Services.RemoveAll<ICheckpointer>();
         builder.Services.RemoveAll<S3CheckpointerOptions>();
         builder.Services.AddSingleton(options);

@@ -42,6 +42,9 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Service collection.</param>
     /// <param name="configure">Provider selection (e.g. <c>c =&gt; c.UseInMemory()</c>).</param>
     /// <returns>The service collection for chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when no <c>Use*</c> was called, or more than one was called.
+    /// </exception>
     /// <example>
     ///     <code>
     ///     services.AddVolutaCheckpoints(c => c.UseInMemory());
@@ -54,7 +57,11 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         Action<VolutaCheckpointBuilder> configure)
     {
-        configure(new VolutaCheckpointBuilder(services));
-        return services;
+        var builder = new VolutaCheckpointBuilder(services);
+        configure(builder);
+        return builder.IsProviderConfigured
+            ? services
+            : throw new InvalidOperationException(
+                "AddVolutaCheckpoints requires exactly one Use* provider (UseInMemory, UseFile, UseEntityFrameworkCore, UseS3).");
     }
 }

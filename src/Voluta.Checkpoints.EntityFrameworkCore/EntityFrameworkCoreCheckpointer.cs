@@ -1,18 +1,14 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Voluta.Abstractions.Checkpoint;
-using Voluta.Checkpoints.EntityFrameworkCore.Wire;
 
 namespace Voluta.Checkpoints.EntityFrameworkCore;
 
 /// <summary>
 ///     EF Core checkpointer over any <typeparamref name="TContext" /> that implements
-///     <see cref="IVolutaCheckpointDbContext" />. Prefer <see cref="IDbContextFactory{TContext}" />.
+///     <see cref="IVolutaCheckpointDbContext" />. Snapshot JSON conversion lives in the
+///     EF model (<see cref="CheckpointRecordConfiguration" />), not here.
 /// </summary>
 /// <typeparam name="TContext">Host DbContext type.</typeparam>
-/// <remarks>
-///     Values use System.Text.Json; prefer JSON-friendly types (strings, numbers, lists of primitives).
-/// </remarks>
 public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<TContext> factory)
     : ICheckpointer
     where TContext : DbContext, IVolutaCheckpointDbContext
@@ -20,31 +16,39 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
     {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var document = EfCheckpointDocument.FromSnapshot(snapshot);
-        var json = JsonSerializer.Serialize(document, JsonSerializerOptions.Web);
-
-        var existing = await db.Checkpoints.FindAsync(
-            [snapshot.ThreadId, snapshot.Step],
-            cancellationToken);
-
-        if (existing is null)
+        try
         {
-            db.Checkpoints.Add(new CheckpointRecord
+            await using var db = await factory.CreateDbContextAsync(cancellationToken);
+            var existing = await db.Checkpoints.FindAsync(
+                [snapshot.ThreadId, snapshot.Step],
+                cancellationToken);
+
+            if (existing is null)
             {
-                ThreadId = snapshot.ThreadId,
-                Step = snapshot.Step,
-                Status = snapshot.Status.ToString(),
-                PayloadJson = json,
-            });
-        }
-        else
-        {
-            existing.Status = snapshot.Status.ToString();
-            existing.PayloadJson = json;
-        }
+                db.Checkpoints.Add(new CheckpointRecord
+                {
+                    ThreadId = snapshot.ThreadId,
+                    Step = snapshot.Step,
+                    Status = snapshot.Status,
+                    Snapshot = snapshot,
+                });
+            }
+            else
+            {
+                existing.Status = snapshot.Status;
+                existing.Snapshot = snapshot;
+            }
 
-        await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException
+                                          and not CheckpointStoreException)
+        {
+            throw new CheckpointStoreException(
+                "checkpoint.put_failed",
+                $"Failed to put checkpoint for thread '{snapshot.ThreadId}' step {snapshot.Step}.",
+                exception);
+        }
     }
 
     /// <inheritdoc />
@@ -52,14 +56,25 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<
         string threadId,
         CancellationToken cancellationToken = default)
     {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var record = await db.Checkpoints
-            .AsNoTracking()
-            .Where(row => row.ThreadId == threadId)
-            .OrderByDescending(row => row.Step)
-            .FirstOrDefaultAsync(cancellationToken);
+        try
+        {
+            await using var db = await factory.CreateDbContextAsync(cancellationToken);
+            var record = await db.Checkpoints
+                .AsNoTracking()
+                .Where(row => row.ThreadId == threadId)
+                .OrderByDescending(row => row.Step)
+                .FirstOrDefaultAsync(cancellationToken);
 
-        return record is null ? null : EfCheckpointPayload.Deserialize(record.PayloadJson);
+            return record?.Snapshot;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException
+                                          and not CheckpointStoreException)
+        {
+            throw new CheckpointStoreException(
+                "checkpoint.get_failed",
+                $"Failed to get checkpoint for thread '{threadId}'.",
+                exception);
+        }
     }
 
     /// <inheritdoc />
@@ -67,30 +82,29 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext>(IDbContextFactory<
         string threadId,
         CancellationToken cancellationToken = default)
     {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var records = await db.Checkpoints
-            .AsNoTracking()
-            .Where(row => row.ThreadId == threadId)
-            .OrderBy(row => row.Step)
-            .ToListAsync(cancellationToken);
-
-        var list = new List<CheckpointSnapshot>(records.Count);
-        foreach (var record in records)
+        try
         {
-            var snapshot = EfCheckpointPayload.Deserialize(record.PayloadJson);
-            if (snapshot is not null)
-            {
-                list.Add(snapshot);
-            }
+            await using var db = await factory.CreateDbContextAsync(cancellationToken);
+            return await db.Checkpoints
+                .AsNoTracking()
+                .Where(row => row.ThreadId == threadId)
+                .OrderBy(row => row.Step)
+                .Select(row => row.Snapshot)
+                .ToListAsync(cancellationToken);
         }
-
-        return list;
+        catch (Exception exception) when (exception is not OperationCanceledException
+                                          and not CheckpointStoreException)
+        {
+            throw new CheckpointStoreException(
+                "checkpoint.list_failed",
+                $"Failed to list checkpoints for thread '{threadId}'.",
+                exception);
+        }
     }
 }
 
 /// <summary>
-///     Non-generic façade over dedicated <see cref="VolutaCheckpointDbContext" />
-///     (wraps <c>EntityFrameworkCoreCheckpointer&lt;VolutaCheckpointDbContext&gt;</c>).
+///     Non-generic façade over dedicated <see cref="VolutaCheckpointDbContext" />.
 /// </summary>
 public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaCheckpointDbContext> factory)
     : ICheckpointer
@@ -115,17 +129,5 @@ public sealed class EntityFrameworkCoreCheckpointer(IDbContextFactory<VolutaChec
         CancellationToken cancellationToken = default)
     {
         return inner.ListAsync(threadId, cancellationToken);
-    }
-}
-
-/// <summary>
-///     Deserialize helpers for checkpoint payload JSON.
-/// </summary>
-file static class EfCheckpointPayload
-{
-    public static CheckpointSnapshot? Deserialize(string json)
-    {
-        var document = JsonSerializer.Deserialize<EfCheckpointDocument>(json, JsonSerializerOptions.Web);
-        return document?.ToSnapshot();
     }
 }

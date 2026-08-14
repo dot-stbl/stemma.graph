@@ -20,6 +20,7 @@ public static class VolutaCheckpointBuilderExtensions
         this VolutaCheckpointBuilder builder,
         string rootDirectory)
     {
+        builder.MarkProviderConfigured();
         builder.Services.RemoveAll<ICheckpointer>();
         builder.Services.AddSingleton<ICheckpointer>(_ => new FileCheckpointer(rootDirectory));
         return builder;

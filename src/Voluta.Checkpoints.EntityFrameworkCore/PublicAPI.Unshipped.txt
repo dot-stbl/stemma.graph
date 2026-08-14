@@ -5,9 +5,9 @@ static Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointBuilderExtensions.
 static Voluta.Checkpoints.EntityFrameworkCore.VolutaCheckpointModelExtensions.ApplyVolutaCheckpointModel(this Microsoft.EntityFrameworkCore.ModelBuilder! modelBuilder) -> Microsoft.EntityFrameworkCore.ModelBuilder!
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.CheckpointRecord() -> void
-Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.PayloadJson.get -> string!
-Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.PayloadJson.set -> void
-Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Status.get -> string!
+Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Snapshot.get -> Voluta.Abstractions.Checkpoint.CheckpointSnapshot!
+Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Snapshot.set -> void
+Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Status.get -> Voluta.Abstractions.Runtime.GraphRunStatus
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Status.set -> void
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Step.get -> long
 Voluta.Checkpoints.EntityFrameworkCore.CheckpointRecord.Step.set -> void

@@ -41,6 +41,7 @@ public static class VolutaCheckpointBuilderExtensions
         this VolutaCheckpointBuilder builder)
         where TContext : DbContext, IVolutaCheckpointDbContext
     {
+        builder.MarkProviderConfigured();
         builder.Services.RemoveAll<ICheckpointer>();
         builder.Services.AddSingleton<ICheckpointer>(static serviceProvider =>
             new EntityFrameworkCoreCheckpointer<TContext>(

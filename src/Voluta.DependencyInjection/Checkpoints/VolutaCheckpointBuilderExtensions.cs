@@ -17,6 +17,7 @@ public static class VolutaCheckpointBuilderExtensions
     /// <returns>The builder for chaining.</returns>
     public static VolutaCheckpointBuilder UseInMemory(this VolutaCheckpointBuilder builder)
     {
+        builder.MarkProviderConfigured();
         builder.Services.RemoveAll<ICheckpointer>();
         builder.Services.AddSingleton<ICheckpointer, InMemoryCheckpointer>();
         return builder;

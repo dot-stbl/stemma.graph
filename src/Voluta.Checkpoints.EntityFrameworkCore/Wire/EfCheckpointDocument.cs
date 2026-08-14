@@ -120,4 +120,14 @@ internal sealed class EfCheckpointDocument
             InterruptPayload = EfCheckpointJson.FromElement(InterruptPayload),
         };
     }
+
+    /// <summary>
+    ///     Materializes a snapshot from wire JSON (used by the EF value converter).
+    /// </summary>
+    public static CheckpointSnapshot DeserializeToSnapshot(string json)
+    {
+        var document = JsonSerializer.Deserialize<EfCheckpointDocument>(json, JsonSerializerOptions.Web)
+            ?? throw new InvalidOperationException("Checkpoint payload JSON deserialized to null.");
+        return document.ToSnapshot();
+    }
 }

@@ -4,6 +4,8 @@ static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Mic
 static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVoluta(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Voluta.Graph.CompiledGraph! graph) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVolutaCheckpoints(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.IsProviderConfigured.get -> bool
+Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.MarkProviderConfigured() -> void
 Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder.VolutaCheckpointBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
 Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilderExtensions
