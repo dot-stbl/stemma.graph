@@ -27,6 +27,32 @@ The public API MUST allow resuming an interrupted thread with a command payload 
 - **WHEN** a thread is interrupted and the host calls resume with an approve command
 - **THEN** the run leaves interrupted status and continues supersteps from the interrupted point using the command as specified
 
+### Requirement: Closed resume command taxonomy
+Resume commands MUST use a closed kind set for 0.2: `approve`, `reject`, and `update` (string constants / factories on `Command`, not free-form control-flow enums with behavior). The public API MUST expose factories or constants so hosts can document the contract without inventing kind strings.
+
+#### Scenario: Approve factory
+- **WHEN** the host resumes with `Command.Approve(payload?)`
+- **THEN** the runtime treats kind as `approve`, injects payload as resume input to the interrupted node, and continues supersteps
+
+#### Scenario: Reject factory
+- **WHEN** the host resumes with `Command.Reject(reason?)`
+- **THEN** the runtime treats kind as `reject`, injects reason as resume payload, and the interrupted node decides terminal vs re-route (runtime does not auto-fail solely because of reject)
+
+#### Scenario: Update factory merges channels
+- **WHEN** the host resumes with `Command.Update(values)` where values is a non-empty channel map
+- **THEN** those channel writes are applied to checkpoint state before the interrupted node re-runs
+
+### Requirement: Invalid command kind or payload
+Resume MUST fail with a stable machine code when the command kind is missing, unknown, or violates kind-specific rules (e.g. `update` without values). The failure MUST NOT advance or clear the interrupted checkpoint incorrectly.
+
+#### Scenario: Unknown kind
+- **WHEN** resume is called with kind not in `{approve, reject, update}` (including empty/null)
+- **THEN** the API fails with code `hitl.invalid_command` and the thread remains interrupted
+
+#### Scenario: Update without values
+- **WHEN** resume is called with kind `update` and empty or missing `Values`
+- **THEN** the API fails with code `hitl.invalid_command`
+
 ### Requirement: Reject resume when not interrupted
 Resume MUST fail clearly when the thread is not in interrupted status (or has no checkpoint).
 

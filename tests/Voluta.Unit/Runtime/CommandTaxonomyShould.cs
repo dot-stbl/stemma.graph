@@ -1,0 +1,231 @@
+using Shouldly;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Exceptions.Run;
+using Voluta.Graph;
+using Voluta.Graph.Builder;
+using Voluta.Runtime;
+using Xunit;
+
+namespace Voluta.Unit.Runtime;
+
+public sealed class CommandTaxonomyShould
+{
+    [Fact(DisplayName = "Given Command.Approve, when EnsureValid is called, then succeeds")]
+    public void AcceptApproveFactory()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(Command.Approve("ok")));
+    }
+
+    [Fact(DisplayName = "Given Command.Reject, when EnsureValid is called, then succeeds")]
+    public void AcceptRejectFactory()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(Command.Reject("no")));
+    }
+
+    [Fact(DisplayName = "Given Command.Update with values, when EnsureValid is called, then succeeds")]
+    public void AcceptUpdateFactory()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(
+            Command.Update(new Dictionary<string, object?> { ["decision"] = "go" })));
+    }
+
+    [Fact(DisplayName = "Given Command.Update from channel writes, when EnsureValid is called, then succeeds")]
+    public void AcceptUpdateFromWrites()
+    {
+        Should.NotThrow(() => CommandTaxonomy.EnsureValid(
+            Command.Update(new ChannelWrite("decision", "go"))));
+    }
+
+    [Theory(DisplayName = "Given known Kind string, when IsKnownKind is called, then returns true")]
+    [InlineData(Command.Kinds.Approve)]
+    [InlineData(Command.Kinds.Reject)]
+    [InlineData(Command.Kinds.Update)]
+    public void RecognizeKnownKinds(string kind)
+    {
+        Command.IsKnownKind(kind).ShouldBeTrue();
+    }
+
+    [Theory(DisplayName = "Given unknown or empty Kind, when EnsureValid is called, then throws hitl.invalid_command")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("continue")]
+    [InlineData("APPROVE")]
+    [InlineData("Approve")]
+    public void RejectInvalidKinds(string? kind)
+    {
+        var command = new Command { Kind = kind, Payload = "x" };
+
+        var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+    }
+
+    [Fact(DisplayName = "Given update without Values, when EnsureValid is called, then throws hitl.invalid_command")]
+    public void RejectUpdateWithoutValues()
+    {
+        var command = new Command { Kind = Command.Kinds.Update };
+
+        var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Message.ShouldContain("update");
+    }
+
+    [Fact(DisplayName = "Given update with empty Values, when EnsureValid is called, then throws hitl.invalid_command")]
+    public void RejectUpdateWithEmptyValues()
+    {
+        var command = new Command
+        {
+            Kind = Command.Kinds.Update,
+            Values = new Dictionary<string, object?>(),
+        };
+
+        var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+    }
+
+    [Fact(DisplayName = "Given interrupted thread, when Resume with Approve factory, then continues to End")]
+    public async Task ResumeApproveFactoryContinues()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = BuildGateGraph(checkpointer, static context => context.ResumePayload is null
+            ? NodeResult.Interrupt("wait")
+            : NodeResult.Continue(new ChannelWrite("messages", $"approve={context.ResumePayload}")));
+
+        var interrupted = await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-approve", StreamMode = StreamMode.Events });
+        interrupted.Kind.ShouldBe(StreamEventKind.Interrupt);
+
+        var terminal = await graph.ResumeInvokeAsync("tax-approve", Command.Approve("ok"));
+
+        terminal.Kind.ShouldBe(StreamEventKind.End);
+        var done = await checkpointer.GetAsync("tax-approve");
+        done!.Status.ShouldBe(GraphRunStatus.Done);
+        var messages = done.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
+        messages.ShouldContain("approve=ok");
+    }
+
+    [Fact(DisplayName = "Given interrupted thread, when Resume with Reject factory, then gate sees reject payload")]
+    public async Task ResumeRejectFactoryDeliversReason()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = BuildGateGraph(checkpointer, static context => context.ResumePayload is null
+            ? NodeResult.Interrupt("wait")
+            : NodeResult.Continue(new ChannelWrite("messages", $"reject={context.ResumePayload}")));
+
+        await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-reject", StreamMode = StreamMode.Events });
+
+        var terminal = await graph.ResumeInvokeAsync("tax-reject", Command.Reject("policy"));
+
+        terminal.Kind.ShouldBe(StreamEventKind.End);
+        var done = await checkpointer.GetAsync("tax-reject");
+        var messages = done!.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
+        messages.ShouldContain("reject=policy");
+    }
+
+    [Fact(DisplayName = "Given interrupted thread, when Resume with Update factory, then Values apply before gate")]
+    public async Task ResumeUpdateFactoryAppliesValues()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = new StateGraph()
+            .AddChannel("messages", ChannelKind.Append)
+            .AddChannel("decision", ChannelKind.LastValue)
+            .AddNode(
+                "gate",
+                (context, _) => context.ResumePayload is null
+                    ? Task.FromResult<NodeResult>(NodeResult.Interrupt("need-decision"))
+                    : Task.FromResult<NodeResult>(
+                        NodeResult.Continue(
+                            new ChannelWrite(
+                                "messages",
+                                $"decision={context.Read<string>("decision") ?? "(none)"}"))))
+            .AddEdge(GraphConstants.Start, "gate")
+            .AddEdge("gate", GraphConstants.End)
+            .Compile(checkpointer);
+
+        await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-update", StreamMode = StreamMode.Events });
+
+        var terminal = await graph.ResumeInvokeAsync(
+            "tax-update",
+            Command.Update([new ChannelWrite("decision", "go")], "ok"));
+
+        terminal.Kind.ShouldBe(StreamEventKind.End);
+        var done = await checkpointer.GetAsync("tax-update");
+        done!.ChannelValues["decision"].ShouldBe("go");
+        var messages = done.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
+        messages.ShouldContain("decision=go");
+    }
+
+    [Fact(DisplayName = "Given interrupted thread, when Resume with unknown Kind, then throws hitl.invalid_command")]
+    public async Task ResumeUnknownKindFails()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = BuildGateGraph(checkpointer, static context => context.ResumePayload is null
+            ? NodeResult.Interrupt("wait")
+            : NodeResult.Continue());
+
+        await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-bad", StreamMode = StreamMode.Events });
+
+        var exception = await Should.ThrowAsync<GraphInvalidCommandException>(async () =>
+        {
+            await graph.ResumeInvokeAsync("tax-bad", new Command { Kind = "continue", Payload = "x" });
+        });
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+        var stillInterrupted = await checkpointer.GetAsync("tax-bad");
+        stillInterrupted!.Status.ShouldBe(GraphRunStatus.Interrupted);
+    }
+
+    [Fact(DisplayName = "Given interrupted thread, when Resume with update and no Values, then throws hitl.invalid_command")]
+    public async Task ResumeUpdateWithoutValuesFails()
+    {
+        var checkpointer = new InMemoryCheckpointer();
+        var graph = BuildGateGraph(checkpointer, static context => context.ResumePayload is null
+            ? NodeResult.Interrupt("wait")
+            : NodeResult.Continue());
+
+        await graph.InvokeAsync(
+            [],
+            new RunOptions { ThreadId = "tax-upd-empty", StreamMode = StreamMode.Events });
+
+        var exception = await Should.ThrowAsync<GraphInvalidCommandException>(async () =>
+        {
+            await graph.ResumeInvokeAsync(
+                "tax-upd-empty",
+                new Command { Kind = Command.Kinds.Update, Payload = "x" });
+        });
+
+        exception.Code.ShouldBe("hitl.invalid_command");
+    }
+
+    private static CompiledGraph BuildGateGraph(
+        InMemoryCheckpointer checkpointer,
+        Func<GraphContext, NodeResult> gate)
+    {
+        return new StateGraph()
+            .AddChannel("messages", ChannelKind.Append)
+            .AddNode(
+                "gate",
+                (context, cancellationToken) =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return Task.FromResult(gate(context));
+                })
+            .AddEdge(GraphConstants.Start, "gate")
+            .AddEdge("gate", GraphConstants.End)
+            .Compile(checkpointer);
+    }
+}

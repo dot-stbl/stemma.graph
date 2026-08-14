@@ -119,15 +119,13 @@ var terminal = await graph.InvokeAsync(input, new RunOptions { ThreadId = "hitl-
 // terminal.Kind == StreamEventKind.Interrupt
 
 // later — same or new process, same checkpointer root / store
+// closed kinds: Command.Approve / Reject / Update (Command.Kinds.*)
 var done = await graph.ResumeInvokeAsync(
     "hitl-1",
-    new Command
-    {
-        Kind = "approve",
-        Payload = "ok",
+    Command.Approve(
+        "ok",
         // optional: patch channels before the node re-runs
-        Values = new Dictionary<string, object?> { ["decision"] = "go" },
-    });
+        new Dictionary<string, object?> { ["decision"] = "go" }));
 ```
 
 </details>
@@ -185,7 +183,7 @@ await graph.InvokeAsync(input, new RunOptions { ThreadId = "order-9" });
 // → Interrupted
 
 // process B (new host, same UseFile root) — resume
-await graph.ResumeInvokeAsync("order-9", new Command { Kind = "approve", Payload = "ok" });
+await graph.ResumeInvokeAsync("order-9", Command.Approve("ok"));
 ```
 
 Values serialize with `System.Text.Json` — prefer JSON-friendly types (strings, numbers, lists of

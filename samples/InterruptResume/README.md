@@ -20,5 +20,5 @@ Flow:
 
 1. `StreamAsync` / invoke until `StreamEventKind.Interrupt`
 2. Checkpoint status is `GraphRunStatus.Interrupted`
-3. `ResumeAsync(threadId, new Command { Kind = "approve", Payload = "ok" })`
+3. `ResumeAsync(threadId, Command.Approve("ok"))`
 4. Gate continues, writes an approval message, run ends with `Done`

@@ -20,5 +20,17 @@ const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphNoNodes = "graph.no_
 const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphOutOfSteps = "graph.out_of_steps" -> string!
 const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphRunFailed = "graph.run_failed" -> string!
 const Voluta.Abstractions.Diagnostics.VolutaErrorCodes.GraphUnknownEndpoint = "graph.unknown_endpoint" -> string!
+const Voluta.Abstractions.Runtime.Command.Kinds.Approve = "approve" -> string!
+const Voluta.Abstractions.Runtime.Command.Kinds.Reject = "reject" -> string!
+const Voluta.Abstractions.Runtime.Command.Kinds.Update = "update" -> string!
 static Voluta.Abstractions.Diagnostics.VolutaErrorCodes.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Voluta.Abstractions.Runtime.Command.Approve(object? payload = null, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? values = null) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.IsKnownKind(string? kind) -> bool
+static Voluta.Abstractions.Runtime.Command.Reject(object? reason = null, System.Collections.Generic.IReadOnlyDictionary<string!, object?>? values = null) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.Update(params Voluta.Abstractions.Channels.ChannelWrite![]! writes) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! writes, object? payload) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! writes) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values, object? payload) -> Voluta.Abstractions.Runtime.Command!
+static Voluta.Abstractions.Runtime.Command.Update(System.Collections.Generic.IReadOnlyDictionary<string!, object?>! values) -> Voluta.Abstractions.Runtime.Command!
 Voluta.Abstractions.Diagnostics.VolutaErrorCodes
+Voluta.Abstractions.Runtime.Command.Kinds

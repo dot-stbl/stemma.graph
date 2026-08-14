@@ -24,5 +24,9 @@ static Voluta.Diagnostics.VolutaEventIds.All.get -> System.Collections.Generic.I
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(string! code) -> Microsoft.Extensions.Logging.EventId
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Abstractions.Checkpoint.CheckpointStoreException! exception) -> Microsoft.Extensions.Logging.EventId
 static Voluta.Diagnostics.VolutaExceptionLogging.GetEventId(Voluta.Exceptions.GraphException! exception) -> Microsoft.Extensions.Logging.EventId
+static Voluta.Runtime.CommandTaxonomy.EnsureValid(Voluta.Abstractions.Runtime.Command! command) -> void
 Voluta.Diagnostics.VolutaEventIds
 Voluta.Diagnostics.VolutaExceptionLogging
+Voluta.Exceptions.Run.GraphInvalidCommandException
+Voluta.Exceptions.Run.GraphInvalidCommandException.GraphInvalidCommandException(string! message) -> void
+Voluta.Runtime.CommandTaxonomy

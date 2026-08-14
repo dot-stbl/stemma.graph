@@ -54,7 +54,7 @@ public sealed class GraphFixturesShould
 
         var terminal = await graph.ResumeInvokeAsync(
             "fix-hitl",
-            new Command { Kind = "approve", Payload = "ok" });
+            Command.Approve("ok"));
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
     }

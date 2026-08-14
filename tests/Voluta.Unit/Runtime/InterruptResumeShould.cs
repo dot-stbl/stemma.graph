@@ -44,7 +44,7 @@ public sealed class InterruptResumeShould
 
         var terminal = await graph.ResumeInvokeAsync(
             "hitl-1",
-            new Command { Kind = "approve", Payload = "ok" });
+            Command.Approve("ok"));
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
         var done = await checkpointer.GetAsync("hitl-1");
@@ -70,7 +70,7 @@ public sealed class InterruptResumeShould
 
         await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
         {
-            await foreach (var _ in graph.ResumeAsync("done-1", new Command { Kind = "approve" }))
+            await foreach (var _ in graph.ResumeAsync("done-1", Command.Approve()))
             {
             }
         });
@@ -89,7 +89,7 @@ public sealed class InterruptResumeShould
 
         await Should.ThrowAsync<GraphInvalidResumeException>(async () =>
         {
-            await graph.ResumeInvokeAsync("missing-thread", new Command { Kind = "approve" });
+            await graph.ResumeInvokeAsync("missing-thread", Command.Approve());
         });
     }
 
@@ -117,7 +117,7 @@ public sealed class InterruptResumeShould
 
         var terminal = await graph.ResumeInvokeAsync(
             "payload-1",
-            new Command { Kind = "approve", Payload = "signed-off" });
+            Command.Approve("signed-off"));
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
         var done = await checkpointer.GetAsync("payload-1");
@@ -153,12 +153,9 @@ public sealed class InterruptResumeShould
 
         var terminal = await graph.ResumeInvokeAsync(
             "values-1",
-            new Command
-            {
-                Kind = "approve",
-                Payload = "ok",
-                Values = new Dictionary<string, object?> { ["decision"] = "go" },
-            });
+            Command.Approve(
+                "ok",
+                new Dictionary<string, object?> { ["decision"] = "go" }));
 
         terminal.Kind.ShouldBe(StreamEventKind.End);
         var done = await checkpointer.GetAsync("values-1");
