@@ -232,4 +232,66 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
             new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Events },
             cancellationToken);
     }
+
+    /// <summary>
+    ///     Continues a Running thread from the latest checkpoint (drains to terminal event).
+    /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Terminal stream event.</returns>
+    public async Task<StreamEvent> ContinueAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(threadId);
+        return await Graph.ContinueInvokeAsync(threadId, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Streams continue events for a Running thread (SSE source).
+    /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Live stream of graph events.</returns>
+    public IAsyncEnumerable<StreamEvent> StreamContinueAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(threadId);
+        return Graph.ContinueAsync(threadId, StreamMode.Events, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Applies channel writes to the latest checkpoint (time-travel edit).
+    /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="writes">Channel writes to merge.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Host-facing snapshot after the edit.</returns>
+    public async Task<ThreadSnapshot> UpdateStateAsync(
+        string threadId,
+        IEnumerable<ChannelWrite> writes,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(threadId);
+        return await Graph.UpdateStateAsync(threadId, writes, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Forks a history step onto a new thread id.
+    /// </summary>
+    /// <param name="sourceThreadId">Source thread.</param>
+    /// <param name="step">History step to copy.</param>
+    /// <param name="newThreadId">Destination thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Host-facing snapshot on the new thread.</returns>
+    public async Task<ThreadSnapshot> ForkAsync(
+        string sourceThreadId,
+        long step,
+        string newThreadId,
+        CancellationToken cancellationToken = default)
+    {
+        TrackThread(newThreadId);
+        return await Graph.ForkAsync(sourceThreadId, step, newThreadId, cancellationToken);
+    }
 }

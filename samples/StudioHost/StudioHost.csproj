@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Voluta.Samples.StudioHost</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>
+      StudioHost: versioned HTTP/SSE Studio API (/api/v1) sample with multi-node graph and seeded threads.
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\Voluta.UI\Voluta.UI.csproj" />
+  </ItemGroup>
+
+</Project>

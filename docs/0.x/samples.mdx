@@ -30,6 +30,7 @@ Folder name = project name (no numeric prefixes).
 | **MarketingAgent** | Hybrid-style desk: brief → creative → setup → review (mock tools) | `dotnet run --project samples/MarketingAgent -- --offline` |
 | **MockAdMcp** | Hybrid-shaped tool server (Campaign / SSP / deal / AdLibrary) on `:5190` | `dotnet run --project samples/MockAdMcp` |
 | **UiHost** | ASP.NET host for `MapVolutaUI` | `dotnet run --project samples/UiHost` → `http://localhost:5188/voluta` |
+| **StudioHost** | Versioned Studio HTTP/SSE (`MapStudioApi`) | `dotnet run --project samples/StudioHost` → `http://localhost:5189/api/v1` |
 
 ## Suggested order (and why)
 
@@ -45,6 +46,8 @@ Folder name = project name (no numeric prefixes).
 5. **MarketingAgent + MockAdMcp** — Two terminals: mock tools server, then the
    graph that drives a desk-style flow.
 6. **UiHost** — When you want the ops console without wiring it yourself.
+7. **StudioHost** — When you need the stable `/api/v1` contract for SPA Studio
+   (see [Studio API](./studio-api)).
 
 ## How to read a sample
 
