@@ -63,6 +63,23 @@ internal static class VolutaUiJson
         };
     }
 
+    public static object ToWire(ThreadSnapshot state)
+    {
+        return new
+        {
+            threadId = state.ThreadId,
+            step = state.Step,
+            status = state.Status.ToString(),
+            lastNode = state.LastNode,
+            nextNodes = state.NextNodes,
+            interruptPayload = FormatValue(state.InterruptPayload),
+            values = state.Values.ToDictionary(
+                static pair => pair.Key,
+                static pair => FormatValue(pair.Value),
+                StringComparer.Ordinal),
+        };
+    }
+
     public static object ToWire(GraphDescription topology)
     {
         return new

@@ -137,6 +137,32 @@ public sealed class VolutaUiSession(CompiledGraph graph, ICheckpointer checkpoin
     }
 
     /// <summary>
+    ///     Loads the latest host-facing thread state (time-travel read).
+    /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>State or null when missing.</returns>
+    public Task<ThreadSnapshot?> GetStateAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        return Graph.GetStateAsync(threadId, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Lists host-facing states ordered by step (time-travel history).
+    /// </summary>
+    /// <param name="threadId">Thread id.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Steps oldest-first.</returns>
+    public Task<IReadOnlyList<ThreadSnapshot>> GetHistoryAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        return Graph.GetHistoryAsync(threadId, cancellationToken);
+    }
+
+    /// <summary>
     ///     Resumes an interrupted thread with a command (drains to terminal event).
     /// </summary>
     /// <param name="threadId">Thread id.</param>

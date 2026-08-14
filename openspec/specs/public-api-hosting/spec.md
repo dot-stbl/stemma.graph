@@ -70,6 +70,13 @@ The product MUST expose a node contract implementable as a class with constructo
 - **WHEN** a consumer registers a node type that implements the node contract and the type is present in host services
 - **THEN** the graph invokes that implementation for the named node
 
+### Requirement: Time-travel read on CompiledGraph
+Standalone and DI hosts MUST be able to inspect current state and step history through `CompiledGraph.GetStateAsync` / `GetHistoryAsync` without opening the checkpointer directly. Ops UI MAY surface the same history via an HTTP endpoint when list is supported.
+
+#### Scenario: Host reads state after invoke
+- **WHEN** a host invokes a graph and then calls `GetStateAsync` with the same thread id
+- **THEN** the returned `ThreadSnapshot` reflects the latest checkpoint status and values
+
 ### Requirement: Optional Agents AI package
 Microsoft Extensions AI chat clients and Microsoft Agent Framework agents MUST integrate as optional package nodes that write assistant or agent text into channels, without adding AI package dependencies to the AOT core runtime packages.
 

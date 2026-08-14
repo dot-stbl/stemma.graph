@@ -105,6 +105,26 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                     : Results.Json(VolutaUiJson.ToWire(snapshot), JsonSerializerOptions.Web);
             });
 
+        endpoints.MapGet(
+            $"{prefix}/api/threads/{{threadId}}/history",
+            async (string threadId, VolutaUiSession session, CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var history = await session.GetHistoryAsync(threadId, cancellationToken);
+                    return Results.Json(
+                        history.Select(static state => VolutaUiJson.ToWire(state)),
+                        JsonSerializerOptions.Web);
+                }
+                catch (NotSupportedException exception)
+                {
+                    return Results.Json(
+                        new { error = exception.Message, code = "checkpoint.list_not_supported" },
+                        JsonSerializerOptions.Web,
+                        statusCode: StatusCodes.Status501NotImplemented);
+                }
+            });
+
         endpoints.MapPost(
             $"{prefix}/api/threads/{{threadId}}/resume",
             async (

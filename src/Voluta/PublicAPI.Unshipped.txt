@@ -55,3 +55,6 @@ Voluta.Diagnostics.VolutaExceptionLogging
 Voluta.Exceptions.Run.GraphInvalidCommandException
 Voluta.Exceptions.Run.GraphInvalidCommandException.GraphInvalidCommandException(string! code, string! message) -> void
 Voluta.Runtime.CommandTaxonomy
+
+Voluta.Graph.CompiledGraph.GetHistoryAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!>!
+Voluta.Graph.CompiledGraph.GetStateAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot?>!

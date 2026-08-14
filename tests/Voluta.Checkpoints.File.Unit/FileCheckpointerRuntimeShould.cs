@@ -37,6 +37,15 @@ public sealed class FileCheckpointerRuntimeShould
             snapshot!.Status.ShouldBe(GraphRunStatus.Done);
             var messages = snapshot.ChannelValues["messages"].ShouldBeOfType<List<object?>>();
             messages.ShouldContain("approved");
+
+            var state = await resumedGraph.GetStateAsync("file-hitl-1");
+            state.ShouldNotBeNull();
+            state.Status.ShouldBe(GraphRunStatus.Done);
+            state.Values["messages"].ShouldBeOfType<List<object?>>().ShouldContain("approved");
+
+            var history = await resumedGraph.GetHistoryAsync("file-hitl-1");
+            history.Count.ShouldBeGreaterThanOrEqualTo(1);
+            history[^1].Step.ShouldBe(state.Step);
         }
         finally
         {

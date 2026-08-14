@@ -661,3 +661,29 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .graph-layout { grid-template-columns: 1fr; }
   .graph-side { border-left: 0; border-top: 1px solid var(--line); max-height: 40vh; }
 }
+
+/* time-travel history steps */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  border: 1px solid var(--border, #2a2a2a);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.history-item:hover {
+  background: rgba(255,255,255,0.04);
+}

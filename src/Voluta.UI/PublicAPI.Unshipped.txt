@@ -1,1 +1,3 @@
 #nullable enable
+Voluta.UI.VolutaUiSession.GetHistoryAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!>!
+Voluta.UI.VolutaUiSession.GetStateAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot?>!

@@ -131,6 +131,25 @@ var done = await graph.ResumeInvokeAsync(
 </details>
 
 <details>
+<summary><strong>Time-travel read (GetState / GetHistory)</strong></summary>
+
+Host-facing projection of checkpoints — no need to spelunk `ICheckpointer` C-shape fields:
+
+```csharp
+// latest snapshot for ops / HTTP / UI
+var state = await graph.GetStateAsync("order-9");
+// state?.Status, state?.Step, state?.Values, state?.InterruptPayload
+
+// full step history when the checkpointer supports List (InMemory, File, EF, S3)
+var history = await graph.GetHistoryAsync("order-9");
+// ordered by Step ascending; history[^1] matches GetState when present
+```
+
+Ops UI: `GET /voluta/api/threads/{id}/history` lists steps; inspector shows them after Load.
+
+</details>
+
+<details>
 <summary><strong>Typed state with <code>[GraphState]</code> (source generator)</strong></summary>
 
 String channel names work. When you want compile-time names and updates that only write what you
