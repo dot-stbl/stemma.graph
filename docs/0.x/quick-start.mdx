@@ -1,0 +1,213 @@
+---
+title: Quick Start
+description: Walk a simulated ReAct loop and understand why each piece exists.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Quick Start
+  order: 3
+  group: Start
+---
+
+This walkthrough is the real **`samples/HelloWorld`**: a tiny agent loop that
+asks for tools, gets observations, and stops when it has enough. No live LLM —
+the “model” is a few lines of C# — so you can see the **runtime** without cloud
+keys or rate limits.
+
+The point is not the weather answer. The point is: **a cycle with shared state,
+streaming, and a checkpointer**, in a form you can re-read later.
+
+## Run it first
+
+```bash
+git clone https://github.com/dot-stbl/voluta.git
+cd voluta
+dotnet run --project samples/HelloWorld
+```
+
+You’ll see something like (middle rounds trimmed):
+
+```text
+  ◆  voluta · HelloWorld
+
+  simulated ReAct · agent ⇄ tools · no LLM
+  thread   react-sample-1
+  stream   Updates
+  ────────────────────────────────────────
+  [agent] round 0 · requesting tools
+  · step 1  Updates  [agent]
+      status ← tools
+      messages ← agent: call get_weather (round 1)
+  …
+  [agent] enough tool data · finishing
+  · step 5  End  [—]
+
+  ▸ result
+  status      Done
+  ✓ done
+```
+
+If that printed, you already exercised: channels, a conditional edge, concurrent
+supersteps, and `StreamMode.Updates`.
+
+## What the graph is trying to say
+
+```text
+START → agent ──(status == "tools")──► tools → agent …
+              └──(else)──────────────► END
+```
+
+That is the ReAct skeleton:
+
+- **agent** decides: need tools, or finish  
+- **tools** run (here: fake weather) and write observations  
+- edge back to **agent** so thinking continues  
+
+Without a cycle you’d have to unroll “tool rounds” into a fixed pipeline. Agents
+don’t work that way — the number of rounds is data-dependent.
+
+## Build the same graph
+
+```csharp
+using Voluta;
+using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Results;
+using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.Checkpoint;
+using Voluta.Graph;
+using Voluta.Graph.Builder;
+using Voluta.Graph.Options;
+
+const string ThreadId = "react-sample-1";
+
+var checkpointer = new InMemoryCheckpointer();
+var graph = new StateGraph()
+    .AddChannel("messages", ChannelKind.Append)
+    .AddChannel("status", ChannelKind.LastValue)
+    .AddChannel("tool_rounds", ChannelKind.LastValue)
+    .AddNode("agent", AgentNodeAsync)
+    .AddNode("tools", ToolsNodeAsync)
+    .AddEdge(GraphConstants.Start, "agent")
+    .AddConditionalEdges(
+        "agent",
+        static context => context.Read<string>("status") == "tools"
+            ? "tools"
+            : GraphConstants.End)
+    .AddEdge("tools", "agent")
+    .Compile(checkpointer, new CompileOptions { RecursionLimit = 32 });
+
+var input = new ChannelWrite[]
+{
+    new("messages", "user: what's the weather in Oslo?"),
+    new("status", "start"),
+    new("tool_rounds", 0),
+};
+
+await foreach (var item in graph.StreamAsync(
+                   input,
+                   new RunOptions { ThreadId = ThreadId, StreamMode = StreamMode.Updates }))
+{
+    // item.Kind, item.NodeNames, item.Writes
+}
+```
+
+### Why these channels?
+
+| Channel | Kind | Why this kind |
+|---------|------|----------------|
+| `messages` | `Append` | Conversation is a **history**. Agent and tools both contribute lines; you want all of them. |
+| `status` | `LastValue` | Routing needs a **single current** intent: tools vs done. Replace, don’t accumulate. |
+| `tool_rounds` | `LastValue` | A counter the agent uses to decide “enough.” One writer per superstep is enough. |
+
+If `messages` were `LastValue`, every write would erase the transcript. If
+`status` were `Append`, your conditional edge would have to invent “latest
+status” by hand.
+
+### Why a checkpointer on a toy sample?
+
+Even in-memory, the checkpointer is the **same seam** you’ll use in production.
+Every superstep barrier stores a snapshot under `ThreadId`. Later you’ll swap
+`UseInMemory` for `UseFile` / EF / S3 without rewriting nodes.
+
+### Why `RecursionLimit = 32`?
+
+Cycles are allowed. Infinite cycles are not. The limit is a safety valve: high
+enough for multi-round tool use, low enough that a bug doesn’t spin forever.
+
+### Why stream `Updates` instead of only `InvokeAsync`?
+
+`Updates` shows **who wrote what** each step — perfect for learning and for UIs.
+When you only care about the terminal event:
+
+```csharp
+StreamEvent terminal = await graph.InvokeAsync(
+    input,
+    new RunOptions { ThreadId = ThreadId, StreamMode = StreamMode.Values });
+```
+
+Same graph. Different observation mode.
+
+## The node bodies (and the contract)
+
+```csharp
+static Task<NodeResult> AgentNodeAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var rounds = context.Read<int?>("tool_rounds") ?? 0;
+    if (rounds < 2)
+    {
+        return Task.FromResult<NodeResult>(
+            NodeResult.Continue(
+                new ChannelWrite("status", "tools"),
+                new ChannelWrite("messages", $"agent: call get_weather (round {rounds + 1})")));
+    }
+
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("status", "done"),
+            new ChannelWrite("messages", "agent: final answer — cloudy, 12°C in Oslo")));
+}
+
+static Task<NodeResult> ToolsNodeAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var rounds = (context.Read<int?>("tool_rounds") ?? 0) + 1;
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(
+            new ChannelWrite("tool_rounds", rounds),
+            new ChannelWrite("messages", $"tools: observation — temp=12C (round {rounds})"),
+            new ChannelWrite("status", "agent")));
+}
+```
+
+A few habits show up here that scale to real agents:
+
+- **Read committed state** via `GraphContext` — not some shared mutable bag.  
+- **Return partial writes** — omit channels you don’t touch; they stay as they are.  
+- **Signal routing through state** (`status`), then let the conditional edge decide
+  the next node. Don’t hard-code “call tools next” inside the runtime.  
+- **Honor cancellation** — long tool calls should not ignore host shutdown.
+
+`NodeResult.Continue(...)` means “here are my writes for this superstep.” The
+runtime merges them at the barrier, checkpoints, then routes. You never call
+“schedule next node” yourself for the normal path.
+
+## Map of pieces (after you’ve seen them work)
+
+| Piece | Role in the story |
+|-------|-------------------|
+| `StateGraph` | Fluent place to declare channels, nodes, edges |
+| `ChannelKind` | Merge policy when multiple writes hit one channel |
+| `NodeHandler` | Your async work: `(context, ct) → NodeResult` |
+| `NodeResult.Continue` | “I finished this step; apply these writes” |
+| `GraphConstants.Start` / `End` | Enter / leave the graph |
+| `Compile` | Validate topology once → immutable `CompiledGraph` |
+| `RunOptions.ThreadId` | Isolation key in the checkpointer |
+| `StreamAsync` / `InvokeAsync` | Observe or just run |
+
+## What to do next
+
+1. [Interrupts](/voluta/0.x/concepts/interrupts) — same idea, but pause for a human  
+2. [State & channels](/voluta/0.x/concepts/state) — reducers in depth  
+3. [Samples](/voluta/0.x/samples) — pick the next sample by what you need to learn  

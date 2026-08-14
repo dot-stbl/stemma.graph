@@ -1,0 +1,97 @@
+---
+title: Edges
+description: Edges are control flow — including the cycles agents actually need.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Edges
+  order: 12
+  group: Concepts
+---
+
+**Edges** answer one question after a superstep commits: *who is ready next?*
+
+They are not “function calls between nodes.” They are the graph’s control flow,
+evaluated on **merged, checkpointed** state so routing cannot race the writes it
+depends on.
+
+## Static edges: when the path is known
+
+```csharp
+.AddEdge(GraphConstants.Start, "agent")
+.AddEdge("tools", "agent")
+.AddEdge("gate", GraphConstants.End)
+```
+
+Use these for fixed succession: tools always return to agent; gate always exits.
+If you find yourself encoding “maybe” in a static edge, you want a conditional.
+
+## Conditional edges: when data decides
+
+Evaluated **after** channel merge:
+
+```csharp
+.AddConditionalEdges(
+    "agent",
+    static context => context.Read<string>("status") == "tools"
+        ? "tools"
+        : GraphConstants.End)
+```
+
+Overloads:
+
+- single next: `Func<GraphContext, string>`  
+- multi-target: `Func<GraphContext, IReadOnlyList<string>>`  
+
+One conditional registration per source node. If you need layered policies,
+compose them in the function — don’t stack multiple conditionals on the same
+source and hope order saves you.
+
+### Why after the merge?
+
+Suppose `agent` writes `status = "tools"`. If the edge ran *before* merge, it
+might still see the old status. Routing on committed state keeps “write then
+branch” predictable — the same model supersteps use for everything else.
+
+## Cycles are first-class
+
+Agents that reconsider are loops. voluta does not pretend otherwise.
+
+```csharp
+.AddEdge(GraphConstants.Start, "agent")
+.AddConditionalEdges("agent", ctx => /* tools or END */)
+.AddEdge("tools", "agent")  // back-edge — the loop
+```
+
+Typical ReAct shape:
+
+```text
+agent ──needs tools──► tools ──► agent ──done──► END
+```
+
+Without a back-edge you either unroll N tool rounds into a brittle pipeline or
+smuggle a loop through something that is not the graph (timers, external
+re-invoke). Prefer the explicit cycle.
+
+## Recursion limit: loops with a budget
+
+`CompileOptions.RecursionLimit` caps supersteps. It is not a moral judgment on
+cycles — it is a fuse.
+
+- Too low → legitimate multi-round agents die mid-thought  
+- Too high → a bug spins until ops notices  
+
+Tune to the product: support bots may need dozens of tool rounds; a two-step
+classifier should fail at five.
+
+## Designing edges without painting yourself in
+
+1. Put **routing signals in channels** (`status`, `phase`, scores).  
+2. Keep edge functions **pure reads** of `GraphContext` — no IO.  
+3. Prefer **one clear exit** to `End` over a maze of half-terminating branches.  
+4. Draw the cycle on paper once; if you can’t, the graph will confuse the next
+   reader too.
+
+Next: [State & channels](/voluta/0.x/concepts/state) for what those routing
+signals should look like, and [Supersteps](/voluta/0.x/concepts/supersteps) for
+when edges fire in the tick.

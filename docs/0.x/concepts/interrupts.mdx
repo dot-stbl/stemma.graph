@@ -1,0 +1,139 @@
+---
+title: Interrupts and HITL
+description: Pause is a result — resume with a Command, maybe days later in another process.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Interrupts / HITL
+  order: 16
+  group: Concepts
+---
+
+Real agents hit gates: money movement, irreversible actions, “does this draft
+look right?”. voluta models that as **interrupt**, not as a thrown exception and
+not as “block the thread until someone types in the console.”
+
+A node returns `NodeResult.Interrupt(payload)`. The run **stops**. The
+checkpoint stores `Status = Interrupted` and the payload. Later — same process
+or another — something calls `ResumeAsync` with a `Command`. The node re-enters
+with `ResumePayload` set and decides what to write next.
+
+## Why not exceptions?
+
+Exceptions mean failure. Humans approving a transfer are not a failure mode.
+Using exceptions for HITL also fights checkpoints, streaming, and hosts that
+translate faults into 500s.
+
+Interrupt is a **first-class terminal for now**: stream emits
+`StreamEventKind.Interrupt`, status becomes `Interrupted`, payload is data you
+can show in a UI.
+
+## Interrupt from a node
+
+```csharp
+return NodeResult.Interrupt(new { action = "transfer", amount = 50, currency = "USD" });
+```
+
+What happens next:
+
+- no further supersteps until resume  
+- stream surfaces the interrupt  
+- checkpoint holds the payload for inspection  
+
+Keep payloads **serializable and small**. They may live on disk and cross
+process boundaries. Don’t stuff live sockets into them.
+
+## Resume with a `Command`
+
+```csharp
+public sealed class Command
+{
+    public string? Kind { get; init; }      // e.g. "approve", "reject"
+    public object? Payload { get; init; }
+    public IReadOnlyDictionary<string, object?>? Values { get; init; }
+}
+```
+
+```csharp
+await foreach (var item in graph.ResumeAsync(
+                   threadId,
+                   new Command { Kind = "approve", Payload = "ok" },
+                   StreamMode.Events))
+{
+    // observe lifecycle / updates as needed
+}
+```
+
+`ResumeAsync` is a **separate call** against the same `threadId`. That is the
+feature: an HTTP handler tomorrow can approve what a worker paused today.
+
+## Pattern inside the gate node
+
+```csharp
+static Task<NodeResult> GateNodeAsync(GraphContext context, CancellationToken cancellationToken)
+{
+    if (context.ResumePayload is null)
+    {
+        return Task.FromResult<NodeResult>(
+            NodeResult.Interrupt(new { action = "transfer", amount = 50, currency = "USD" }));
+    }
+
+    // ResumePayload / Command informed this re-entry
+    return Task.FromResult<NodeResult>(
+        NodeResult.Continue(new ChannelWrite("messages", "gate: transfer approved")));
+}
+```
+
+First entry → interrupt.  
+After resume → continue with writes (or interrupt again if the human said no and
+you want another round).
+
+Branch on `Command.Kind` / payload explicitly. Don’t assume “resume means
+approve.”
+
+## End-to-end story
+
+1. `StreamAsync` / `InvokeAsync` runs until a gate interrupts  
+2. Your app shows `InterruptPayload` to a human (or policy engine)  
+3. Decision arrives → `ResumeInvokeAsync(threadId, command)` (or stream
+   `ResumeAsync`)  
+4. Graph continues from the checkpointed thread  
+
+```csharp
+// first process
+var terminal = await graph.InvokeAsync(input, new RunOptions { ThreadId = "hitl-1" });
+// terminal.Kind == StreamEventKind.Interrupt
+
+// later — same or new process, same checkpointer root / store
+var done = await graph.ResumeInvokeAsync(
+    "hitl-1",
+    new Command
+    {
+        Kind = "approve",
+        Payload = "ok",
+        // optional: patch channels before the node re-runs
+        Values = new Dictionary<string, object?> { ["decision"] = "go" },
+    });
+```
+
+Sample: `samples/InterruptResume` — invoke → interrupt → resume with
+`Command.Kind = approve` → `Done`.
+
+## UI
+
+`Voluta.UI` (`MapVolutaUI`) is the ops-facing surface: inspect checkpoints,
+resume, view topology. Use it when you don’t want to build the first HITL
+console from scratch — still the same resume protocol underneath
+(`ResumeInvokeAsync` / `ResumeAsync`).
+
+## Design tips
+
+1. Interrupt **at the decision boundary**, not deep inside a tool implementation
+   you can’t re-enter cleanly.  
+2. Put enough context in the payload for a human who didn’t write the graph.  
+3. Idempotency: resuming twice should be safe at *your* domain layer; don’t
+   double-charge because the UI double-clicked.  
+4. Combine with durable checkpointers in anything past a demo.
+
+Next: [Streaming](/voluta/0.x/concepts/streaming) to observe interrupts live, and
+[Checkpoints](/voluta/0.x/concepts/checkpoints) for what stored the pause.

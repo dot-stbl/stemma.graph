@@ -1,0 +1,71 @@
+---
+title: Samples
+description: Which sample teaches which idea — pick a path, don’t boil the ocean.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Samples
+  order: 4
+  group: Start
+---
+
+Samples live under
+[`samples/`](https://github.com/dot-stbl/voluta/tree/main/samples). Shared glue
+is in `Voluta.Samples.Shared`.
+
+They are **teaching tools**, not product templates. Each one isolates a concept
+so you can see the runtime without five concerns fighting in one file.
+
+Folder name = project name (no numeric prefixes).
+
+## Catalog
+
+| Sample | What it is for | Command |
+|--------|----------------|---------|
+| **HelloWorld** | The core loop: channels, cycle, `StreamMode.Updates`, in-memory checkpoints | `dotnet run --project samples/HelloWorld` |
+| **InterruptResume** | Human-in-the-loop: pause, inspect payload, resume with a `Command` | `dotnet run --project samples/InterruptResume` |
+| **AotSmoke** | “Does the core publish under Native AOT?” Linear graph, publish path | `dotnet run --project samples/AotSmoke` · `dotnet publish samples/AotSmoke -c Release` |
+| **ReviewBot** | Multi-node plan → sandboxed tools → review (more realistic shape) | `dotnet run --project samples/ReviewBot -- --offline --root .` |
+| **DocQ** | Docs Q&A over a sandboxed folder (tools + questions) | `dotnet run --project samples/DocQ -- --offline --root . --question "What is Voluta?"` |
+| **MarketingAgent** | Hybrid-style desk: brief → creative → setup → review (mock tools) | `dotnet run --project samples/MarketingAgent -- --offline` |
+| **MockAdMcp** | Hybrid-shaped tool server (Campaign / SSP / deal / AdLibrary) on `:5190` | `dotnet run --project samples/MockAdMcp` |
+| **UiHost** | ASP.NET host for `MapVolutaUI` | `dotnet run --project samples/UiHost` → `http://localhost:5188/voluta` |
+
+## Suggested order (and why)
+
+1. **HelloWorld** — If you skip this, the rest feels like magic. You need the
+   feel of a superstep, a conditional edge, and streaming once.
+2. **InterruptResume** — This is the durability story. Same thread id, different
+   process (or at least a second call): interrupt → checkpoint → resume. Almost
+   every production agent eventually needs “wait for a human.”
+3. **AotSmoke** — Only if AOT / publish size matters to you. Otherwise leave it
+   until later.
+4. **ReviewBot / DocQ** — When you want multi-node structure and tool-ish side
+   effects without inventing your own sandbox.
+5. **MarketingAgent + MockAdMcp** — Two terminals: mock tools server, then the
+   graph that drives a desk-style flow.
+6. **UiHost** — When you want the ops console without wiring it yourself.
+
+## How to read a sample
+
+1. Run it once. Watch the stream.  
+2. Open the graph builder section — channels first, then edges. Ask: *why this
+   kind?*  
+3. Open one node. Ask: *what does it write, and what does it leave alone?*  
+4. Only then read helpers / CLI flags.
+
+If a sample feels “too big,” go back to HelloWorld and re-draw the topology on
+paper. The runtime is small; the sample surface grows with the *scenario*, not
+with framework ceremony.
+
+## Optional live chat
+
+ReviewBot / DocQ can call a real chat endpoint when you set:
+
+```bash
+export VOLUTA_CHAT_ENDPOINT=https://api.openai.com/v1
+export VOLUTA_CHAT_API_KEY=...
+export VOLUTA_CHAT_MODEL=gpt-4o-mini
+```
+
+Offline flags keep demos runnable without keys.

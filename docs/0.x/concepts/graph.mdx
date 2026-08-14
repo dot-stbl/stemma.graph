@@ -1,0 +1,101 @@
+---
+title: Graph
+description: Why you build once and compile — topology as a contract, not a bag of callbacks.
+product: voluta
+version: "0.x"
+sidebar:
+  label: Graph
+  order: 10
+  group: Concepts
+---
+
+A **graph** is the shape of your agent: channels (state), nodes (work), edges
+(what runs next). You assemble that shape with `StateGraph`, then **compile** it
+once into an immutable `CompiledGraph` the runtime can actually execute.
+
+Think of the builder as a recipe and compile as locking the oven settings. After
+compile, the topology does not change mid-run — which is what makes checkpoints
+and resumes meaningful.
+
+## Why “build then compile”?
+
+Two phases buy you different things:
+
+1. **Build** — you can still change your mind: add a channel, rename a node, wire
+   a cycle. Errors here are authoring errors.
+2. **Compile** — the runtime validates the topology, freezes it, and hands you
+   something safe to share across threads and hosts. Rebuilding per request pays
+   validation for nothing and makes “two almost-identical graphs” a real footgun.
+
+```csharp
+CompiledGraph graph = new StateGraph()
+    // channels, nodes, edges...
+    .Compile(checkpointer, new CompileOptions { RecursionLimit = 25 });
+```
+
+`RecursionLimit` (default **25**) is the intentional-loop budget. Cycles are
+allowed; infinite cycles are not. Raise it when multi-round tool use is normal;
+keep it low enough that a bug fails fast.
+
+## What you declare on the builder
+
+Namespace: `Voluta.Graph.Builder`.
+
+| Method | Why it exists |
+|--------|----------------|
+| `AddChannel(name, kind)` | State needs a merge policy *before* anyone writes |
+| `AddChannels(schema)` | Bulk register from `[GraphState]` so string keys don’t drift |
+| `AddNode(name, handler)` | Named work unit the edges can point at |
+| `AddEdge(source, target)` | Fixed succession (“always go tools → agent”) |
+| `AddConditionalEdges(...)` | Data-dependent succession (“tools or END?”) |
+| `Compile(checkpointer, options?)` | Validate + freeze → runnable graph |
+
+Conditional edges come in two flavors: one next node, or a list of next nodes.
+One conditional registration per source — if routing is ambiguous in your head,
+it will be ambiguous in production.
+
+## What you run: `CompiledGraph`
+
+Namespace: `Voluta.Graph`.
+
+| API | When you reach for it |
+|-----|------------------------|
+| `StreamAsync(...)` | You care about the journey (UI, logs, learning) |
+| `InvokeAsync(...)` | You only need the terminal event |
+| `ResumeAsync(threadId, command, ...)` | A previous run stopped for a human (or similar) |
+| `Describe()` | Export topology for ops UI / tooling |
+
+Same compiled object, different observation styles. Don’t rebuild the graph to
+“switch modes.”
+
+## Start and End are sentinels, not nodes you implement
+
+```csharp
+GraphConstants.Start  // "__start__"
+GraphConstants.End    // "__end__"
+```
+
+`Start` is how the first ready set is seeded. `End` is how a branch says “this
+path is finished.” You don’t register handlers for them.
+
+## Subgraphs: nest a compiled graph as a node
+
+`Subgraph.AsNode(CompiledGraph child, ...)` returns a `NodeHandler` that runs a
+child graph and maps selected channels back as parent writes.
+
+Why bother? Shared sub-flows (retrieve → rank → format) stay one compiled unit
+you can test and version, while the parent stays a readable high-level loop.
+Child interrupts surface as parent `NodeResult.Interrupt` — HITL doesn’t invent
+a second protocol at the boundary.
+
+## Practical shape
+
+```text
+channels  →  what state means when many nodes write
+nodes     →  pure-ish work units (LLM, tools, gates)
+edges     →  control flow, including cycles
+compile   →  one validated artifact per process (or DI singleton)
+```
+
+Next: [Nodes](/voluta/0.x/concepts/nodes) for what a handler may return, and
+[Edges](/voluta/0.x/concepts/edges) for why cycles are first-class.
