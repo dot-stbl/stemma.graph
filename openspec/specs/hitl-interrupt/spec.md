@@ -61,11 +61,15 @@ Resume MUST fail clearly when the thread is not in interrupted status (or has no
 - **THEN** the API returns a distinct error and does not mutate checkpoints incorrectly
 
 ### Requirement: Multiple pending interrupts (parallel ready / Send)
-When more than one ready task in a superstep returns an interrupt result, the runtime MUST collect every interrupt into a stable `PendingInterrupts` list on the checkpoint (task id, node name, interrupt payload, optional Send task payload). `InterruptPayload` remains the first pending payload for single-path compatibility. Resume MUST accept a map of task id → payload (`Command.Resumes`) covering every pending interrupt; single-interrupt threads MAY keep using `Command.Payload` alone. Partial superstep continues MUST NOT be applied until all pending interrupts for that barrier resume.
+When more than one ready task in a superstep returns an interrupt result, the runtime MUST collect every interrupt into a stable `PendingInterrupts` list on the checkpoint (task id, node name, interrupt payload, optional Send task payload). `InterruptPayload` remains the first pending payload for single-path compatibility. Resume MUST accept a map of task id → payload (`Command.Resumes`); single-interrupt threads MAY keep using `Command.Payload` alone. A full map covers every pending id and clears the barrier. A **partial** map (proper subset of known task ids) is allowed: only those tasks re-run, their writes apply, status remains Interrupted, and `PendingInterrupts` retains the unresumed ids. Unknown task ids in the map MUST fail with `command.invalid_payload`. Sibling continues from a mixed superstep still wait until no pending interrupts remain.
 
 #### Scenario: Two parallel Send workers both interrupt
 - **WHEN** a map node fans out two Send tasks to a worker and both workers return interrupt
-- **THEN** the checkpoint status is interrupted, `PendingInterrupts` has two entries with stable task ids, and resume with `Command.Approve(resumesMap)` re-runs both workers with their mapped payloads and reaches done
+- **THEN** the checkpoint status is interrupted, `PendingInterrupts` has two entries with stable task ids, and resume with a full `Command.ApproveResumes(map)` re-runs both workers and reaches done
+
+#### Scenario: Progressive partial resume
+- **WHEN** two interrupts are pending and the host resumes with a Resumes map covering only one task id
+- **THEN** that task re-runs, its writes apply, status remains Interrupted, and PendingInterrupts contains only the remaining task id
 
 #### Scenario: Multi-interrupt without Resumes map
 - **WHEN** two or more interrupts are pending and the host resumes with only a single `Payload` (no `Resumes` map)
