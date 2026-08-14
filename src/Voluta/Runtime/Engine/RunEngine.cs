@@ -29,7 +29,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         CancellationToken cancellationToken = default)
     {
         var store = new ChannelStore(topology.Channels);
-        var inputList = input.ToList();
+        var inputList = input as IList<ChannelWrite> ?? input.ToList();
         if (inputList.Count > 0)
         {
             store.ApplyInputWrites(inputList);
@@ -106,7 +106,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         }
 
         var nextNodes = checkpoint.NextNodes.Count > 0
-            ? [.. checkpoint.NextNodes]
+            ? checkpoint.NextNodes
             : RunEngineRouting.ResolveNextNodes(
                 topology,
                 GraphConstants.Start,
@@ -181,6 +181,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             if (step > topology.RecursionLimit)
             {
                 var outOfSteps = new GraphOutOfStepsException(topology.RecursionLimit, step);
+                var failedNodeNames = RunEngineLoopHelpers.DistinctNodeNames(readyTasks);
                 await checkpointer.PutAsync(
                     RunEngineSnapshots.Build(
                         options.ThreadId,
@@ -188,7 +189,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        [.. readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                        failedNodeNames,
                         [],
                         null),
                     cancellationToken);
@@ -202,23 +203,23 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 throw outOfSteps;
             }
 
-            var snapshot = store.SnapshotValues();
-            var orderedReady = readyTasks
-                .OrderBy(static task => task.NodeName, StringComparer.Ordinal)
-                .ThenBy(static task => task.TaskId, StringComparer.Ordinal)
-                .ToList();
+            // Pre-apply snapshot for node handlers (barrier visibility).
+            var preApplySnapshot = store.SnapshotValues();
+            // readyTasks from ToPullTasks are already sorted; re-sort only when sends merge in.
+            var orderedReady = readyTasks;
             var payloadForStep = isFirstResumeStep ? resumePayload : null;
             isFirstResumeStep = false;
 
             var executionOutcome = await RunEngineExecution.TryExecuteReadyAsync(
                 topology,
                 orderedReady,
-                snapshot,
+                preApplySnapshot,
                 payloadForStep,
                 cancellationToken);
 
             if (executionOutcome.Cancelled)
             {
+                var cancelledNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
                 await checkpointer.PutAsync(
                     RunEngineSnapshots.Build(
                         options.ThreadId,
@@ -226,7 +227,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Cancelled,
                         store,
                         lastNode,
-                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                        cancelledNodes,
                         [],
                         null),
                     cancellationToken);
@@ -241,6 +242,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 
             if (executionOutcome.Failure is { } failure)
             {
+                var failedNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
                 await checkpointer.PutAsync(
                     RunEngineSnapshots.Build(
                         options.ThreadId,
@@ -248,7 +250,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                        failedNodes,
                         [],
                         null),
                     cancellationToken);
@@ -295,6 +297,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
             var applyError = RunEngineExecution.TryApplyWrites(store, writes);
             if (applyError is not null)
             {
+                var applyFailedNodes = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
                 await checkpointer.PutAsync(
                     RunEngineSnapshots.Build(
                         options.ThreadId,
@@ -302,7 +305,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                         GraphRunStatus.Failed,
                         store,
                         lastNode,
-                        [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                        applyFailedNodes,
                         [],
                         null),
                     cancellationToken);
@@ -316,13 +319,16 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                 throw applyError;
             }
 
-            foreach (var nodeName in orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal))
+            // One post-apply snapshot shared by routing, checkpoint, and Values stream.
+            var postApplySnapshot = store.SnapshotValues();
+            var nodeNames = RunEngineLoopHelpers.DistinctNodeNames(orderedReady);
+            foreach (var nodeName in nodeNames)
             {
                 store.MarkSeen(nodeName);
             }
 
             lastNode = orderedReady[^1].NodeName;
-            var scheduled = new List<string>();
+            var scheduled = new List<string>(executions.Count);
             var pendingSends = new List<PendingSend>();
             foreach (var execution in executions)
             {
@@ -330,7 +336,7 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     RunEngineRouting.ResolveNextNodes(
                         topology,
                         execution.NodeName,
-                        store.SnapshotValues(),
+                        postApplySnapshot,
                         null));
 
                 if (execution.Result is ContinueNodeResult continueResult)
@@ -356,16 +362,32 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
 
             var nextPull = RunEngineRouting.ToPullTasks(
                 topology,
-                [.. scheduled.Distinct(StringComparer.Ordinal)]);
-            readyTasks =
-            [
-                .. nextPull,
-                .. pendingSends.Select(static send => new ReadyTask(
-                    send.NodeName,
-                    send.TaskId,
-                    send.Payload)),
-            ];
+                RunEngineLoopHelpers.DistinctNames(scheduled));
+            if (pendingSends.Count == 0)
+            {
+                readyTasks = nextPull;
+            }
+            else
+            {
+                // Merge pull (already sorted) with sends; sort once by node then task id.
+                var merged = new List<ReadyTask>(nextPull.Count + pendingSends.Count);
+                merged.AddRange(nextPull);
+                foreach (var send in pendingSends)
+                {
+                    merged.Add(new ReadyTask(send.NodeName, send.TaskId, send.Payload));
+                }
 
+                merged.Sort(static (left, right) =>
+                {
+                    var nodeCompare = string.CompareOrdinal(left.NodeName, right.NodeName);
+                    return nodeCompare != 0
+                        ? nodeCompare
+                        : string.CompareOrdinal(left.TaskId, right.TaskId);
+                });
+                readyTasks = merged;
+            }
+
+            var checkpointNextNodes = RunEngineLoopHelpers.DistinctNodeNames(readyTasks);
             await checkpointer.PutAsync(
                 RunEngineSnapshots.Build(
                     options.ThreadId,
@@ -373,20 +395,81 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
                     GraphRunStatus.Running,
                     store,
                     lastNode,
-                    [.. readyTasks.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                    checkpointNextNodes,
                     pendingSends,
-                    null),
+                    null,
+                    postApplySnapshot),
                 cancellationToken);
 
             foreach (var streamItem in RunEngineStreaming.EmitCommit(
                          options.StreamMode,
                          step,
-                         [.. orderedReady.Select(static task => task.NodeName).Distinct(StringComparer.Ordinal)],
+                         nodeNames,
                          writes,
-                         store))
+                         store,
+                         postApplySnapshot))
             {
                 yield return streamItem;
             }
         }
+    }
+}
+
+/// <summary>
+///     Hot-path helpers for ready-set node name extraction (file-static).
+/// </summary>
+file static class RunEngineLoopHelpers
+{
+    public static IReadOnlyList<string> DistinctNodeNames(IReadOnlyList<ReadyTask> tasks)
+    {
+        if (tasks.Count == 0)
+        {
+            return [];
+        }
+
+        if (tasks.Count == 1)
+        {
+            return [tasks[0].NodeName];
+        }
+
+        // Ready tasks are ordered by NodeName — adjacent de-dupe is O(n).
+        var names = new List<string>(tasks.Count);
+        string? previous = null;
+        for (var index = 0; index < tasks.Count; index++)
+        {
+            var name = tasks[index].NodeName;
+            if (previous is null || !string.Equals(previous, name, StringComparison.Ordinal))
+            {
+                names.Add(name);
+                previous = name;
+            }
+        }
+
+        return names;
+    }
+
+    public static IReadOnlyList<string> DistinctNames(List<string> names)
+    {
+        if (names.Count == 0)
+        {
+            return [];
+        }
+
+        if (names.Count == 1)
+        {
+            return names;
+        }
+
+        var seen = new HashSet<string>(names.Count, StringComparer.Ordinal);
+        var distinct = new List<string>(names.Count);
+        foreach (var name in names)
+        {
+            if (seen.Add(name))
+            {
+                distinct.Add(name);
+            }
+        }
+
+        return distinct;
     }
 }

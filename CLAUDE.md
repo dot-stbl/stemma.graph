@@ -16,9 +16,10 @@ API .NET-native: generic state, типизированные редьюсеры,
 
 ## Текущий статус
 
-**Shipped on `main`:** Pregel runtime, InMemory + File checkpointers, Send fan-out,
-`Subgraph.AsNode`, topology export, Testing, Generators, MicrosoftAi helpers,
-`MapVolutaUI`, samples 01–05, BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
+**Shipped on `main`:** Pregel runtime, checkpointers (InMemory · File · EF Core · S3) with
+`AddVolutaCheckpoints` / `Use*`, Send fan-out, `Subgraph.AsNode`, topology export, Testing,
+Generators, MicrosoftAi helpers, `MapVolutaUI`, samples (incl. MarketingAgent + MockAdMcp),
+BenchmarkDotNet. **Not on NuGet yet** (0.1 tag pending).
 
 **Specs (source of truth):** main OpenSpec under
 [`openspec/specs/`](openspec/specs/) (12 capabilities). Planning change archived:
@@ -27,8 +28,8 @@ Decisions: [`.agents/decisions.md`](.agents/decisions.md) (D-001…D-024).
 Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
-- **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/03-AotSmoke`
-- **Full .NET / ASP.NET:** Checkpoints.File, UI, MicrosoftAi, Testing, Generators — regular CLR, not AOT-claimed
+- **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/AotSmoke`
+- **Full .NET / ASP.NET:** Checkpoints.File / EF / S3, UI, MicrosoftAi, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -51,10 +52,12 @@ voluta/
 │   ├── Voluta.DependencyInjection/     ← AddVoluta
 │   ├── Voluta.Testing/                 ← doubles + conformance
 │   ├── Voluta.Generators/              ← [GraphState] source-gen
-│   ├── Voluta.Checkpoints.File/        ← JSON file checkpointer
+│   ├── Voluta.Checkpoints.File/        ← UseFile
+│   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
+│   ├── Voluta.Checkpoints.S3/          ← UseS3
 │   ├── Voluta.MicrosoftAi/             ← IChatClient helpers
 │   └── Voluta.UI/                      ← MapVolutaUI ops console
-├── samples/     ← 01 HelloWorld · 02 HITL · 03 AotSmoke · 04 ReviewBot · 05 DocQ
+├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost
 ├── benchmarks/  ← Voluta.Benchmarks
 ├── tests/
 ├── openspec/

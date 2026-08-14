@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <RootNamespace>Voluta.Samples.Shared</RootNamespace>
-    <Description>Shared CLI helpers for ReviewBot / DocQ harness samples (sandbox FS, chat client).</Description>
+    <Description>Shared CLI helpers for samples (CliUi, sandbox FS, chat client, flags).</Description>
   </PropertyGroup>
 
   <ItemGroup>

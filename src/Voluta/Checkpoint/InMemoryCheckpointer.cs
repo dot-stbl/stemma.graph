@@ -11,6 +11,10 @@ public sealed class InMemoryCheckpointer : ICheckpointer
         new(StringComparer.Ordinal);
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Ownership: engine <see cref="CheckpointSnapshot" /> instances are treated as exclusive
+    ///     after Put — maps are not re-cloned on store. Isolation is enforced on Get/List by cloning.
+    /// </remarks>
     public Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -18,7 +22,8 @@ public sealed class InMemoryCheckpointer : ICheckpointer
         var list = history.GetOrAdd(snapshot.ThreadId, static _ => []);
         lock (list)
         {
-            list.Add(InMemoryCheckpointClone.Clone(snapshot));
+            // Store without deep re-clone: RunEngineSnapshots.Build already allocated fresh maps.
+            list.Add(snapshot);
         }
 
         return Task.CompletedTask;
@@ -56,36 +61,57 @@ public sealed class InMemoryCheckpointer : ICheckpointer
 
         lock (list)
         {
-            var ordered = list
-                .OrderBy(static snapshot => snapshot.Step)
-                .Select(InMemoryCheckpointClone.Clone)
-                .ToList();
+            var ordered = new List<CheckpointSnapshot>(list.Count);
+            foreach (var snapshot in list.OrderBy(static item => item.Step))
+            {
+                ordered.Add(InMemoryCheckpointClone.Clone(snapshot));
+            }
+
             return Task.FromResult<IReadOnlyList<CheckpointSnapshot>>(ordered);
         }
     }
 }
 
 /// <summary>
-///     Deep-enough clone of C-shape snapshots for InMemory isolation.
+///     Deep-enough clone of C-shape snapshots so callers cannot mutate stored history.
 /// </summary>
 file static class InMemoryCheckpointClone
 {
     public static CheckpointSnapshot Clone(CheckpointSnapshot snapshot)
     {
+        var channelValues = new Dictionary<string, object?>(
+            snapshot.ChannelValues.Count,
+            StringComparer.Ordinal);
+        foreach (var (key, value) in snapshot.ChannelValues)
+        {
+            channelValues[key] = value;
+        }
+
+        var channelVersions = new Dictionary<string, long>(
+            snapshot.ChannelVersions.Count,
+            StringComparer.Ordinal);
+        foreach (var (key, value) in snapshot.ChannelVersions)
+        {
+            channelVersions[key] = value;
+        }
+
+        var versionsSeen = new Dictionary<string, IReadOnlyDictionary<string, long>>(
+            snapshot.VersionsSeen.Count,
+            StringComparer.Ordinal);
+        foreach (var (nodeName, map) in snapshot.VersionsSeen)
+        {
+            versionsSeen[nodeName] = new Dictionary<string, long>(map, StringComparer.Ordinal);
+        }
+
         return new CheckpointSnapshot
         {
             FormatVersion = snapshot.FormatVersion,
             ThreadId = snapshot.ThreadId,
             Step = snapshot.Step,
             Status = snapshot.Status,
-            ChannelValues = new Dictionary<string, object?>(snapshot.ChannelValues, StringComparer.Ordinal),
-            ChannelVersions = new Dictionary<string, long>(snapshot.ChannelVersions, StringComparer.Ordinal),
-            VersionsSeen = snapshot.VersionsSeen.ToDictionary(
-                static pair => pair.Key,
-                static pair => (IReadOnlyDictionary<string, long>)new Dictionary<string, long>(
-                    pair.Value,
-                    StringComparer.Ordinal),
-                StringComparer.Ordinal),
+            ChannelValues = channelValues,
+            ChannelVersions = channelVersions,
+            VersionsSeen = versionsSeen,
             PendingWrites = [.. snapshot.PendingWrites],
             PendingSends = [.. snapshot.PendingSends],
             LastNode = snapshot.LastNode,

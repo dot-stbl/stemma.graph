@@ -87,18 +87,16 @@ public sealed class CompiledGraph
     }
 
     /// <summary>
-    ///     Resumes an interrupted thread with a command.
+    ///     Resumes an interrupted thread with a command (Updates stream mode).
     /// </summary>
     /// <param name="threadId">Thread identifier.</param>
     /// <param name="command">Resume payload / values.</param>
-    /// <param name="cancellationToken">Cooperative cancellation.</param>
     /// <returns>Async sequence continuing from the interrupted checkpoint.</returns>
     public IAsyncEnumerable<StreamEvent> ResumeAsync(
         string threadId,
-        Command command,
-        CancellationToken cancellationToken = default)
+        Command command)
     {
-        return ResumeAsync(threadId, command, StreamMode.Updates, cancellationToken);
+        return ResumeAsync(threadId, command, StreamMode.Updates, default);
     }
 
     /// <summary>

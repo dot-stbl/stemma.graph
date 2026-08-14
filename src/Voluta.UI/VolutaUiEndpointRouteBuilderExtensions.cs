@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
+using Voluta.UI.Sse;
 
 namespace Voluta.UI;
 
 /// <summary>
-///     ASP.NET Core endpoint mapping for the Voluta ops UI.
+///     ASP.NET Core endpoint mapping for the Voluta ops UI (Swagger-style host API).
 /// </summary>
 public static class VolutaUiEndpointRouteBuilderExtensions
 {
@@ -25,38 +28,72 @@ public static class VolutaUiEndpointRouteBuilderExtensions
     }
 
     /// <summary>
-    ///     Maps static UI + JSON API under the given path prefix (default <c>/voluta</c>).
+    ///     Maps UI shell + JSON API + SSE under the default path prefix (<c>/voluta</c>).
     /// </summary>
     /// <param name="endpoints">Endpoint route builder (typically <see cref="WebApplication" />).</param>
-    /// <param name="pathPrefix">URL prefix.</param>
+    /// <returns>The endpoint route builder.</returns>
+    public static IEndpointRouteBuilder MapVolutaUI(this IEndpointRouteBuilder endpoints)
+    {
+        return MapVolutaUI(endpoints, new VolutaUiOptions());
+    }
+
+    /// <summary>
+    ///     Maps UI shell + JSON API + SSE with an options mutator (e.g. path prefix).
+    /// </summary>
+    /// <param name="endpoints">Endpoint route builder (typically <see cref="WebApplication" />).</param>
+    /// <param name="configure">Options mutator.</param>
     /// <returns>The endpoint route builder.</returns>
     public static IEndpointRouteBuilder MapVolutaUI(
         this IEndpointRouteBuilder endpoints,
-        string pathPrefix = "/voluta")
+        Action<VolutaUiOptions> configure)
     {
-        var prefix = pathPrefix.TrimEnd('/');
-        if (string.IsNullOrEmpty(prefix))
-        {
-            prefix = "/voluta";
-        }
+        var options = new VolutaUiOptions();
+        configure(options);
+        return MapVolutaUI(endpoints, options);
+    }
 
-        endpoints.MapGet(prefix, () => Results.Redirect($"{prefix}/"));
-        endpoints.MapGet($"{prefix}/", () => Results.Content(VolutaUiAssets.IndexHtml, "text/html; charset=utf-8"));
+    /// <summary>
+    ///     Maps UI shell + JSON API + SSE under the given options.
+    /// </summary>
+    /// <param name="endpoints">Endpoint route builder.</param>
+    /// <param name="options">UI host options.</param>
+    /// <returns>The endpoint route builder.</returns>
+    public static IEndpointRouteBuilder MapVolutaUI(
+        this IEndpointRouteBuilder endpoints,
+        VolutaUiOptions options)
+    {
+        var prefix = VolutaUiRouteHelpers.NormalizePrefix(options.PathPrefix);
+
+        // Single shell route — do not also MapGet(prefix+"/") (AmbiguousMatch with /voluta).
+        // Inject <base href="{prefix}/"> so relative styles.css/app.js resolve under the prefix
+        // when the browser URL is /voluta without a trailing slash.
+        endpoints.MapGet(
+            prefix,
+            () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
         endpoints.MapGet(
             $"{prefix}/index.html",
-            () => Results.Content(VolutaUiAssets.IndexHtml, "text/html; charset=utf-8"));
+            () => Results.Content(VolutaUiAssets.RenderIndexHtml(prefix), "text/html; charset=utf-8"));
         endpoints.MapGet(
             $"{prefix}/styles.css",
             () => Results.Content(VolutaUiAssets.StylesCss, "text/css; charset=utf-8"));
+        endpoints.MapGet(
+            $"{prefix}/app.js",
+            () => Results.Content(VolutaUiAssets.AppJs, "text/javascript; charset=utf-8"));
 
         endpoints.MapGet(
             $"{prefix}/api/topology",
-            (VolutaUiSession session) => Results.Json(session.Topology, JsonSerializerOptions.Web));
+            (VolutaUiSession session) =>
+                Results.Json(VolutaUiJson.ToWire(session.Topology), JsonSerializerOptions.Web));
 
         endpoints.MapGet(
             $"{prefix}/api/hitl",
             async (VolutaUiSession session, CancellationToken cancellationToken) =>
                 Results.Json(await session.ListInterruptedAsync(cancellationToken), JsonSerializerOptions.Web));
+
+        endpoints.MapGet(
+            $"{prefix}/api/threads",
+            async (VolutaUiSession session, CancellationToken cancellationToken) =>
+                Results.Json(await session.ListThreadsAsync(cancellationToken), JsonSerializerOptions.Web));
 
         endpoints.MapGet(
             $"{prefix}/api/threads/{{threadId}}",
@@ -65,7 +102,7 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                 var snapshot = await session.GetCheckpointAsync(threadId, cancellationToken);
                 return snapshot is null
                     ? Results.NotFound()
-                    : Results.Json(snapshot, JsonSerializerOptions.Web);
+                    : Results.Json(VolutaUiJson.ToWire(snapshot), JsonSerializerOptions.Web);
             });
 
         endpoints.MapPost(
@@ -82,16 +119,129 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                     Payload = body?.Payload,
                 };
                 var terminal = await session.ResumeAsync(threadId, command, cancellationToken);
-                return Results.Json(
-                    new
-                    {
-                        kind = terminal.Kind.ToString(),
-                        step = terminal.Step,
-                        payload = terminal.Payload?.ToString(),
-                    },
-                    JsonSerializerOptions.Web);
+                return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
             });
 
+        endpoints.MapGet(
+            $"{prefix}/api/threads/{{threadId}}/stream",
+            VolutaUiStreamEndpoint.HandleAsync);
+
         return endpoints;
+    }
+
+    /// <summary>
+    ///     Legacy overload: maps UI under an explicit path prefix string.
+    /// </summary>
+    /// <param name="endpoints">Endpoint route builder.</param>
+    /// <param name="pathPrefix">URL prefix.</param>
+    /// <returns>The endpoint route builder.</returns>
+    public static IEndpointRouteBuilder MapVolutaUI(
+        this IEndpointRouteBuilder endpoints,
+        string pathPrefix)
+    {
+        return MapVolutaUI(endpoints, new VolutaUiOptions { PathPrefix = pathPrefix });
+    }
+}
+
+/// <summary>
+///     Path prefix normalization for MapVolutaUI.
+/// </summary>
+file static class VolutaUiRouteHelpers
+{
+    public static string NormalizePrefix(string? pathPrefix)
+    {
+        var prefix = (pathPrefix ?? "/voluta").TrimEnd('/');
+        return string.IsNullOrEmpty(prefix)
+            ? "/voluta"
+            : prefix.StartsWith('/') ? prefix : "/" + prefix;
+    }
+}
+
+/// <summary>
+///     SSE stream endpoint handler for live graph events.
+/// </summary>
+file static class VolutaUiStreamEndpoint
+{
+    public static async Task HandleAsync(
+        string threadId,
+        HttpContext httpContext,
+        VolutaUiSession session,
+        CancellationToken cancellationToken)
+    {
+        var mode = httpContext.Request.Query["mode"].FirstOrDefault() ?? "checkpoint";
+        var kind = httpContext.Request.Query["kind"].FirstOrDefault() ?? "approve";
+        var payload = httpContext.Request.Query["payload"].FirstOrDefault();
+
+        IAsyncEnumerable<StreamEvent> stream;
+        if (string.Equals(mode, "resume", StringComparison.OrdinalIgnoreCase))
+        {
+            stream = session.StreamResumeAsync(
+                threadId,
+                new Command { Kind = kind, Payload = payload },
+                cancellationToken);
+        }
+        else if (string.Equals(mode, "invoke", StringComparison.OrdinalIgnoreCase))
+        {
+            var seed = httpContext.Request.Query["seed"].FirstOrDefault()
+                       ?? "user: transfer $50";
+            stream = session.StreamInvokeAsync(
+                threadId,
+                [new ChannelWrite("messages", seed)],
+                cancellationToken);
+        }
+        else
+        {
+            var snapshot = await session.GetCheckpointAsync(threadId, cancellationToken);
+            if (snapshot is null)
+            {
+                await StreamEventSseWriter.WriteErrorAsync(
+                    httpContext.Response,
+                    $"thread '{threadId}' not found",
+                    cancellationToken);
+                return;
+            }
+
+            stream = snapshot.Status == GraphRunStatus.Interrupted
+                && string.Equals(
+                    httpContext.Request.Query["auto"].FirstOrDefault(),
+                    "1",
+                    StringComparison.Ordinal)
+                ? session.StreamResumeAsync(
+                    threadId,
+                    new Command { Kind = kind, Payload = payload ?? "ok" },
+                    cancellationToken)
+                : CheckpointAsStream.FromSnapshotAsync(snapshot);
+        }
+
+        await StreamEventSseWriter.WriteAsync(httpContext.Response, stream, cancellationToken);
+    }
+}
+
+/// <summary>
+///     Emits a single synthetic stream event from a checkpoint snapshot.
+/// </summary>
+file static class CheckpointAsStream
+{
+    public static async IAsyncEnumerable<StreamEvent> FromSnapshotAsync(
+        Abstractions.Checkpoint.CheckpointSnapshot snapshot)
+    {
+        yield return new StreamEvent
+        {
+            Mode = StreamMode.Events,
+            Kind = snapshot.Status switch
+            {
+                GraphRunStatus.Interrupted => StreamEventKind.Interrupt,
+                GraphRunStatus.Done => StreamEventKind.End,
+                GraphRunStatus.Failed => StreamEventKind.Failed,
+                GraphRunStatus.Cancelled => StreamEventKind.Cancelled,
+                GraphRunStatus.Running => throw new NotImplementedException(),
+                _ => StreamEventKind.Values,
+            },
+            Step = snapshot.Step,
+            NodeNames = snapshot.LastNode is { } last ? [last] : [],
+            State = snapshot.ChannelValues,
+            Payload = snapshot.InterruptPayload,
+        };
+        await Task.CompletedTask;
     }
 }

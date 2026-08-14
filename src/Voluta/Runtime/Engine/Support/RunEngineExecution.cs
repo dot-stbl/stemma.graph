@@ -20,38 +20,32 @@ internal static class RunEngineExecution
     {
         try
         {
-            var tasks = orderedReady.Select(async readyTask =>
+            if (orderedReady.Count == 1)
             {
-                if (!topology.Nodes.TryGetValue(readyTask.NodeName, out var handler))
-                {
-                    throw new GraphRunFailedException($"Unknown ready node '{readyTask.NodeName}'.");
-                }
-
-                var context = new GraphContext(
-                    readyTask.NodeName,
+                var single = await RunEngineExecutionHelpers.ExecuteOneAsync(
+                    topology,
+                    orderedReady[0],
                     snapshot,
                     resumePayload,
-                    readyTask.TaskPayload);
-                try
-                {
-                    var result = await handler(context, cancellationToken);
-                    return new NodeExecution(readyTask.NodeName, readyTask.TaskId, result);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception exception) when (exception is not GraphException)
-                {
-                    throw new GraphRunFailedException(
-                        $"Node '{readyTask.NodeName}' threw: {exception.Message}",
-                        exception);
-                }
-            });
+                    cancellationToken);
+                return new ReadyExecutionOutcome { Executions = [single] };
+            }
+
+            // WhenAll preserves input order — CollectWrites relies on that (no re-sort).
+            var tasks = new Task<NodeExecution>[orderedReady.Count];
+            for (var index = 0; index < orderedReady.Count; index++)
+            {
+                tasks[index] = RunEngineExecutionHelpers.ExecuteOneAsync(
+                    topology,
+                    orderedReady[index],
+                    snapshot,
+                    resumePayload,
+                    cancellationToken);
+            }
 
             return new ReadyExecutionOutcome
             {
-                Executions = [.. await Task.WhenAll(tasks)]
+                Executions = await Task.WhenAll(tasks)
             };
         }
         catch (OperationCanceledException exception)
@@ -92,13 +86,30 @@ internal static class RunEngineExecution
         }
     }
 
+    /// <summary>
+    ///     Collects writes in execution order. Callers must pass executions ordered by
+    ///     (NodeName, TaskId) — matching <see cref="TryExecuteReadyAsync" /> / WhenAll order.
+    /// </summary>
     public static IReadOnlyList<TaskChannelWrite> CollectWrites(IReadOnlyList<NodeExecution> executions)
     {
-        var writes = new List<TaskChannelWrite>();
-        foreach (var execution in executions
-                     .OrderBy(static item => item.NodeName, StringComparer.Ordinal)
-                     .ThenBy(static item => item.TaskId, StringComparer.Ordinal))
+        var capacity = 0;
+        for (var index = 0; index < executions.Count; index++)
         {
+            if (executions[index].Result is ContinueNodeResult continueResult)
+            {
+                capacity += continueResult.Writes.Count;
+            }
+        }
+
+        if (capacity == 0)
+        {
+            return [];
+        }
+
+        var writes = new List<TaskChannelWrite>(capacity);
+        for (var index = 0; index < executions.Count; index++)
+        {
+            var execution = executions[index];
             if (execution.Result is not ContinueNodeResult continueResult)
             {
                 continue;
@@ -111,5 +122,45 @@ internal static class RunEngineExecution
         }
 
         return writes;
+    }
+}
+
+/// <summary>
+///     Per-ready-task execution body (file-static to avoid private methods on the helper type).
+/// </summary>
+file static class RunEngineExecutionHelpers
+{
+    public static async Task<NodeExecution> ExecuteOneAsync(
+        GraphTopology topology,
+        ReadyTask readyTask,
+        IReadOnlyDictionary<string, object?> snapshot,
+        object? resumePayload,
+        CancellationToken cancellationToken)
+    {
+        if (!topology.Nodes.TryGetValue(readyTask.NodeName, out var handler))
+        {
+            throw new GraphRunFailedException($"Unknown ready node '{readyTask.NodeName}'.");
+        }
+
+        var context = new GraphContext(
+            readyTask.NodeName,
+            snapshot,
+            resumePayload,
+            readyTask.TaskPayload);
+        try
+        {
+            var result = await handler(context, cancellationToken);
+            return new NodeExecution(readyTask.NodeName, readyTask.TaskId, result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is not GraphException)
+        {
+            throw new GraphRunFailedException(
+                $"Node '{readyTask.NodeName}' threw: {exception.Message}",
+                exception);
+        }
     }
 }

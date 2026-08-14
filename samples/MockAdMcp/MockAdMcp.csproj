@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Voluta.Samples.MockAdMcp</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>
+      MockAdMcp: Hybrid console.platform-shaped MCP tools (campaign/SSP/deal/banner).
+    </Description>
+  </PropertyGroup>
+
+</Project>

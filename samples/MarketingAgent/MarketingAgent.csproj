@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Voluta.Samples.MarketingAgent</RootNamespace>
+    <Description>
+      MarketingAgent: Hybrid desk brief → creative → create RK/SSP/banner → review (HITL optional).
+    </Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\Voluta.Samples.Shared\Voluta.Samples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

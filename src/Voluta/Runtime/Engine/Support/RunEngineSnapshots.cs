@@ -16,16 +16,24 @@ internal static class RunEngineSnapshots
         string? lastNode,
         IReadOnlyList<string> nextNodes,
         IReadOnlyList<PendingSend> pendingSends,
-        object? interruptPayload)
+        object? interruptPayload,
+        IReadOnlyDictionary<string, object?>? channelValues = null)
     {
+        var versions = store.Versions;
+        var channelVersions = new Dictionary<string, long>(versions.Count, StringComparer.Ordinal);
+        foreach (var (name, version) in versions)
+        {
+            channelVersions[name] = version;
+        }
+
         return new CheckpointSnapshot
         {
             ThreadId = threadId,
             Step = step,
             Status = status,
-            ChannelValues = store.SnapshotValues(),
-            ChannelVersions = new Dictionary<string, long>(store.Versions, StringComparer.Ordinal),
-            VersionsSeen = store.VersionsSeen,
+            ChannelValues = channelValues ?? store.SnapshotValues(),
+            ChannelVersions = channelVersions,
+            VersionsSeen = store.CloneVersionsSeen(),
             PendingWrites = [],
             PendingSends = [.. pendingSends],
             LastNode = lastNode,

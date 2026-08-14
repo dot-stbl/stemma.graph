@@ -65,6 +65,30 @@
         </PackageReference>
     </ItemGroup>
 
+    <!-- PublicAPI ship gate (v0.1 freeze): only when PublicAPI.Shipped.txt exists
+         (baseline not committed yet — avoid RS0016 noise). Override: -p:VolutaEnablePublicApi=false -->
+    <PropertyGroup
+        Condition="'$(VolutaEnablePublicApi)' == ''
+                   and Exists('$(MSBuildProjectDirectory)\PublicAPI.Shipped.txt')
+                   and ('$(MSBuildProjectName)' == 'Voluta'
+                        or '$(MSBuildProjectName)' == 'Voluta.Abstractions'
+                        or '$(MSBuildProjectName)' == 'Voluta.DependencyInjection'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
+                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
+                         or '$(MSBuildProjectName)' == 'Voluta.MicrosoftAi'
+                         or '$(MSBuildProjectName)' == 'Voluta.UI')">
+        <VolutaEnablePublicApi>true</VolutaEnablePublicApi>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(VolutaEnablePublicApi)' == 'true'">
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <!-- SDK auto-includes PublicAPI.*.txt as AdditionalFiles when present — do not re-add. -->
+    </ItemGroup>
+
     <!-- NuGet package assets (icon + readme) for all packable library projects. -->
     <ItemGroup Condition="'$(IsPackable)' != 'false'">
         <None Include="$(VolutaPackageIconPath)"

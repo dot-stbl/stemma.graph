@@ -1,23 +1,5 @@
-# .github/workflows/publish.yml
-#
 # Publish Voluta NuGet packages on a v*.*.* tag.
-#
-# Trust flow: GitHub Actions OIDC → nuget.org trusted publishing.
-# No long-lived API key is stored anywhere — the workflow's identity
-# (configured once at nuget.org) is what authorizes the push.
-#
-# To set up (one-time, repo owner):
-#   1. nuget.org → Voluta → Trusted Publishing → Add a trusted publisher
-#      - Account: dot-stbl
-#      - Repository owner: dot-stbl
-#      - Repository: voluta
-#      - Workflow filename: publish.yml
-#      - Environment: (blank — uses default env)
-#   2. Create a NuGet API key with `nuget.org` scope (write/read),
-#      set as NUGET_API_KEY secret (only used if OIDC ever fails — fallback).
-#
-# Trigger: push a tag matching `v*.*.*` (e.g. v0.1.0, v0.2.1).
-# Branch protection on main is the quality gate (green CI required).
+# Trust flow: GitHub Actions OIDC -> nuget.org trusted publishing.
 
 name: publish
 
@@ -39,36 +21,29 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write   # required for OIDC trusted publishing
-
-env:
-  DOTNET_VERSION: "10.0.x"
-  NUGET_PACKAGES: ${{ runner.temp }}/nuget-packages
+  id-token: write
 
 jobs:
-  # ── 1. publish — build, pack, push every package in the solution ─────
   publish:
     name: publish
     runs-on: ubuntu-latest
-    environment: nuget  # gate any manual approval here if needed
+    environment: nuget
     steps:
       - name: checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history for source-link
-
-      - name: cache nuget
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.NUGET_PACKAGES }}
-          key: nuget-v1-${{ hashFiles('voluta.slnx', 'Directory.Build.props', 'Directory.Packages.props', 'src/**/*.csproj') }}
-          restore-keys: |
-            nuget-v1-
+          fetch-depth: 0
 
       - name: setup-dotnet
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: |
+            **/voluta.slnx
+            **/Directory.Build.props
+            **/Directory.Packages.props
+            **/*.csproj
 
       - name: restore
         run: dotnet restore voluta.slnx --nologo
@@ -77,58 +52,39 @@ jobs:
         run: dotnet build voluta.slnx -c Release --nologo
 
       - name: pack
-        # Pack each project individually so we get a clean .nupkg per package.
-        # Only src/ libraries are packable (samples/tests set IsPackable=false).
-        # When Voluta.Testing is added under src/, set IsPackable=false on
-        # that csproj (or exclude it here) so test helpers never ship to nuget.org.
         run: |
           set -euo pipefail
+          pack_out="${RUNNER_TEMP}/packages"
+          mkdir -p "$pack_out"
           for proj in $(find src -name "*.csproj" -not -path "*/samples/*" -not -path "*/tests/*"); do
-            echo "── packing $proj ──"
+            echo "packing $proj"
             dotnet pack "$proj" -c Release \
               --no-build \
               --include-symbols \
               --include-source \
               -p:SymbolPackageFormat=snupkg \
-              --output "${{ runner.temp }}/packages"
+              --output "$pack_out"
           done
-          ls -la "${{ runner.temp }}/packages"
+          ls -la "$pack_out"
 
       - name: push to nuget.org
-        if: github.event_name == 'push' && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true)
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
-          # OIDC trusted publishing — nuget.org recognises this workflow
-          # and authorises the push without a long-lived API key.
-          dotnet nuget push "${{ runner.temp }}/packages/*.nupkg" \
+          pack_out="${RUNNER_TEMP}/packages"
+          dotnet nuget push "$pack_out/*.nupkg" \
             --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate \
-            --no-symbols \
-            --timeout 600
-
-      # Fallback: if OIDC ever misconfigures, the maintainer can push manually
-      # with the NUGET_API_KEY secret. Comment out the step above and use this.
-      # - name: push (fallback with API key)
-      #   if: github.event_name == 'push' && inputs.dry_run != true
-      #   env:
-      #     NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      #   run: |
-      #     dotnet nuget push "${{ runner.temp }}/packages/*.nupkg" \
-      #       --source https://api.nuget.org/v3/index.json \
-      #       --api-key "$NUGET_API_KEY" \
-      #       --skip-duplicate
-
-      - name: push symbols
-        if: github.event_name == 'push' && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true)
-        run: |
-          set -euo pipefail
-          dotnet nuget push "${{ runner.temp }}/packages/*.snupkg" \
-            --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate \
-            --timeout 600
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --skip-duplicate
+          if ls "$pack_out"/*.snupkg >/dev/null 2>&1; then
+            dotnet nuget push "$pack_out/*.snupkg" \
+              --source https://api.nuget.org/v3/index.json \
+              --api-key "${{ secrets.NUGET_API_KEY }}" \
+              --skip-duplicate
+          fi
 
       - name: dry-run summary
-        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         run: |
-          echo "Dry run — packages built and packed but NOT pushed:"
-          ls -la "${{ runner.temp }}/packages"
+          echo "Dry run — packages packed but NOT pushed:"
+          ls -la "${RUNNER_TEMP}/packages"
