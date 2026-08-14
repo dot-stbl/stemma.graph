@@ -88,6 +88,38 @@ you can test and version, while the parent stays a readable high-level loop.
 Child interrupts surface as parent `NodeResult.Interrupt` — HITL doesn’t invent
 a second protocol at the boundary.
 
+### Nested HITL and checkpoint namespaces
+
+Child runs use a **stable nested thread id** so parent resume continues the same
+child checkpoint (not a fresh START). Default:
+
+```text
+{parentThreadId}/{nodeName}   // e.g. order-9/reviewer
+```
+
+`GraphContext.ThreadId` carries the parent run id into the factory. Override with
+`threadIdFactory` for multi-agent nests (per-tool, per-tenant, …):
+
+```csharp
+.AddNode("reviewer", Subgraph.AsNode(
+    reviewerGraph,
+    inputChannels: ["messages"],
+    outputChannels: ["decision"],
+    threadIdFactory: ctx => $"{ctx.ThreadId}/agent/{ctx.NodeName}"))
+```
+
+Lifecycle:
+
+1. Parent invoke hits the subgraph node → child `InvokeAsync` on nested thread.
+2. Child interrupts → parent node returns `Interrupt` → parent checkpoint keeps
+   `NextNodes = [subgraph node]`; child stays `Interrupted` on its thread.
+3. Host `ResumeInvokeAsync(parentThread, Command.Approve(...))` re-enters the
+   subgraph node → child `ResumeInvokeAsync` with the same nested thread id.
+4. Child completes → outputs map into parent channels → parent continues.
+
+Share one `ICheckpointer` (or compatible store) across parent and child compiles
+so nested keys resolve on resume.
+
 ## Practical shape
 
 ```text
