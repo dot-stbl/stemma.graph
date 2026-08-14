@@ -47,11 +47,11 @@ Resume MUST fail with a stable machine code when the command kind is missing, un
 
 #### Scenario: Unknown kind
 - **WHEN** resume is called with kind not in `{approve, reject, update}` (including empty/null)
-- **THEN** the API fails with code `hitl.invalid_command` and the thread remains interrupted
+- **THEN** the API fails with code `command.invalid_kind` and the thread remains interrupted
 
 #### Scenario: Update without values
 - **WHEN** resume is called with kind `update` and empty or missing `Values`
-- **THEN** the API fails with code `hitl.invalid_command`
+- **THEN** the API fails with code `command.invalid_payload`
 
 ### Requirement: Reject resume when not interrupted
 Resume MUST fail clearly when the thread is not in interrupted status (or has no checkpoint).

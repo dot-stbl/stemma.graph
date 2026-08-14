@@ -101,16 +101,26 @@ public sealed class VolutaEventIdsShould
         VolutaErrorCodes.All.ShouldContain(exception.Code);
     }
 
-    [Fact(DisplayName = "Given hitl.invalid_command, when GetEventId is called, then returns unknown fallback")]
-    public void InvalidCommandCodeUsesFallbackUntilCataloged()
+    [Fact(DisplayName = "Given command.invalid_kind, when GetEventId is called, then returns catalog EventId")]
+    public void ResolveEventIdForCommandInvalidKind()
     {
-        var exception = new GraphInvalidCommandException("bad kind");
+        var exception = new GraphInvalidCommandException(VolutaErrorCodes.CommandInvalidKind, "bad kind");
 
         var eventId = VolutaExceptionLogging.GetEventId(exception);
 
-        exception.Code.ShouldBe("hitl.invalid_command");
-        eventId.Id.ShouldBe(2999);
-        eventId.Name.ShouldBe("hitl.invalid_command");
+        eventId.ShouldBe(VolutaEventIds.CommandInvalidKind);
+        eventId.Name.ShouldBe(VolutaErrorCodes.CommandInvalidKind);
+    }
+
+    [Fact(DisplayName = "Given command.invalid_payload, when GetEventId is called, then returns catalog EventId")]
+    public void ResolveEventIdForCommandInvalidPayload()
+    {
+        var exception = new GraphInvalidCommandException(VolutaErrorCodes.CommandInvalidPayload, "missing values");
+
+        var eventId = VolutaExceptionLogging.GetEventId(exception);
+
+        eventId.ShouldBe(VolutaEventIds.CommandInvalidPayload);
+        eventId.Name.ShouldBe(VolutaErrorCodes.CommandInvalidPayload);
     }
 
     public static TheoryData<GraphException, EventId> GraphExceptionCases =>
@@ -151,6 +161,14 @@ public sealed class VolutaEventIdsShould
             {
                 new GraphCompileException(VolutaErrorCodes.GraphMissingStart, "no start"),
                 VolutaEventIds.GraphMissingStart
+            },
+            {
+                new GraphInvalidCommandException(VolutaErrorCodes.CommandInvalidKind, "bad kind"),
+                VolutaEventIds.CommandInvalidKind
+            },
+            {
+                new GraphInvalidCommandException(VolutaErrorCodes.CommandInvalidPayload, "bad payload"),
+                VolutaEventIds.CommandInvalidPayload
             },
         };
 }

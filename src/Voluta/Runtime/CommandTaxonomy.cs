@@ -1,3 +1,4 @@
+using Voluta.Abstractions.Diagnostics;
 using Voluta.Abstractions.Runtime;
 using Voluta.Exceptions.Run;
 
@@ -18,12 +19,14 @@ public static class CommandTaxonomy
         if (command.Kind is not { Length: > 0 } kind)
         {
             throw new GraphInvalidCommandException(
+                VolutaErrorCodes.CommandInvalidKind,
                 "Resume command Kind is required. Use Command.Approve(), Command.Reject(), or Command.Update(...).");
         }
 
         if (!Command.IsKnownKind(kind))
         {
             throw new GraphInvalidCommandException(
+                VolutaErrorCodes.CommandInvalidKind,
                 $"Unknown resume command kind '{kind}'. Expected one of: {Command.Kinds.Approve}, {Command.Kinds.Reject}, {Command.Kinds.Update}.");
         }
 
@@ -31,6 +34,7 @@ public static class CommandTaxonomy
             && command.Values is not { Count: > 0 })
         {
             throw new GraphInvalidCommandException(
+                VolutaErrorCodes.CommandInvalidPayload,
                 "Resume command kind 'update' requires non-empty Values (channel writes).");
         }
     }

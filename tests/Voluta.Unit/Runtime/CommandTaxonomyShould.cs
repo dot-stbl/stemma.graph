@@ -1,5 +1,6 @@
 using Shouldly;
 using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Diagnostics;
 using Voluta.Abstractions.Results;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
@@ -49,7 +50,7 @@ public sealed class CommandTaxonomyShould
         Command.IsKnownKind(kind).ShouldBeTrue();
     }
 
-    [Theory(DisplayName = "Given unknown or empty Kind, when EnsureValid is called, then throws hitl.invalid_command")]
+    [Theory(DisplayName = "Given unknown or empty Kind, when EnsureValid is called, then throws command.invalid_kind")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
@@ -62,21 +63,21 @@ public sealed class CommandTaxonomyShould
 
         var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
 
-        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Code.ShouldBe(VolutaErrorCodes.CommandInvalidKind);
     }
 
-    [Fact(DisplayName = "Given update without Values, when EnsureValid is called, then throws hitl.invalid_command")]
+    [Fact(DisplayName = "Given update without Values, when EnsureValid is called, then throws command.invalid_payload")]
     public void RejectUpdateWithoutValues()
     {
         var command = new Command { Kind = Command.Kinds.Update };
 
         var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
 
-        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Code.ShouldBe(VolutaErrorCodes.CommandInvalidPayload);
         exception.Message.ShouldContain("update");
     }
 
-    [Fact(DisplayName = "Given update with empty Values, when EnsureValid is called, then throws hitl.invalid_command")]
+    [Fact(DisplayName = "Given update with empty Values, when EnsureValid is called, then throws command.invalid_payload")]
     public void RejectUpdateWithEmptyValues()
     {
         var command = new Command
@@ -87,7 +88,7 @@ public sealed class CommandTaxonomyShould
 
         var exception = Should.Throw<GraphInvalidCommandException>(() => CommandTaxonomy.EnsureValid(command));
 
-        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Code.ShouldBe(VolutaErrorCodes.CommandInvalidPayload);
     }
 
     [Fact(DisplayName = "Given interrupted thread, when Resume with Approve factory, then continues to End")]
@@ -167,7 +168,7 @@ public sealed class CommandTaxonomyShould
         messages.ShouldContain("decision=go");
     }
 
-    [Fact(DisplayName = "Given interrupted thread, when Resume with unknown Kind, then throws hitl.invalid_command")]
+    [Fact(DisplayName = "Given interrupted thread, when Resume with unknown Kind, then throws command.invalid_kind")]
     public async Task ResumeUnknownKindFails()
     {
         var checkpointer = new InMemoryCheckpointer();
@@ -184,12 +185,12 @@ public sealed class CommandTaxonomyShould
             await graph.ResumeInvokeAsync("tax-bad", new Command { Kind = "continue", Payload = "x" });
         });
 
-        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Code.ShouldBe(VolutaErrorCodes.CommandInvalidKind);
         var stillInterrupted = await checkpointer.GetAsync("tax-bad");
         stillInterrupted!.Status.ShouldBe(GraphRunStatus.Interrupted);
     }
 
-    [Fact(DisplayName = "Given interrupted thread, when Resume with update and no Values, then throws hitl.invalid_command")]
+    [Fact(DisplayName = "Given interrupted thread, when Resume with update and no Values, then throws command.invalid_payload")]
     public async Task ResumeUpdateWithoutValuesFails()
     {
         var checkpointer = new InMemoryCheckpointer();
@@ -208,7 +209,7 @@ public sealed class CommandTaxonomyShould
                 new Command { Kind = Command.Kinds.Update, Payload = "x" });
         });
 
-        exception.Code.ShouldBe("hitl.invalid_command");
+        exception.Code.ShouldBe(VolutaErrorCodes.CommandInvalidPayload);
     }
 
     [Fact(DisplayName = "Given Approve with null payload, when EnsureValid is called, then succeeds")]

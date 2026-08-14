@@ -1,3 +1,5 @@
+using Voluta.Abstractions.Diagnostics;
+
 namespace Voluta.Exceptions.Run;
 
 /// <summary>
@@ -5,10 +7,13 @@ namespace Voluta.Exceptions.Run;
 ///     (unknown kind, empty kind, or kind-specific payload/values rules).
 /// </summary>
 /// <remarks>
-///     Initializes an invalid-command failure. Stable code: <c>hitl.invalid_command</c>.
+///     Initializes an invalid-command failure. Stable codes:
+///     <see cref="VolutaErrorCodes.CommandInvalidKind"/> or
+///     <see cref="VolutaErrorCodes.CommandInvalidPayload"/>.
 /// </remarks>
+/// <param name="code">Stable error code from the command catalog.</param>
 /// <param name="message">Safe human-readable description (no PII/secrets).</param>
-public sealed class GraphInvalidCommandException(string message)
-    : GraphException("hitl.invalid_command", message)
+public sealed class GraphInvalidCommandException(string code, string message)
+    : GraphException(code, message)
 {
 }

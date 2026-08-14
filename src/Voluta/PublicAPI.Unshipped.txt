@@ -53,5 +53,5 @@ Voluta.Diagnostics.VolutaDiagnostics
 Voluta.Diagnostics.VolutaEventIds
 Voluta.Diagnostics.VolutaExceptionLogging
 Voluta.Exceptions.Run.GraphInvalidCommandException
-Voluta.Exceptions.Run.GraphInvalidCommandException.GraphInvalidCommandException(string! message) -> void
+Voluta.Exceptions.Run.GraphInvalidCommandException.GraphInvalidCommandException(string! code, string! message) -> void
 Voluta.Runtime.CommandTaxonomy
