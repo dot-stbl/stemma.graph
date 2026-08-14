@@ -57,15 +57,26 @@ jobs:
           pack_out="${RUNNER_TEMP}/packages"
           mkdir -p "$pack_out"
           for proj in $(find src -name "*.csproj" -not -path "*/samples/*" -not -path "*/tests/*"); do
+            name="$(basename "$proj" .csproj)"
             echo "packing $proj"
-            dotnet pack "$proj" -c Release \
-              --no-build \
-              --include-symbols \
-              --include-source \
-              -p:SymbolPackageFormat=snupkg \
-              --output "$pack_out"
+            # Generators is an analyzer package: pack must run Build so TargetPath exists
+            # (IncludeBuildOutput=false + static None Include → empty nupkg / NU5017).
+            if [ "$name" = "Voluta.Generators" ]; then
+              dotnet pack "$proj" -c Release \
+                -p:IncludeSymbols=false \
+                --output "$pack_out"
+            else
+              dotnet pack "$proj" -c Release \
+                --no-build \
+                --include-symbols \
+                --include-source \
+                -p:SymbolPackageFormat=snupkg \
+                --output "$pack_out"
+            fi
           done
           ls -la "$pack_out"
+          # Do not push non-packable / test helpers if any slipped in
+          test -f "$pack_out/Voluta.0.1.0.nupkg"
 
       - name: push to nuget.org
         if: github.event_name == 'push'
