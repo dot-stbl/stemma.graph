@@ -285,13 +285,34 @@ on-disk / in-DB / S3 objects). Unsupported future versions throw
 Wire constant is **duplicated** per provider (`CheckpointWireFormat.Version`) —
 no shared package, keeps checkpoint package isolation. Writes always stamp
 version 1 (domain `CheckpointSnapshot.FormatVersion` is not trusted as wire
-schema). InMemory stays process-local (no JSON wire). Polymorphic channel-value
-serde remains best-effort (open).
+schema). InMemory stays process-local (no JSON wire).
+
+### D-030 — Checkpoint wire v1 value allow-list (fail-loud)
+
+**Decision (2026-08-14):** Durable providers (File / EF / S3) enforce a
+**conservative allow-list** for channel values, pending write/send payloads, and
+interrupt payloads at Put (before serialize). Unsupported types throw
+`CheckpointStoreException` with code **`checkpoint.unsupported_value_type`**
+rather than silently losing data across restart.
+
+| Allowed (v1) | Rejected examples |
+|--------------|-------------------|
+| `null`, string, bool, char, numeric primitives | Custom domain POCOs / records without host registration |
+| `Guid`, `DateTime` / `DateTimeOffset` / `DateOnly` / `TimeOnly` / `TimeSpan` | `Stream`, delegates, `Type`, open polymorphic graphs |
+| `JsonElement`, `byte[]` | Non-string dictionary keys |
+| Lists/arrays of allowed values (depth ≤ 8) | Nesting deeper than 8 |
+| String-key dictionaries of allowed values | |
+
+Rules are **duplicated** per provider package (same isolation as D-029).
+`JsonSerializerOptions.Web` only — no project-level options singletons.
+**InMemory** remains process-local and does **not** enforce the allow-list
+(any CLR reference may be held within one process). Host-owned
+`JsonSerializerContext` / custom DTO registration is deferred (optional later).
 
 ## Open questions (remaining)
 
 1. **Command taxonomy** — approve / reject / update-state / opaque payload shapes.
-2. **Checkpoint serde** — polymorphic channel values (File/EF/S3 best-effort JSON); wire versioning closed in D-029.
+2. **Checkpoint serde** — wire versioning D-029 + value allow-list D-030 closed for v1; host pluggable converters still open.
 3. **Token-level LLM streaming** — graph stream mode vs node-local (Agents.AI).
 4. **Docs site** engine/hosting/domain.
 5. **InMemory** re-export from Testing? Prefer core only; Testing wraps.

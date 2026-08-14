@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Diagnostics;
+using Voluta.Checkpoints.EntityFrameworkCore.Wire;
 
 namespace Voluta.Checkpoints.EntityFrameworkCore;
 
@@ -13,6 +14,8 @@ namespace Voluta.Checkpoints.EntityFrameworkCore;
 /// <remarks>
 ///     Host registration: <c>v.Checkpoints.UseEntityFrameworkCore&lt;TContext&gt;()</c>.
 ///     Direct construction is internal for conformance / unit tests only.
+///     Channel values must be wire-format v1 allow-listed shapes; unsupported types fail Put with
+///     <c>checkpoint.unsupported_value_type</c>.
 /// </remarks>
 public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
     where TContext : DbContext, IVolutaCheckpointDbContext
@@ -31,6 +34,9 @@ public sealed class EntityFrameworkCoreCheckpointer<TContext> : ICheckpointer
     /// <inheritdoc />
     public async Task PutAsync(CheckpointSnapshot snapshot, CancellationToken cancellationToken = default)
     {
+        // Validate wire v1 allow-list before EF conversion so CheckpointStoreException is not wrapped.
+        _ = EfCheckpointDocument.FromSnapshot(snapshot);
+
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);

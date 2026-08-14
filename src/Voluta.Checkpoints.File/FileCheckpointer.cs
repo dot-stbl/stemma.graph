@@ -12,8 +12,9 @@ namespace Voluta.Checkpoints.File;
 ///     Host registration: <c>v.Checkpoints.UseFile(rootDirectory)</c> (or
 ///     <c>AddVolutaCheckpoints(c =&gt; c.UseFile(...))</c>). Direct construction is
 ///     internal for conformance / unit tests only.
-///     Values are serialized with System.Text.Json; prefer JSON-friendly types
-///     (strings, numbers, lists of primitives). Complex CLR graphs may not roundtrip.
+    ///     Channel values must be wire-format v1 allow-listed shapes (primitives, string,
+    ///     lists/dictionaries of those, JsonElement). Unsupported types fail Put with
+    ///     <c>checkpoint.unsupported_value_type</c>.
 /// </remarks>
 public sealed class FileCheckpointer : ICheckpointer
 {

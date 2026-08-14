@@ -461,8 +461,10 @@ EF value conversion — the checkpointer itself does not call `JsonSerializer`.
 - **Storage failures** → `CheckpointStoreException` with stable `Code`
   (`checkpoint.put_failed` / `get_failed` / `list_failed`). Graph logic still uses
   `GraphException` and friends.
-- **Channel values** should be JSON-friendly (strings, numbers, lists of primitives). Complex
-  CLR graphs may not round-trip — same wire limits for File, EF, and S3.
+- **Channel values (wire format v1)** on File / EF / S3: allow-list only — `null`, primitives,
+  string, `Guid`, date/time, `JsonElement`, `byte[]`, lists and string-key dictionaries of those
+  (depth ≤ 8). Unsupported types fail Put with `checkpoint.unsupported_value_type` (no silent
+  loss). **InMemory** is process-local and does not enforce the allow-list.
 - **S3 keys:** `{prefix}/{safeThreadId}/{step:D12}.json`.
 
 Every provider is exercised by `CheckpointerConformance.RunAllAsync` in `Voluta.Testing`

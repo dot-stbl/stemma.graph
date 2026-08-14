@@ -92,6 +92,21 @@ File, EF Core, and S3 checkpoint payloads MUST include an explicit wire format v
 - **WHEN** a durable provider reads a document with format version greater than the supported version
 - **THEN** the operation fails with a checkpoint store error identifying unsupported format version
 
+### Requirement: Wire format v1 value allow-list on durable providers
+File, EF Core, and S3 MUST reject channel values, pending write/send payloads, and interrupt payloads that are not in the wire format v1 allow-list at Put time, with stable code `checkpoint.unsupported_value_type`. Silent partial round-trip of arbitrary CLR graphs is forbidden.
+
+Allow-listed shapes: `null`, string, bool, char, numeric primitives, `Guid`, date/time primitives (`DateTime`, `DateTimeOffset`, `DateOnly`, `TimeOnly`, `TimeSpan`), `JsonElement`, `byte[]`, lists/arrays of allow-listed values, and string-key dictionaries of allow-listed values (max nesting depth 8).
+
+InMemory is process-local and MAY store arbitrary CLR references without JSON allow-list enforcement.
+
+#### Scenario: Allow-listed values put successfully
+- **WHEN** a durable provider puts a checkpoint whose values are only allow-listed shapes
+- **THEN** Put succeeds and Get returns a snapshot with those channel keys present
+
+#### Scenario: Unsupported CLR type rejected
+- **WHEN** a durable provider puts a checkpoint containing a custom domain type (or Stream) as a channel value
+- **THEN** Put fails with `CheckpointStoreException` code `checkpoint.unsupported_value_type` and does not persist the snapshot
+
 ### Requirement: Host construction via Use builders
 Product documentation and DI fluent builders MUST treat File, EF Core, and S3 checkpointers as configured through the checkpoint builder (`UseFile` / `UseEntityFrameworkCore` / `UseS3`), not as the primary public construction path for hosts. Provider types may remain resolvable for advanced hosts, but public constructors of File/EF/S3 checkpointers MUST NOT be part of the supported host surface (internal or equivalent).
 

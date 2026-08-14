@@ -15,7 +15,8 @@ namespace Voluta.Checkpoints.S3;
 ///     Key layout: <c>{prefix}/{safeThreadId}/{step:D12}.json</c>.
 ///     Host registration: <c>v.Checkpoints.UseS3(configure)</c>.
 ///     Direct construction is internal for conformance / unit tests only.
-///     Values use System.Text.Json; prefer JSON-friendly types (strings, numbers, lists of primitives).
+    ///     Channel values must be wire-format v1 allow-listed shapes; unsupported types fail Put with
+    ///     <c>checkpoint.unsupported_value_type</c>.
 /// </remarks>
 public sealed class S3Checkpointer : ICheckpointer
 {
