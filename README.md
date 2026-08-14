@@ -706,6 +706,18 @@ Metrics: `voluta.superstep.duration`, `voluta.node.duration` (ms), `voluta.inter
 `voluta.checkpoint.*.count`. Tags: `node.name`, `run.status`, `error.type`, `provider.name`
 (no raw thread ids).
 
+
+<details>
+<summary><strong>Production hardening (Continue / multi-HITL / stream)</strong></summary>
+
+- **Continue** with `PendingSends`: schedules incomplete push tasks only — does not re-pull `NextNodes` (avoids double side effects after a completed map+Send).
+- **Multi-interrupt**: `Command.Resumes` may be a **partial** map; remaining `PendingInterrupts` stay Interrupted until covered. Unknown task ids fail `command.invalid_payload`.
+- **Live Custom/Messages**: bounded buffer (capacity 256); overflow drops and increments `voluta.stream.dropped` (`stream.kind` tag). Order is best-effort per node.
+
+See OpenSpec `checkpoint` / `hitl-interrupt` / `streaming` and issue #63.
+
+</details>
+
 ## Samples
 
 | Sample | What it shows |

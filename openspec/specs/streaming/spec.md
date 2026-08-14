@@ -52,3 +52,10 @@ A non-streaming invoke API MUST complete a run to terminal status (done, interru
 #### Scenario: Invoke until interrupt
 - **WHEN** invoke runs a graph that hits an interrupt
 - **THEN** invoke returns interrupted status with payload rather than hanging for resume
+
+### Requirement: Bounded live stream backpressure
+Live Custom/Messages delivery uses a bounded buffer. When full, further node writes MAY be dropped and MUST increment metric `voluta.stream.dropped` (tag `stream.kind`). Order is best-effort within a node; global order across parallel nodes is not guaranteed.
+
+#### Scenario: Flood drops with metric
+- **WHEN** a node emits more live custom events than the buffer capacity during a superstep
+- **THEN** the run still reaches a terminal event and dropped count increases

@@ -41,12 +41,14 @@ public static class CommandTaxonomy
     }
 
     /// <summary>
-    ///     When multiple interrupts are pending, <see cref="Command.Resumes"/> must cover every task id.
+    ///     When multiple interrupts are pending, <see cref="Command.Resumes"/> is required.
+    ///     Progressive (partial) maps are allowed: every key must be a known pending task id;
+    ///     keys may be a proper subset (remaining interrupts stay pending).
     ///     Single-interrupt threads may use <see cref="Command.Payload"/> alone.
     /// </summary>
     /// <param name="command">Resume command from the host.</param>
     /// <param name="pendingInterrupts">Pending interrupts from the interrupted checkpoint.</param>
-    /// <exception cref="GraphInvalidCommandException">When multi-interrupt map is incomplete.</exception>
+    /// <exception cref="GraphInvalidCommandException">When multi-interrupt map is missing or has unknown ids.</exception>
     public static void EnsureMultiInterruptResumes(
         Command command,
         IReadOnlyList<PendingInterrupt> pendingInterrupts)
@@ -60,16 +62,19 @@ public static class CommandTaxonomy
         {
             throw new GraphInvalidCommandException(
                 VolutaErrorCodes.CommandInvalidPayload,
-                "Multiple pending interrupts require Command.Resumes (map of task id → payload).");
+                "Multiple pending interrupts require Command.Resumes (map of task id → payload). Partial maps are allowed.");
         }
 
-        foreach (var pending in pendingInterrupts)
+        var knownIds = new HashSet<string>(
+            pendingInterrupts.Select(static item => item.TaskId),
+            StringComparer.Ordinal);
+        foreach (var taskId in resumes.Keys)
         {
-            if (!resumes.ContainsKey(pending.TaskId))
+            if (!knownIds.Contains(taskId))
             {
                 throw new GraphInvalidCommandException(
                     VolutaErrorCodes.CommandInvalidPayload,
-                    $"Resume map is missing task id '{pending.TaskId}' (node '{pending.NodeName}').");
+                    $"Resume map contains unknown task id '{taskId}'.");
             }
         }
     }

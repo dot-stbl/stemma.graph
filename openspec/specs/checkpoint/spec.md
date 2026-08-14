@@ -171,3 +171,10 @@ Product documentation and DI fluent builders MUST treat File, EF Core, and S3 ch
 #### Scenario: InMemory remains newable
 - **WHEN** a sample or test constructs the InMemory checkpointer with `new`
 - **THEN** compile and runtime succeed without DI
+
+### Requirement: Incomplete-only Continue ready set
+When `ContinueAsync` loads a Running checkpoint that has non-empty `PendingSends`, the runtime MUST schedule those push tasks and MUST NOT re-drive `NextNodes` as fresh pull tasks in the same continue entry. This avoids re-executing side-effect nodes that already completed and only scheduled Sends. When `PendingSends` is empty, Continue MAY pull from `NextNodes` (fork/update of a pull barrier).
+
+#### Scenario: Continue pending sends skips map re-pull
+- **WHEN** a Running checkpoint has PendingSends for workers and NextNodes still lists a completed map node
+- **THEN** Continue runs workers only and does not re-invoke the map node
