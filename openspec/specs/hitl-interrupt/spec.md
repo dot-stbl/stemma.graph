@@ -59,3 +59,14 @@ Resume MUST fail clearly when the thread is not in interrupted status (or has no
 #### Scenario: Resume on running/done thread
 - **WHEN** resume is called for a thread whose status is done
 - **THEN** the API returns a distinct error and does not mutate checkpoints incorrectly
+
+### Requirement: Multiple pending interrupts (parallel ready / Send)
+When more than one ready task in a superstep returns an interrupt result, the runtime MUST collect every interrupt into a stable `PendingInterrupts` list on the checkpoint (task id, node name, interrupt payload, optional Send task payload). `InterruptPayload` remains the first pending payload for single-path compatibility. Resume MUST accept a map of task id → payload (`Command.Resumes`) covering every pending interrupt; single-interrupt threads MAY keep using `Command.Payload` alone. Partial superstep continues MUST NOT be applied until all pending interrupts for that barrier resume.
+
+#### Scenario: Two parallel Send workers both interrupt
+- **WHEN** a map node fans out two Send tasks to a worker and both workers return interrupt
+- **THEN** the checkpoint status is interrupted, `PendingInterrupts` has two entries with stable task ids, and resume with `Command.Approve(resumesMap)` re-runs both workers with their mapped payloads and reaches done
+
+#### Scenario: Multi-interrupt without Resumes map
+- **WHEN** two or more interrupts are pending and the host resumes with only a single `Payload` (no `Resumes` map)
+- **THEN** the API fails with code `command.invalid_payload` and the thread remains interrupted

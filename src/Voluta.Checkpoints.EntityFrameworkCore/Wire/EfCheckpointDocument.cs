@@ -27,6 +27,8 @@ internal sealed class EfCheckpointDocument
 
     public List<EfPendingSendDocument> PendingSends { get; set; } = [];
 
+    public List<EfPendingInterruptDocument> PendingInterrupts { get; set; } = [];
+
     public string? LastNode { get; set; }
 
     public List<string> NextNodes { get; set; } = [];
@@ -66,6 +68,16 @@ internal sealed class EfCheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = EfCheckpointJson.ToElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. snapshot.PendingInterrupts.Select(static item => new EfPendingInterruptDocument
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = EfCheckpointJson.ToElement(item.Payload),
+                    TaskPayload = EfCheckpointJson.ToElement(item.TaskPayload),
                 })
             ],
             LastNode = snapshot.LastNode,
@@ -115,6 +127,16 @@ internal sealed class EfCheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = EfCheckpointJson.FromElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. PendingInterrupts.Select(static item => new PendingInterrupt
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = EfCheckpointJson.FromElement(item.Payload),
+                    TaskPayload = EfCheckpointJson.FromElement(item.TaskPayload),
                 })
             ],
             LastNode = LastNode,

@@ -27,6 +27,8 @@ internal sealed class FileCheckpointDocument
 
     public List<FilePendingSendDocument> PendingSends { get; set; } = [];
 
+    public List<FilePendingInterruptDocument> PendingInterrupts { get; set; } = [];
+
     public string? LastNode { get; set; }
 
     public List<string> NextNodes { get; set; } = [];
@@ -66,6 +68,16 @@ internal sealed class FileCheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = FileCheckpointJson.ToElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. snapshot.PendingInterrupts.Select(static item => new FilePendingInterruptDocument
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = FileCheckpointJson.ToElement(item.Payload),
+                    TaskPayload = FileCheckpointJson.ToElement(item.TaskPayload),
                 })
             ],
             LastNode = snapshot.LastNode,
@@ -115,6 +127,16 @@ internal sealed class FileCheckpointDocument
                     NodeName = send.NodeName,
                     TaskId = send.TaskId,
                     Payload = FileCheckpointJson.FromElement(send.Payload),
+                })
+            ],
+            PendingInterrupts =
+            [
+                .. PendingInterrupts.Select(static item => new PendingInterrupt
+                {
+                    TaskId = item.TaskId,
+                    NodeName = item.NodeName,
+                    Payload = FileCheckpointJson.FromElement(item.Payload),
+                    TaskPayload = FileCheckpointJson.FromElement(item.TaskPayload),
                 })
             ],
             LastNode = LastNode,

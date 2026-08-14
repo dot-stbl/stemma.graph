@@ -181,7 +181,8 @@ file static class InMemoryCheckpointClone
             PendingSends = [.. snapshot.PendingSends],
             LastNode = snapshot.LastNode,
             NextNodes = [.. snapshot.NextNodes],
-            InterruptPayload = snapshot.InterruptPayload
+            InterruptPayload = snapshot.InterruptPayload,
+            PendingInterrupts = [.. snapshot.PendingInterrupts],
         };
     }
 }

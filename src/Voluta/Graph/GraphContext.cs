@@ -12,13 +12,15 @@ namespace Voluta.Graph;
 /// <param name="taskPayload">Send/PUSH task payload when this invocation was scheduled via Send.</param>
 /// <param name="services">Optional host <see cref="IServiceProvider" /> (from <see cref="Options.CompileOptions.Services" />).</param>
 /// <param name="threadId">Parent run thread id (for nested checkpoint namespaces).</param>
+/// <param name="taskId">Stable task id (node name for pull tasks; Send task id for PUSH).</param>
 public sealed class GraphContext(
     string nodeName,
     IReadOnlyDictionary<string, object?> channelValues,
     object? resumePayload = null,
     object? taskPayload = null,
     IServiceProvider? services = null,
-    string? threadId = null)
+    string? threadId = null,
+    string? taskId = null)
 {
     private readonly IReadOnlyDictionary<string, object?> channelValues = channelValues;
 
@@ -26,6 +28,11 @@ public sealed class GraphContext(
     ///     Name of the node currently executing.
     /// </summary>
     public string NodeName { get; } = nodeName;
+
+    /// <summary>
+    ///     Stable task id for this invocation (defaults to <see cref="NodeName" /> when omitted).
+    /// </summary>
+    public string TaskId { get; } = taskId is { Length: > 0 } ? taskId : nodeName;
 
     /// <summary>
     ///     Resume command payload when this invocation is a resume of an interrupted node.

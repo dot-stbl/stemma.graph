@@ -17,7 +17,7 @@ internal static class RunEngineExecution
         GraphTopology topology,
         IReadOnlyList<ReadyTask> orderedReady,
         IReadOnlyDictionary<string, object?> snapshot,
-        object? resumePayload,
+        IReadOnlyDictionary<string, object?>? resumeByTaskId,
         string threadId,
         CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ internal static class RunEngineExecution
                     topology,
                     orderedReady[0],
                     snapshot,
-                    resumePayload,
+                    RunEngineExecutionHelpers.ResolveResumePayload(resumeByTaskId, orderedReady[0].TaskId),
                     threadId,
                     cancellationToken);
                 return new ReadyExecutionOutcome { Executions = [single] };
@@ -39,11 +39,12 @@ internal static class RunEngineExecution
             var tasks = new Task<NodeExecution>[orderedReady.Count];
             for (var index = 0; index < orderedReady.Count; index++)
             {
+                var readyTask = orderedReady[index];
                 tasks[index] = RunEngineExecutionHelpers.ExecuteOneAsync(
                     topology,
-                    orderedReady[index],
+                    readyTask,
                     snapshot,
-                    resumePayload,
+                    RunEngineExecutionHelpers.ResolveResumePayload(resumeByTaskId, readyTask.TaskId),
                     threadId,
                     cancellationToken);
             }
@@ -135,6 +136,15 @@ internal static class RunEngineExecution
 /// </summary>
 file static class RunEngineExecutionHelpers
 {
+    public static object? ResolveResumePayload(
+        IReadOnlyDictionary<string, object?>? resumeByTaskId,
+        string taskId)
+    {
+        return resumeByTaskId is not null && resumeByTaskId.TryGetValue(taskId, out var payload)
+            ? payload
+            : null;
+    }
+
     public static async Task<NodeExecution> ExecuteOneAsync(
         GraphTopology topology,
         ReadyTask readyTask,
@@ -160,7 +170,8 @@ file static class RunEngineExecutionHelpers
             resumePayload,
             readyTask.TaskPayload,
             topology.Services,
-            threadId);
+            threadId,
+            readyTask.TaskId);
         try
         {
             var result = await handler(context, cancellationToken);

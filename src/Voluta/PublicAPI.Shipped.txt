@@ -44,7 +44,6 @@ Voluta.Graph.CompiledGraph.ResumeInvokeAsync(string! threadId, Voluta.Abstractio
 Voluta.Graph.CompiledGraph.StreamAsync(System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! input, Voluta.Abstractions.Runtime.RunOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Voluta.Abstractions.Streaming.StreamEvent!>!
 Voluta.Graph.GraphContext
 Voluta.Graph.GraphContext.GetRequiredService<T>() -> T
-
 Voluta.Graph.GraphContext.NodeName.get -> string!
 Voluta.Graph.GraphContext.Read<T>(string! channelName) -> T?
 Voluta.Graph.GraphContext.ResumePayload.get -> object?

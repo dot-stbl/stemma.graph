@@ -4,8 +4,9 @@ namespace Voluta.Abstractions.Runtime;
 
 /// <summary>
 ///     Resume input for an interrupted thread.
-///     Prefer factories <see cref="Approve"/> / <see cref="Reject"/> / <see cref="Update(System.Collections.Generic.IReadOnlyDictionary{string, object?}, object?)"/>
-///     over free-form <see cref="Kind"/> strings; known kinds are
+///     Prefer factories <c>Approve</c> / <c>Reject</c> / <c>Update</c> (and multi-interrupt
+///     <c>ApproveResumes</c> / <c>RejectResumes</c> / <c>UpdateResumes</c>) over free-form
+///     <see cref="Kind"/> strings; known kinds are
 ///     <see cref="Kinds.Approve"/>, <see cref="Kinds.Reject"/>, <see cref="Kinds.Update"/>.
 /// </summary>
 public sealed class Command
@@ -45,6 +46,13 @@ public sealed class Command
     public IReadOnlyDictionary<string, object?>? Values { get; init; }
 
     /// <summary>
+    ///     Per-task resume payloads keyed by interrupt/task id (multi-interrupt).
+    ///     When set, each pending interrupt is resumed with the mapped payload.
+    ///     Single-interrupt hosts may keep using <see cref="Payload" /> alone.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?>? Resumes { get; init; }
+
+    /// <summary>
     ///     Builds an approve resume command.
     /// </summary>
     /// <param name="payload">Optional payload visible to the interrupted node on resume.</param>
@@ -58,6 +66,38 @@ public sealed class Command
         {
             Kind = Kinds.Approve,
             Payload = payload,
+            Values = values,
+        };
+    }
+
+    /// <summary>
+    ///     Builds an approve resume that injects a payload per pending interrupt/task id.
+    /// </summary>
+    /// <param name="resumes">Map of task id → resume payload (must cover every pending interrupt).</param>
+    /// <returns>A command with <see cref="Kinds.Approve"/> and <see cref="Resumes"/>.</returns>
+    public static Command ApproveResumes(IReadOnlyDictionary<string, object?> resumes)
+    {
+        return new Command
+        {
+            Kind = Kinds.Approve,
+            Resumes = resumes,
+        };
+    }
+
+    /// <summary>
+    ///     Builds an approve resume with per-task payloads and channel merges.
+    /// </summary>
+    /// <param name="resumes">Map of task id → resume payload.</param>
+    /// <param name="values">Channel merges applied before interrupted tasks re-run.</param>
+    /// <returns>A command with <see cref="Kinds.Approve"/> and <see cref="Resumes"/>.</returns>
+    public static Command ApproveResumes(
+        IReadOnlyDictionary<string, object?> resumes,
+        IReadOnlyDictionary<string, object?> values)
+    {
+        return new Command
+        {
+            Kind = Kinds.Approve,
+            Resumes = resumes,
             Values = values,
         };
     }
@@ -77,6 +117,38 @@ public sealed class Command
         {
             Kind = Kinds.Reject,
             Payload = reason,
+            Values = values,
+        };
+    }
+
+    /// <summary>
+    ///     Builds a reject resume that injects a reason per pending interrupt/task id.
+    /// </summary>
+    /// <param name="resumes">Map of task id → reject reason/payload.</param>
+    /// <returns>A command with <see cref="Kinds.Reject"/> and <see cref="Resumes"/>.</returns>
+    public static Command RejectResumes(IReadOnlyDictionary<string, object?> resumes)
+    {
+        return new Command
+        {
+            Kind = Kinds.Reject,
+            Resumes = resumes,
+        };
+    }
+
+    /// <summary>
+    ///     Builds a reject resume with per-task reasons and channel merges.
+    /// </summary>
+    /// <param name="resumes">Map of task id → reject reason/payload.</param>
+    /// <param name="values">Channel merges applied before interrupted tasks re-run.</param>
+    /// <returns>A command with <see cref="Kinds.Reject"/> and <see cref="Resumes"/>.</returns>
+    public static Command RejectResumes(
+        IReadOnlyDictionary<string, object?> resumes,
+        IReadOnlyDictionary<string, object?> values)
+    {
+        return new Command
+        {
+            Kind = Kinds.Reject,
+            Resumes = resumes,
             Values = values,
         };
     }
@@ -131,6 +203,24 @@ public sealed class Command
     public static Command Update(IEnumerable<ChannelWrite> writes, object? payload)
     {
         return CreateUpdate(ToValueMap(writes), payload);
+    }
+
+    /// <summary>
+    ///     Builds an update resume with per-task resume payloads (multi-interrupt).
+    /// </summary>
+    /// <param name="values">Non-empty channel map to apply before resume.</param>
+    /// <param name="resumes">Map of task id → resume payload for each pending interrupt.</param>
+    /// <returns>A command with <see cref="Kinds.Update"/> and <see cref="Resumes"/>.</returns>
+    public static Command UpdateResumes(
+        IReadOnlyDictionary<string, object?> values,
+        IReadOnlyDictionary<string, object?> resumes)
+    {
+        return new Command
+        {
+            Kind = Kinds.Update,
+            Values = values,
+            Resumes = resumes,
+        };
     }
 
     private static Command CreateUpdate(
