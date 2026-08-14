@@ -48,5 +48,6 @@
     <Project Path="tests/Voluta.Checkpoints.File.Unit/Voluta.Checkpoints.File.Unit.csproj" />
     <Project Path="tests/Voluta.Checkpoints.EntityFrameworkCore.Unit/Voluta.Checkpoints.EntityFrameworkCore.Unit.csproj" />
     <Project Path="tests/Voluta.Checkpoints.S3.Unit/Voluta.Checkpoints.S3.Unit.csproj" />
+    <Project Path="tests/Voluta.Architecture.Unit/Voluta.Architecture.Unit.csproj" />
   </Folder>
 </Solution>

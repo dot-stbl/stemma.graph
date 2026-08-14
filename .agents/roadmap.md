@@ -21,7 +21,7 @@
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
 | PublicAPI owner review | 📝 decision draft — [docs/public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) (381 unshipped lines / 8 pkgs; P0 markers + P1 EF config → internal) |
 | NuGet 0.1 tag | ❌ owner OK on review → optional hygiene PR → tag `v0.1.0` + publish |
-| Arch tests (package isolation) | ❌ later |
+| Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
 
 ## Shipped package map
 
@@ -41,9 +41,9 @@
 ## Ближайшие шаги
 
 1. **Owner OK** on [public-api-review-v0.1.md](./docs/public-api-review-v0.1.md) → optional P0/P1 internals → tag **`v0.1.0`** + nuget.org publish
-2. Architecture tests: Abstractions isolation, core ↛ UI/EF
-3. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
-4. Docs site (D-011)
+2. UI polish: multi-thread discovery, richer inspector (SSE shipped — D-025 / #14)
+3. Docs site (D-011)
+4. OpenSpec main specs sync (graph DI / Agents.AI / wire format) — gap after post-MVP code
 
 ## Не в планах
 

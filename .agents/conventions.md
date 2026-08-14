@@ -37,8 +37,8 @@ IDE/CA-правила выполнены. Точка. Никаких «CI пой
 ## Что НЕ покрыто автоматически
 
 - Именование параметров (camelCase, без сокращений) — code review.
-- Архитектурные границы (Domain ← Application ← Infrastructure) —
-  добавим NetArchTest проект, когда появится ≥2 модуля.
+- Архитектурные границы пакетов — `tests/Voluta.Architecture.Unit`
+  (csproj ProjectReference graph + NetArchTest type deps).
 - Какие решения приняты и почему — [`decisions.md`](./decisions.md).
 - Куда движемся — [`roadmap.md`](./roadmap.md).
 
