@@ -1,1 +1,10 @@
 #nullable enable
+static Voluta.DependencyInjection.ServiceCollectionExtensions.AddVolutaStore(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Voluta.DependencyInjection.Store.VolutaStoreBuilder!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Voluta.DependencyInjection.Store.VolutaStoreBuilderExtensions.UseInMemory(this Voluta.DependencyInjection.Store.VolutaStoreBuilder! builder) -> Voluta.DependencyInjection.Store.VolutaStoreBuilder!
+Voluta.DependencyInjection.Store.VolutaStoreBuilder
+Voluta.DependencyInjection.Store.VolutaStoreBuilder.IsProviderConfigured.get -> bool
+Voluta.DependencyInjection.Store.VolutaStoreBuilder.MarkProviderConfigured() -> void
+Voluta.DependencyInjection.Store.VolutaStoreBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Voluta.DependencyInjection.Store.VolutaStoreBuilder.VolutaStoreBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Voluta.DependencyInjection.Store.VolutaStoreBuilderExtensions
+Voluta.DependencyInjection.VolutaBuilder.Store.get -> Voluta.DependencyInjection.Store.VolutaStoreBuilder!

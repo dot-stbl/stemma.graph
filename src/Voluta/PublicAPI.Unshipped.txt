@@ -81,3 +81,10 @@ Voluta.Graph.GraphContext.TaskId.get -> string!
 Voluta.Graph.GraphContext.ThreadId.get -> string?
 static Voluta.Runtime.CommandTaxonomy.EnsureMultiInterruptResumes(Voluta.Abstractions.Runtime.Command! command, System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.PendingInterrupt!>! pendingInterrupts) -> void
 
+
+Voluta.Store.InMemoryVolutaStore
+Voluta.Store.InMemoryVolutaStore.DeleteAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Store.InMemoryVolutaStore.GetAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Store.StoreItem?>!
+Voluta.Store.InMemoryVolutaStore.InMemoryVolutaStore(System.TimeProvider? timeProvider = null) -> void
+Voluta.Store.InMemoryVolutaStore.ListAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Store.StoreItem!>!>!
+Voluta.Store.InMemoryVolutaStore.PutAsync(System.Collections.Generic.IReadOnlyList<string!>! namespace, string! key, object? value, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
