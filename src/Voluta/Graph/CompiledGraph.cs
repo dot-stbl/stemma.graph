@@ -4,6 +4,7 @@ using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
 using Voluta.Abstractions.Topology;
 using Voluta.Runtime.Engine;
+using Voluta.Runtime.Engine.Support;
 
 namespace Voluta.Graph;
 
@@ -183,6 +184,97 @@ public sealed class CompiledGraph
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Applies channel writes to the latest checkpoint and puts a new history step.
+    ///     Uses channel reducers (LastValue / Append). Failed/Cancelled become Running
+    ///     so <see cref="ContinueAsync" /> can re-drive; Interrupted stays Interrupted
+    ///     (resume via <see cref="ResumeInvokeAsync" />); Done stays Done.
+    /// </summary>
+    /// <param name="threadId">Thread identifier.</param>
+    /// <param name="writes">Channel writes to merge.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Host-facing snapshot after the edit.</returns>
+    /// <exception cref="Exceptions.Run.GraphThreadNotFoundException">Thread never checkpointed.</exception>
+    public Task<ThreadSnapshot> UpdateStateAsync(
+        string threadId,
+        IEnumerable<ChannelWrite> writes,
+        CancellationToken cancellationToken = default)
+    {
+        return string.IsNullOrWhiteSpace(threadId)
+            ? throw new ArgumentException("Thread id is required.", nameof(threadId))
+            : CheckpointStateMutation.UpdateStateAsync(
+                topology,
+                checkpointer,
+                threadId,
+                writes,
+                cancellationToken);
+    }
+
+    /// <summary>
+    ///     Copies the checkpoint at <paramref name="step" /> from
+    ///     <paramref name="sourceThreadId" /> onto <paramref name="newThreadId" />,
+    ///     keeping the same step index as the fork root.
+    ///     Source thread is unchanged. Requires list-capable checkpointer.
+    /// </summary>
+    /// <param name="sourceThreadId">Thread to copy from.</param>
+    /// <param name="step">History step to copy.</param>
+    /// <param name="newThreadId">Destination thread id (must be unused or append history).</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Host-facing snapshot on the new thread.</returns>
+    /// <exception cref="Exceptions.Run.GraphThreadNotFoundException">Source has no history.</exception>
+    /// <exception cref="Exceptions.Run.GraphStepNotFoundException">Step missing on source.</exception>
+    public Task<ThreadSnapshot> ForkAsync(
+        string sourceThreadId,
+        long step,
+        string newThreadId,
+        CancellationToken cancellationToken = default)
+    {
+        return string.IsNullOrWhiteSpace(sourceThreadId)
+            ? throw new ArgumentException("Source thread id is required.", nameof(sourceThreadId))
+            : string.IsNullOrWhiteSpace(newThreadId)
+                ? throw new ArgumentException("New thread id is required.", nameof(newThreadId))
+                : CheckpointStateMutation.ForkAsync(
+                    checkpointer,
+                    sourceThreadId,
+                    step,
+                    newThreadId,
+                    cancellationToken);
+    }
+
+    /// <summary>
+    ///     Continues a Running thread from the latest checkpoint (after update or fork).
+    ///     For Interrupted use <see cref="ResumeInvokeAsync" />. Nodes in NextNodes re-execute —
+    ///     side effects may run again; make node work idempotent when continuing after edit.
+    /// </summary>
+    /// <param name="threadId">Thread identifier.</param>
+    /// <param name="streamMode">Observation mode.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Async sequence continuing the run.</returns>
+    public IAsyncEnumerable<StreamEvent> ContinueAsync(
+        string threadId,
+        StreamMode streamMode = StreamMode.Updates,
+        CancellationToken cancellationToken = default)
+    {
+        return string.IsNullOrWhiteSpace(threadId)
+            ? throw new ArgumentException("Thread id is required.", nameof(threadId))
+            : new RunEngine(topology, checkpointer).ContinueAsync(threadId, streamMode, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Drains <see cref="ContinueAsync" /> to the next terminal event.
+    /// </summary>
+    /// <param name="threadId">Thread identifier.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <returns>Final stream event after continue.</returns>
+    public async Task<StreamEvent> ContinueInvokeAsync(
+        string threadId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DrainToTerminalAsync(
+            ContinueAsync(threadId, StreamMode.Updates, cancellationToken),
+            StreamMode.Updates);
     }
 
     private static async Task<StreamEvent> DrainToTerminalAsync(

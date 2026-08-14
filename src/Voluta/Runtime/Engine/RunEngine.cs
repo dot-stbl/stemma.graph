@@ -143,6 +143,198 @@ internal sealed class RunEngine(GraphTopology topology, ICheckpointer checkpoint
         }
     }
 
+    /// <summary>
+    ///     Continues a Running thread from the latest checkpoint (after UpdateState / Fork).
+    ///     Does not re-inject HITL resume payload; use <see cref="ResumeAsync" /> for Interrupted.
+    ///     Side-effect risk: nodes in NextNodes re-execute — hosts must make nodes idempotent.
+    /// </summary>
+    public async IAsyncEnumerable<StreamEvent> ContinueAsync(
+        string threadId,
+        StreamMode streamMode,
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken = default)
+    {
+        var checkpoint = await checkpointer.GetAsync(threadId, cancellationToken)
+                         ?? throw new GraphThreadNotFoundException(
+                             $"No checkpoint found for thread '{threadId}'.");
+        if (checkpoint.Status != GraphRunStatus.Running)
+        {
+            throw new GraphInvalidContinueException(
+                $"Thread '{threadId}' is not Running (status={checkpoint.Status}); " +
+                "use ResumeAsync for Interrupted or UpdateStateAsync after Failed/Cancelled.");
+        }
+
+        var store = new ChannelStore(topology.Channels);
+        store.Restore(checkpoint.ChannelValues, checkpoint.ChannelVersions, checkpoint.VersionsSeen);
+
+        var nextNodes = checkpoint.NextNodes;
+        if (nextNodes.Count == 0 && checkpoint.PendingSends.Count == 0)
+        {
+            throw new GraphInvalidContinueException(
+                $"Thread '{threadId}' has no next nodes or pending sends to continue.");
+        }
+
+        var options = new RunOptions { ThreadId = threadId, StreamMode = streamMode };
+
+        if (streamMode == StreamMode.Events)
+        {
+            yield return new StreamEvent
+            {
+                Mode = StreamMode.Events,
+                Kind = StreamEventKind.Start,
+                Step = checkpoint.Step
+            };
+        }
+
+        // Prefer pull next-nodes; pending sends merge in the first superstep via checkpoint.PendingSends.
+        if (checkpoint.PendingSends.Count > 0)
+        {
+            await foreach (var item in ContinueWithPendingSendsAsync(
+                               options,
+                               store,
+                               nextNodes,
+                               checkpoint,
+                               cancellationToken))
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        await foreach (var item in RunLoopAsync(
+                           options,
+                           store,
+                           nextNodes,
+                           checkpoint.Step,
+                           checkpoint.LastNode,
+                           resumePayload: null,
+                           cancellationToken))
+        {
+            yield return item;
+        }
+    }
+
+    private async IAsyncEnumerable<StreamEvent> ContinueWithPendingSendsAsync(
+        RunOptions options,
+        ChannelStore store,
+        IReadOnlyList<string> nextNodes,
+        CheckpointSnapshot checkpoint,
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken)
+    {
+        var pull = RunEngineRouting.ToPullTasks(topology, nextNodes);
+        var ready = new List<ReadyTask>(pull.Count + checkpoint.PendingSends.Count);
+        ready.AddRange(pull);
+        foreach (var send in checkpoint.PendingSends)
+        {
+            ready.Add(new ReadyTask(send.NodeName, send.TaskId, send.Payload));
+        }
+
+        ready.Sort(static (left, right) =>
+        {
+            var nodeCompare = string.CompareOrdinal(left.NodeName, right.NodeName);
+            return nodeCompare != 0
+                ? nodeCompare
+                : string.CompareOrdinal(left.TaskId, right.TaskId);
+        });
+
+        var readyTasks = (IReadOnlyList<ReadyTask>)ready;
+        var step = checkpoint.Step;
+        var lastNode = checkpoint.LastNode;
+        var streamMode = options.StreamMode;
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (readyTasks.Count == 0)
+            {
+                await checkpointer.PutAsync(
+                    RunEngineSnapshots.Build(
+                        options.ThreadId,
+                        step,
+                        GraphRunStatus.Done,
+                        store,
+                        lastNode,
+                        [],
+                        [],
+                        interruptPayload: null),
+                    cancellationToken);
+
+                yield return RunEngineStreaming.Terminal(
+                    streamMode,
+                    StreamEventKind.End,
+                    step,
+                    store);
+                yield break;
+            }
+
+            step++;
+            if (step > topology.RecursionLimit)
+            {
+                var outOfSteps = new GraphOutOfStepsException(topology.RecursionLimit, step);
+                var failedNodeNames = RunEngineLoopHelpers.DistinctNodeNames(readyTasks);
+                await checkpointer.PutAsync(
+                    RunEngineSnapshots.Build(
+                        options.ThreadId,
+                        step,
+                        GraphRunStatus.Failed,
+                        store,
+                        lastNode,
+                        failedNodeNames,
+                        [],
+                        null),
+                    cancellationToken);
+
+                yield return RunEngineStreaming.Terminal(
+                    streamMode,
+                    StreamEventKind.Failed,
+                    step,
+                    store,
+                    outOfSteps);
+                throw outOfSteps;
+            }
+
+            SuperstepCommit commit;
+            using (var superstep = ActivityScope.Start(
+                       VolutaDiagnostics.SuperstepActivityName,
+                       VolutaDiagnostics.SuperstepDuration))
+            {
+                commit = await RunEngineLoopHelpers.ExecuteSuperstepAsync(
+                    topology,
+                    checkpointer,
+                    options,
+                    store,
+                    readyTasks,
+                    step,
+                    lastNode,
+                    payloadForStep: null,
+                    superstep,
+                    cancellationToken);
+            }
+
+            lastNode = commit.LastNode;
+            readyTasks = commit.ReadyTasks;
+
+            if (commit.TerminalEvent is { } terminal)
+            {
+                yield return terminal;
+                if (commit.Exception is not null)
+                {
+                    throw commit.Exception;
+                }
+
+                yield break;
+            }
+
+            foreach (var streamItem in commit.StreamItems)
+            {
+                yield return streamItem;
+            }
+        }
+    }
+
     private async IAsyncEnumerable<StreamEvent> RunLoopAsync(
         RunOptions options,
         ChannelStore store,

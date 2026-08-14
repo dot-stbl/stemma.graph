@@ -30,11 +30,14 @@ static readonly Voluta.Diagnostics.VolutaEventIds.GraphDuplicateNode -> Microsof
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidChannel -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidEdge -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidNode -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidContinue -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphInvalidResume -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphMissingStart -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphNoNodes -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphOutOfSteps -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphRunFailed -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphStepNotFound -> Microsoft.Extensions.Logging.EventId
+static readonly Voluta.Diagnostics.VolutaEventIds.GraphThreadNotFound -> Microsoft.Extensions.Logging.EventId
 static readonly Voluta.Diagnostics.VolutaEventIds.GraphUnknownEndpoint -> Microsoft.Extensions.Logging.EventId
 static Voluta.Diagnostics.VolutaDiagnostics.ActivitySource.get -> System.Diagnostics.ActivitySource!
 static Voluta.Diagnostics.VolutaDiagnostics.CheckpointGetCount.get -> System.Diagnostics.Metrics.Counter<long>!
@@ -54,10 +57,20 @@ Voluta.Diagnostics.VolutaEventIds
 Voluta.Diagnostics.VolutaExceptionLogging
 Voluta.Exceptions.Run.GraphInvalidCommandException
 Voluta.Exceptions.Run.GraphInvalidCommandException.GraphInvalidCommandException(string! code, string! message) -> void
+Voluta.Exceptions.Run.GraphInvalidContinueException
+Voluta.Exceptions.Run.GraphInvalidContinueException.GraphInvalidContinueException(string! message) -> void
+Voluta.Exceptions.Run.GraphStepNotFoundException
+Voluta.Exceptions.Run.GraphStepNotFoundException.GraphStepNotFoundException(string! message) -> void
+Voluta.Exceptions.Run.GraphThreadNotFoundException
+Voluta.Exceptions.Run.GraphThreadNotFoundException.GraphThreadNotFoundException(string! message) -> void
 Voluta.Runtime.CommandTaxonomy
 
 Voluta.Checkpoint.InMemoryCheckpointer.ListThreadIdsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Voluta.Graph.CompiledGraph.ContinueAsync(string! threadId, Voluta.Abstractions.Streaming.StreamMode streamMode = Voluta.Abstractions.Streaming.StreamMode.Updates, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Voluta.Abstractions.Streaming.StreamEvent!>!
+Voluta.Graph.CompiledGraph.ContinueInvokeAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Streaming.StreamEvent!>!
+Voluta.Graph.CompiledGraph.ForkAsync(string! sourceThreadId, long step, string! newThreadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!
 Voluta.Graph.CompiledGraph.GetHistoryAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!>!
 Voluta.Graph.CompiledGraph.GetStateAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot?>!
+Voluta.Graph.CompiledGraph.UpdateStateAsync(string! threadId, System.Collections.Generic.IEnumerable<Voluta.Abstractions.Channels.ChannelWrite!>! writes, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.ThreadSnapshot!>!
 Voluta.Graph.GraphContext.ThreadId.get -> string?
 Voluta.Graph.GraphContext.GraphContext(string! nodeName, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! channelValues, object? resumePayload = null, object? taskPayload = null, System.IServiceProvider? services = null, string? threadId = null) -> void

@@ -150,6 +150,31 @@ Ops UI: `GET /voluta/api/threads/{id}/history` lists steps; inspector shows them
 </details>
 
 <details>
+<summary><strong>Update state / fork / continue</strong></summary>
+
+Ops and support workflows can edit channel values and branch threads without re-invoking from scratch:
+
+```csharp
+// patch latest checkpoint (Append / LastValue reducers apply)
+var patched = await graph.UpdateStateAsync(
+    "order-9",
+    [new ChannelWrite("messages", "ops-note")]);
+
+// branch a new thread from history step N (same step index on the new thread)
+var fork = await graph.ForkAsync(sourceThreadId: "order-9", step: 2, newThreadId: "order-9-retry");
+
+// re-drive a Running thread after update/fork (not for Interrupted — use Resume*)
+// WARNING: nodes in NextNodes re-execute; make side effects idempotent
+var terminal = await graph.ContinueInvokeAsync("order-9-retry");
+```
+
+- **Interrupted** → still use `ResumeAsync` / `ResumeInvokeAsync` (optionally after `UpdateStateAsync`).
+- **Done** → `UpdateStateAsync` may still patch values; `Continue*` throws `graph.invalid_continue`.
+- **Failed/Cancelled** → update promotes status to Running so continue can re-drive last NextNodes.
+
+</details>
+
+<details>
 <summary><strong>Typed state with <code>[GraphState]</code> (source generator)</strong></summary>
 
 String channel names work. When you want compile-time names and updates that only write what you
