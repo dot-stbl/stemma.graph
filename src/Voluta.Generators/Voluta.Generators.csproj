@@ -35,13 +35,17 @@
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
   </ItemGroup>
 
-  <!--
-    Analyzer DLL must be added after Build so TargetPath exists.
-    Evaluating $(OutputPath) at project load yields an empty nupkg (NU5017).
-  -->
-  <Target Name="AddAnalyzerToPackage" BeforeTargets="_GetPackageFiles" DependsOnTargets="Build">
+  <!-- Analyzer DLL into nupkg. Avoid DependsOnTargets Build (breaks no-build pack smoke). -->
+  <Target Name="AddAnalyzerToPackage" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <_AnalyzerDll Condition="'$(TargetPath)' != '' and Exists('$(TargetPath)')">$(TargetPath)</_AnalyzerDll>
+      <_AnalyzerDll Condition="'$(_AnalyzerDll)' == '' and Exists('$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll')">$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll</_AnalyzerDll>
+    </PropertyGroup>
+    <Error
+      Condition="'$(_AnalyzerDll)' == ''"
+      Text="Voluta.Generators: analyzer DLL not found for pack. Build the project before packing." />
     <ItemGroup>
-      <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+      <None Include="$(_AnalyzerDll)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
   </Target>
 
