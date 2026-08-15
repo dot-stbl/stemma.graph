@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
+using Voluta.Exceptions;
 using Voluta.UI.Sse;
 
 namespace Voluta.UI;
@@ -80,6 +81,10 @@ public static class VolutaUiEndpointRouteBuilderExtensions
             $"{prefix}/app.js",
             () => Results.Content(VolutaUiAssets.AppJs, "text/javascript; charset=utf-8"));
 
+        // Studio SPA (Vite → wwwroot/studio). Legacy shell stays at {prefix}.
+        // SPA dist optional: missing assets → 503 HTML, host still starts.
+        VolutaUiStudioRoutes.Map(endpoints, prefix);
+
         endpoints.MapGet(
             $"{prefix}/api/topology",
             (VolutaUiSession session) =>
@@ -133,9 +138,26 @@ public static class VolutaUiEndpointRouteBuilderExtensions
                 VolutaUiSession session,
                 CancellationToken cancellationToken) =>
             {
-                var command = VolutaUiResumeCommand.Resolve(body?.Kind, body?.Payload);
-                var terminal = await session.ResumeAsync(threadId, command, cancellationToken);
-                return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
+                try
+                {
+                    var command = VolutaUiResumeCommand.Resolve(body?.Kind, body?.Payload);
+                    var terminal = await session.ResumeAsync(threadId, command, cancellationToken);
+                    return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
+                }
+                catch (GraphException exception) when (GraphExceptionResponse.StatusFor(exception) is { } status)
+                {
+                    return Results.Json(
+                        new { error = exception.Message, code = exception.Code },
+                        JsonSerializerOptions.Web,
+                        statusCode: status);
+                }
+                catch (ArgumentException exception)
+                {
+                    return Results.Json(
+                        new { error = exception.Message, code = "ui.invalid_command" },
+                        JsonSerializerOptions.Web,
+                        statusCode: StatusCodes.Status400BadRequest);
+                }
             });
 
         endpoints.MapGet(
@@ -170,6 +192,49 @@ file static class VolutaUiRouteHelpers
         return string.IsNullOrEmpty(prefix)
             ? "/voluta"
             : prefix.StartsWith('/') ? prefix : "/" + prefix;
+    }
+}
+
+/// <summary>
+///     Studio SPA routes under <c>{prefix}/studio</c> (embedded wwwroot/studio).
+/// </summary>
+file static class VolutaUiStudioRoutes
+{
+    public static void Map(IEndpointRouteBuilder endpoints, string prefix)
+    {
+        // Single catch-all route: {**assetPath} also matches empty (i.e. {prefix}/studio),
+        // so exact /studio and /studio/ routes would be ambiguous matches in .NET 10.
+        endpoints.MapGet(
+            $"{prefix}/studio/{{**assetPath}}",
+            (string? assetPath) => StudioAsset(prefix, assetPath));
+    }
+
+    private static IResult StudioIndex(string prefix)
+    {
+        return VolutaStudioAssets.RenderIndexHtml(prefix) is { } html
+            ? Results.Content(html, "text/html; charset=utf-8")
+            : Results.Content(
+                VolutaStudioAssets.RenderUnavailableHtml(prefix),
+                "text/html; charset=utf-8",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    private static IResult StudioAsset(string prefix, string? assetPath)
+    {
+        // Client-side routes (no file extension) fall back to SPA index when built.
+        return string.IsNullOrEmpty(assetPath)
+            || assetPath.Equals("index.html", StringComparison.OrdinalIgnoreCase)
+            ? StudioIndex(prefix)
+            : VolutaStudioAssets.TryReadBytes(assetPath, out var bytes, out var contentType)
+                ? Results.Bytes(bytes, contentType)
+                : Path.HasExtension(assetPath)
+                    ? Results.NotFound()
+                    : VolutaStudioAssets.IsAvailable
+                        ? StudioIndex(prefix)
+                        : Results.Content(
+                            VolutaStudioAssets.RenderUnavailableHtml(prefix),
+                            "text/html; charset=utf-8",
+                            statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
 

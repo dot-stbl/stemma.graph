@@ -4,7 +4,8 @@
 // Run:
 //   dotnet run --project samples/UiHost
 // Open:
-//   http://localhost:5188/voluta
+//   http://localhost:5188/voluta       (legacy shell)
+//   http://localhost:5188/api/v1/*     (versioned Studio HTTP/SSE API)
 
 using Voluta;
 using Voluta.Abstractions.Channels;
@@ -16,6 +17,7 @@ using Voluta.Graph;
 using Voluta.Graph.Builder;
 using Voluta.Graph.Options;
 using Voluta.UI;
+using Voluta.UI.Studio;
 
 var checkpointer = new InMemoryCheckpointer();
 var graph = new StateGraph()
@@ -50,15 +52,23 @@ var session = new VolutaUiSession(graph, checkpointer);
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddVolutaUI(session);
 
+// Studio API v1: bind the StudioApi section (PathPrefix, ApiKey). Both optional —
+// with no section the API mounts at /api/v1 with key auth off.
+var studioApiOptions = new StudioApiOptions();
+builder.Configuration.GetSection(StudioApiOptions.SectionName).Bind(studioApiOptions);
+
 var app = builder.Build();
 app.MapGet("/", static () => Results.Redirect("/voluta"));
 app.MapVolutaUI(static options => options.PathPrefix = "/voluta");
+app.MapStudioApi(studioApiOptions);
 
 await SeedDemoThreadsAsync(session, app.Logger);
 
 app.Logger.LogInformation(
-    "Voluta UI host ready. Open {Url} — threads: payment-hitl, deploy-hitl, research-done, audit-blocked",
-    "http://localhost:5188/voluta");
+    "Voluta UI host ready. UI: {UiUrl}, Studio API: {StudioApiUrl} (key auth {KeyAuth}) — threads: payment-hitl, deploy-hitl, research-done, audit-blocked",
+    "http://localhost:5188/voluta",
+    "http://localhost:5188/api/v1",
+    string.IsNullOrEmpty(studioApiOptions.ApiKey) ? "off" : "on");
 
 await app.RunAsync();
 

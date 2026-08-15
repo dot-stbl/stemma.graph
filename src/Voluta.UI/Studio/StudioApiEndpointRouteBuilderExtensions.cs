@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
+using Voluta.Exceptions;
 using Voluta.UI.Sse;
 
 namespace Voluta.UI.Studio;
@@ -116,14 +117,31 @@ public static class StudioApiEndpointRouteBuilderExtensions
                         JsonSerializerOptions.Web,
                         statusCode: StatusCodes.Status400BadRequest);
                 }
+                catch (GraphException exception) when (GraphExceptionResponse.StatusFor(exception) is { } status)
+                {
+                    return Results.Json(
+                        new { error = exception.Message, code = exception.Code },
+                        JsonSerializerOptions.Web,
+                        statusCode: status);
+                }
             });
 
         group.MapPost(
             "/threads/{threadId}/continue",
             async (string threadId, VolutaUiSession session, CancellationToken cancellationToken) =>
             {
-                var terminal = await session.ContinueAsync(threadId, cancellationToken);
-                return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
+                try
+                {
+                    var terminal = await session.ContinueAsync(threadId, cancellationToken);
+                    return Results.Json(VolutaUiJson.ToWireTerminal(terminal), JsonSerializerOptions.Web);
+                }
+                catch (GraphException exception) when (GraphExceptionResponse.StatusFor(exception) is { } status)
+                {
+                    return Results.Json(
+                        new { error = exception.Message, code = exception.Code },
+                        JsonSerializerOptions.Web,
+                        statusCode: status);
+                }
             });
 
         group.MapPost(
