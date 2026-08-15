@@ -132,6 +132,34 @@ public sealed class StudioApiRoutesShould
         body.ShouldContain("studio.invalid_command");
     }
 
+    [Fact(DisplayName = "Given done thread, when POST resume, then 409 not interrupted")]
+    public async Task ResumeDoneThreadReturns409()
+    {
+        var session = await CreateSeededSessionAsync();
+        using var api = await StudioApiTestHost.StartAsync(session);
+
+        var response = await api.Client.PostAsync(
+            "/api/v1/threads/work-1/resume",
+            JsonContent("""{ "kind": "approve" }"""));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ShouldContain("graph.invalid_resume");
+    }
+
+    [Fact(DisplayName = "Given done thread, when POST continue, then 409 not runnable")]
+    public async Task ContinueDoneThreadReturns409()
+    {
+        var session = await CreateSeededSessionAsync();
+        using var api = await StudioApiTestHost.StartAsync(session);
+
+        var response = await api.Client.PostAsync("/api/v1/threads/work-1/continue", content: null);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ShouldContain("graph.");
+    }
+
     [Fact(DisplayName = "Given forked Running thread, when POST continue, then reaches End")]
     public async Task ContinueRunningThreadReachesEnd()
     {
