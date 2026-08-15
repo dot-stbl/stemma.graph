@@ -18,7 +18,7 @@
         <NoWarn>$(NoWarn);CS1591</NoWarn>
 
         <!-- OSS metadata — applied to every produced package. -->
-        <Version>0.2.0</Version>
+        <Version>0.3.0</Version>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Authors>Voluta contributors</Authors>
         <PackageProjectUrl>https://github.com/dot-stbl/voluta</PackageProjectUrl>
@@ -75,14 +75,12 @@
                         or '$(MSBuildProjectName)' == 'Voluta.Abstractions'
                         or '$(MSBuildProjectName)' == 'Voluta.DependencyInjection'
                         or '$(MSBuildProjectName)' == 'Voluta.OpenTelemetry'
-                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
-                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
-                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
-                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Sqlite'
-                         or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Postgres'
-                         or '$(MSBuildProjectName)' == 'Voluta.Agents.AI'
-                         or '$(MSBuildProjectName)' == 'Voluta.Tools'
-                         or '$(MSBuildProjectName)' == 'Voluta.UI')">
+                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.File'
+                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.EntityFrameworkCore'
+                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.S3'
+                          or '$(MSBuildProjectName)' == 'Voluta.Checkpoints.Redis'
+                          or '$(MSBuildProjectName)' == 'Voluta.Agents.AI'
+                          or '$(MSBuildProjectName)' == 'Voluta.UI')">
         <VolutaEnablePublicApi>true</VolutaEnablePublicApi>
     </PropertyGroup>
 

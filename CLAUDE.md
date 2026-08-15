@@ -29,7 +29,7 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 
 **Two tiers (D-022):**
 - **AOT core:** `Voluta` + Abstractions + DependencyInjection (`IsAotCompatible`); smoke `samples/AotSmoke`
-- **Full .NET / ASP.NET:** Checkpoints.File / Sqlite / EF / S3, UI, Agents.AI, Testing, Generators — regular CLR, not AOT-claimed
+- **Full .NET / ASP.NET:** Checkpoints.File / EF / S3 / Redis, UI, Agents.AI, Testing, Generators — regular CLR, not AOT-claimed
 
 ## Tech stack
 
@@ -47,34 +47,28 @@ Roadmap: [`.agents/roadmap.md`](.agents/roadmap.md).
 ```
 voluta/
 ├── src/
-│   ├── Voluta.Abstractions/            ← contracts (zero package deps)
-│   ├── Voluta/                         ← runtime + InMemory + Subgraph
-│   ├── Voluta.DependencyInjection/     ← AddVoluta
-│   ├── Voluta.Testing/                 ← doubles + conformance
-│   ├── Voluta.Generators/              ← [GraphState] source-gen
-│   ├── Voluta.Checkpoints.File/        ← UseFile
-│   ├── Voluta.Checkpoints.Sqlite/      ← UseSqlite
-│   ├── Voluta.Checkpoints.EntityFrameworkCore/ ← UseEntityFrameworkCore<T>
-│   ├── Voluta.Checkpoints.S3/          ← UseS3
-│   ├── Voluta.Checkpoints.Postgres/    ← UsePostgres
-│   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
-│   ├── Voluta.UI/                      ← Studio SPA (spa/) + MapVolutaUI + MapStudioApi (/api/v1)
-│   ├── Voluta.Hosting/                 ← IThreadWakeBus + GraphWorkerService presets
-│   ├── Voluta.Tools/                   ← tool nodes + light MCP HTTP client
-│   └── Voluta.OpenTelemetry/           ← AddVolutaInstrumentation
+│   ├── core/           ← Abstractions · Voluta · DependencyInjection
+│   ├── checkpoints/    ← File · EntityFrameworkCore · S3 · Redis
+│   ├── hosting/        ← Hosting · OpenTelemetry
+│   ├── ops/            ← Voluta.UI (Studio SPA + MapStudioApi)
+│   ├── agents/         ← Voluta.Agents.AI
+│   └── devtools/       ← Testing · Generators
 ├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost · StudioHost · WorkerHost
 ├── templates/   ← Voluta.Templates (dotnet new voluta-agent)
 ├── benchmarks/  ← Voluta.Benchmarks
 ├── tests/
+│   ├── unit/           ← package unit tests
+│   │   └── checkpoints/
+│   └── integration/
 ├── openspec/
 │   ├── specs/   ← main capability specs (canonical)
 │   └── changes/archive/…
 └── voluta.slnx
 ```
 
-**Studio SPA dev** (только при правке `src/Voluta.UI/spa/`):
+**Studio SPA dev** (только при правке `src/ops/Voluta.UI/spa/`):
 ```bash
-cd src/Voluta.UI/spa
+cd src/ops/Voluta.UI/spa
 bun install && bun run dev      # :3847, proxy /voluta → :5188
 bun run typecheck && bun run lint && bun run test && bun run build  # FE gates
 ```

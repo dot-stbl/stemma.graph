@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <Description>
+      Ops console for Voluta as a Razor Class Library: run inspector, HITL queue,
+      topology, and SSE live stream (MapVolutaUI).
+    </Description>
+    <PackageTags>$(PackageTags);ui;inspector;hitl;sse;razor</PackageTags>
+    <RootNamespace>Voluta.UI</RootNamespace>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <StaticWebAssetBasePath>_content/$(MSBuildProjectName)</StaticWebAssetBasePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\core\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\core\Voluta.Abstractions\Voluta.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Voluta.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot\**\*" />
+  </ItemGroup>
+
+  <!-- brand.png is binary; served as raw bytes, not via string asset reader -->
+
+</Project>

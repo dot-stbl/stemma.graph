@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\core\Voluta\Voluta.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
   </ItemGroup>
 

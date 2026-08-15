@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
-    <ProjectReference Include="..\..\src\Voluta.UI\Voluta.UI.csproj" />
+    <ProjectReference Include="..\..\src\core\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\ops\Voluta.UI\Voluta.UI.csproj" />
   </ItemGroup>
 
 </Project>
