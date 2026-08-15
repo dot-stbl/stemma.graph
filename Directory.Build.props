@@ -30,10 +30,15 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
 
-        <!-- Package icons: i1 = core runtime, i4 = checkpoint providers, i5 = everything else. -->
-        <VolutaPackageIconPath>$(MSBuildThisFileDirectory)assets\icon-i5.png</VolutaPackageIconPath>
-        <VolutaPackageIconPath Condition="'$(MSBuildProjectName)' == 'Voluta'">$(MSBuildThisFileDirectory)assets\icon-i1.png</VolutaPackageIconPath>
-        <VolutaPackageIconPath Condition="$([System.String]::Copy('$(MSBuildProjectName)').Contains('Checkpoints'))">$(MSBuildThisFileDirectory)assets\icon-i4.png</VolutaPackageIconPath>
+        <!-- Package icons: i5 = core, i3 = rare/specialized, i8 = ordinary (default). -->
+        <VolutaPackageIconPath>$(MSBuildThisFileDirectory)assets\icon-i8.png</VolutaPackageIconPath>
+        <VolutaPackageIconPath Condition="'$(MSBuildProjectName)' == 'Voluta'
+                                          or '$(MSBuildProjectName)' == 'Voluta.Abstractions'
+                                          or '$(MSBuildProjectName)' == 'Voluta.DependencyInjection'">$(MSBuildThisFileDirectory)assets\icon-i5.png</VolutaPackageIconPath>
+        <VolutaPackageIconPath Condition="'$(MSBuildProjectName)' == 'Voluta.Checkpoints.Redis'
+                                          or '$(MSBuildProjectName)' == 'Voluta.Generators'
+                                          or '$(MSBuildProjectName)' == 'Voluta.Templates'
+                                          or '$(MSBuildProjectName)' == 'Voluta.OpenTelemetry'">$(MSBuildThisFileDirectory)assets\icon-i3.png</VolutaPackageIconPath>
         <PackageIcon>$([System.IO.Path]::GetFileName('$(VolutaPackageIconPath)'))</PackageIcon>
 
         <!-- Globally suppressed warnings (with documented reason) -->
