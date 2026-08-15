@@ -58,15 +58,25 @@ voluta/
 │   ├── Voluta.Checkpoints.S3/          ← UseS3
 │   ├── Voluta.Checkpoints.Postgres/    ← UsePostgres
 │   ├── Voluta.Agents.AI/               ← MAF AIAgent + MEAI as IGraphNode
-│   ├── Voluta.UI/                      ← MapVolutaUI ops console
-│   └── Voluta.Hosting/                 ← IThreadWakeBus + GraphWorkerService presets
-├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost · WorkerHost
+│   ├── Voluta.UI/                      ← Studio SPA (spa/) + MapVolutaUI + MapStudioApi (/api/v1)
+│   ├── Voluta.Hosting/                 ← IThreadWakeBus + GraphWorkerService presets
+│   ├── Voluta.Tools/                   ← tool nodes + light MCP HTTP client
+│   └── Voluta.OpenTelemetry/           ← AddVolutaInstrumentation
+├── samples/     ← HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost · StudioHost · WorkerHost
+├── templates/   ← Voluta.Templates (dotnet new voluta-agent)
 ├── benchmarks/  ← Voluta.Benchmarks
 ├── tests/
 ├── openspec/
 │   ├── specs/   ← main capability specs (canonical)
 │   └── changes/archive/…
 └── voluta.slnx
+```
+
+**Studio SPA dev** (только при правке `src/Voluta.UI/spa/`):
+```bash
+cd src/Voluta.UI/spa
+bun install && bun run dev      # :3847, proxy /voluta → :5188
+bun run typecheck && bun run lint && bun run test && bun run build  # FE gates
 ```
 
 ## Сборка и команды

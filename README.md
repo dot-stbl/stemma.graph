@@ -280,7 +280,9 @@ builder.Services.AddVoluta(sp =>
 var session = new VolutaUiSession(graph, checkpointer);
 builder.Services.AddVolutaUI(session);
 app.MapVolutaUI(options => options.PathPrefix = "/voluta");
-// → http://localhost:5188/voluta  (see samples/UiHost)
+app.MapStudioApi(); // versioned /api/v1 for the SPA and any FE client
+// → Studio SPA:  http://localhost:5188/voluta/studio
+// → Legacy shell: http://localhost:5188/voluta  (see samples/UiHost)
 ```
 
 </details>
@@ -737,14 +739,13 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 | `Voluta.Checkpoints.Postgres` | Postgres-native Npgsql (`UsePostgres`) | [`src/Voluta.Checkpoints.Postgres`](src/Voluta.Checkpoints.Postgres/) |
 | `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
 | `Voluta.Tools` | Tool nodes + light MCP HTTP client (no LLM SDK) | [`src/Voluta.Tools`](src/Voluta.Tools/) |
-| `Voluta.UI` | Ops console: `MapVolutaUI` (inspector / HITL / topology) | [`src/Voluta.UI`](src/Voluta.UI/) |
+| `Voluta.Hosting` | Wake bus + `GraphWorkerService` presets | [`src/Voluta.Hosting`](src/Voluta.Hosting/) |
+| `Voluta.UI` | **Studio SPA** (React + Fluent) + legacy shell + `/api/v1` via `MapStudioApi` | [`src/Voluta.UI`](src/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
-Checkpoint providers (File / SQLite / EF / S3), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
-Checkpoint providers (File / EF / S3 / Postgres), UI, Agents.AI, and OpenTelemetry are regular-CLR packages
-Checkpoint providers (File / EF / S3), UI, Agents.AI, Tools, and OpenTelemetry are regular-CLR packages
-and do not claim AOT.
+Checkpoint providers (File / SQLite / EF / S3 / Postgres), UI, Agents.AI, Tools,
+Hosting, and OpenTelemetry are regular-CLR packages and do not claim AOT.
 
 ### OpenTelemetry
 
@@ -796,7 +797,8 @@ See OpenSpec `checkpoint` / `hitl-interrupt` / `streaming` and issue #63.
 | [`DocQ`](samples/DocQ/) | Docs Q&A over a sandboxed folder |
 | [`MarketingAgent`](samples/MarketingAgent/) | Hybrid desk setup over mock tools |
 | [`MockAdMcp`](samples/MockAdMcp/) | Hybrid-shaped tool server (Campaign / SSP / deal / AdLibrary) |
-| [`UiHost`](samples/UiHost/) | ASP.NET host for `MapVolutaUI` |
+| [`UiHost`](samples/UiHost/) | ASP.NET host: `MapVolutaUI` + `MapStudioApi` + Studio SPA |
+| [`StudioHost`](samples/StudioHost/) | Studio `/api/v1` contract host with seeded demo threads |
 | [`WorkerHost`](samples/WorkerHost/) | Durable `BackgroundService` runner (wake / park / resume) |
 
 Index: [`samples/README.md`](samples/README.md).
@@ -809,20 +811,20 @@ dotnet run --project samples/ReviewBot -- --offline --root .
 dotnet run --project samples/DocQ -- --offline --root . --question "What is Voluta?"
 dotnet run --project samples/MockAdMcp          # :5190
 dotnet run --project samples/MarketingAgent -- --offline
-dotnet run --project samples/UiHost             # http://localhost:5188/voluta
+dotnet run --project samples/UiHost             # Studio: http://localhost:5188/voluta/studio
 ```
 
 ## What isn't here yet
 
 Stated plainly so you can judge the fit:
 
-- **No published packages.** Source references only until the 0.1 tag.
-- **PublicAPI surface can still move** before a major bump (tracked with PublicApiAnalyzers).
-- **UI is a first cut.** `MapVolutaUI` covers inspect / HITL / topology / SSE and
-  checkpointer thread discovery (`IThreadDiscovery`) — not auth.
+- **PublicAPI surface can still move** before a major bump (tracked with PublicApiAnalyzers);
+  shipped surface up to `v0.2.0` is frozen in `PublicAPI.Shipped.txt`.
+- **Studio SPA auth** is not built in; `/api/v1` supports an optional single API key
+  (`StudioApiOptions.ApiKey`). Multi-tenant auth is out of scope for now.
 - **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
-- **No first-party MCP client/server** — samples use a demo HTTP tools surface; real MCP is
-  `ModelContextProtocol` (+ AspNetCore) on top of Voluta.
+- **MCP client is a light HTTP bridge** (`Voluta.Tools`), not a full protocol stack;
+  real MCP is `ModelContextProtocol` (+ AspNetCore) on top of Voluta.
 - **No built-in coding agent** (bash/edit/permissions) — Voluta is the graph runtime, not Claude Code.
 
 ## Documentation
