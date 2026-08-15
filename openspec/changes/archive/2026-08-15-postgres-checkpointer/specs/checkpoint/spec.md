@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Postgres-native provider package
 A Postgres-native checkpointer package MUST ship separately from the core runtime
@@ -29,18 +29,22 @@ not by relying on a public constructor as the supported host surface.
 - **WHEN** the host configures checkpoints with UsePostgres and a connection string
 - **THEN** the checkpointer interface resolves to the Postgres provider implementation
 
-## MODIFIED Requirements
-
-### Requirement: File EF and S3 provider packages
+### Requirement: File EF S3 and Postgres provider packages
 Durable checkpoint providers for local JSON files, EF Core (provider-agnostic
-relational), S3-compatible object storage, and Postgres-native storage MUST ship
-as separate packages that implement the shared checkpointer contract and pass the
-same conformance suite as InMemory for put/get/list semantics.
+relational), S3-compatible object storage, Postgres-native storage, and SQLite
+single-file stores MUST ship as separate packages that implement the shared
+checkpointer contract and pass the same conformance suite as InMemory for
+put/get/list semantics.
 
 #### Scenario: File provider roundtrip
 - **WHEN** a consumer uses the file checkpointer package under a root directory
 - **THEN** put and get for a thread preserve C-shape semantic content across process
   restarts on the same root
+
+#### Scenario: SQLite provider roundtrip
+- **WHEN** a consumer uses the SQLite checkpointer package with a database file path
+- **THEN** put and get for a thread preserve C-shape semantic content across process
+  restarts on the same file
 
 #### Scenario: EF Core provider with consumer DbContext factory
 - **WHEN** a consumer registers a DbContext factory and configures the EF checkpointer
@@ -112,6 +116,14 @@ part of the supported host surface (internal or equivalent).
 #### Scenario: DI UseFile registration
 - **WHEN** the host configures checkpoints with UseFile and a root path
 - **THEN** the checkpointer interface resolves to the file provider implementation
+
+#### Scenario: DI UseSqlite registration
+- **WHEN** the host configures checkpoints with UseSqlite and a database path
+- **THEN** the checkpointer interface resolves to the SQLite provider implementation
+
+#### Scenario: DI UsePostgres registration
+- **WHEN** the host configures checkpoints with UsePostgres and a connection string
+- **THEN** the checkpointer interface resolves to the Postgres provider implementation
 
 #### Scenario: InMemory remains newable
 - **WHEN** a sample or test constructs the InMemory checkpointer with `new`
