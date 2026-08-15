@@ -11,22 +11,30 @@
     <File Path="AGENTS.md" />
     <File Path="CONTRIBUTING.md" />
   </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/Voluta.Abstractions/Voluta.Abstractions.csproj" />
-    <Project Path="src/Voluta/Voluta.csproj" />
-    <Project Path="src/Voluta.DependencyInjection/Voluta.DependencyInjection.csproj" />
-    <Project Path="src/Voluta.OpenTelemetry/Voluta.OpenTelemetry.csproj" />
-    <Project Path="src/Voluta.Testing/Voluta.Testing.csproj" />
-    <Project Path="src/Voluta.Generators/Voluta.Generators.csproj" />
-    <Project Path="src/Voluta.Checkpoints.File/Voluta.Checkpoints.File.csproj" />
-    <Project Path="src/Voluta.Checkpoints.EntityFrameworkCore/Voluta.Checkpoints.EntityFrameworkCore.csproj" />
-    <Project Path="src/Voluta.Checkpoints.S3/Voluta.Checkpoints.S3.csproj" />
-    <Project Path="src/Voluta.Checkpoints.Sqlite/Voluta.Checkpoints.Sqlite.csproj" />
-    <Project Path="src/Voluta.Checkpoints.Postgres/Voluta.Checkpoints.Postgres.csproj" />
-    <Project Path="src/Voluta.Agents.AI/Voluta.Agents.AI.csproj" />
-    <Project Path="src/Voluta.Tools/Voluta.Tools.csproj" />
-    <Project Path="src/Voluta.UI/Voluta.UI.csproj" />
-    <Project Path="src/Voluta.Hosting/Voluta.Hosting.csproj" />
+  <Folder Name="/src/core/">
+    <Project Path="src/core/Voluta.Abstractions/Voluta.Abstractions.csproj" />
+    <Project Path="src/core/Voluta/Voluta.csproj" />
+    <Project Path="src/core/Voluta.DependencyInjection/Voluta.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/src/checkpoints/">
+    <Project Path="src/checkpoints/Voluta.Checkpoints.File/Voluta.Checkpoints.File.csproj" />
+    <Project Path="src/checkpoints/Voluta.Checkpoints.EntityFrameworkCore/Voluta.Checkpoints.EntityFrameworkCore.csproj" />
+    <Project Path="src/checkpoints/Voluta.Checkpoints.S3/Voluta.Checkpoints.S3.csproj" />
+    <Project Path="src/checkpoints/Voluta.Checkpoints.Redis/Voluta.Checkpoints.Redis.csproj" />
+  </Folder>
+  <Folder Name="/src/hosting/">
+    <Project Path="src/hosting/Voluta.Hosting/Voluta.Hosting.csproj" />
+    <Project Path="src/hosting/Voluta.OpenTelemetry/Voluta.OpenTelemetry.csproj" />
+  </Folder>
+  <Folder Name="/src/ops/">
+    <Project Path="src/ops/Voluta.UI/Voluta.UI.csproj" />
+  </Folder>
+  <Folder Name="/src/agents/">
+    <Project Path="src/agents/Voluta.Agents.AI/Voluta.Agents.AI.csproj" />
+  </Folder>
+  <Folder Name="/src/devtools/">
+    <Project Path="src/devtools/Voluta.Testing/Voluta.Testing.csproj" />
+    <Project Path="src/devtools/Voluta.Generators/Voluta.Generators.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Voluta.Samples.Shared/Voluta.Samples.Shared.csproj" />
@@ -47,22 +55,24 @@
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Voluta.Benchmarks/Voluta.Benchmarks.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Voluta.Unit/Voluta.Unit.csproj" />
-    <Project Path="tests/Voluta.Abstractions.Unit/Voluta.Abstractions.Unit.csproj" />
-    <Project Path="tests/Voluta.DependencyInjection.Unit/Voluta.DependencyInjection.Unit.csproj" />
-    <Project Path="tests/Voluta.OpenTelemetry.Unit/Voluta.OpenTelemetry.Unit.csproj" />
-    <Project Path="tests/Voluta.Agents.AI.Unit/Voluta.Agents.AI.Unit.csproj" />
-    <Project Path="tests/Voluta.Tools.Unit/Voluta.Tools.Unit.csproj" />
-    <Project Path="tests/Voluta.Testing.Unit/Voluta.Testing.Unit.csproj" />
-    <Project Path="tests/Voluta.Generators.Unit/Voluta.Generators.Unit.csproj" />
-    <Project Path="tests/Voluta.Integration/Voluta.Integration.csproj" />
-    <Project Path="tests/Voluta.Checkpoints.File.Unit/Voluta.Checkpoints.File.Unit.csproj" />
-    <Project Path="tests/Voluta.Checkpoints.EntityFrameworkCore.Unit/Voluta.Checkpoints.EntityFrameworkCore.Unit.csproj" />
-    <Project Path="tests/Voluta.Checkpoints.S3.Unit/Voluta.Checkpoints.S3.Unit.csproj" />
-    <Project Path="tests/Voluta.Checkpoints.Sqlite.Unit/Voluta.Checkpoints.Sqlite.Unit.csproj" />
-    <Project Path="tests/Voluta.Checkpoints.Postgres.Unit/Voluta.Checkpoints.Postgres.Unit.csproj" />
-    <Project Path="tests/Voluta.Architecture.Unit/Voluta.Architecture.Unit.csproj" />
-    <Project Path="tests/Voluta.Hosting.Unit/Voluta.Hosting.Unit.csproj" />
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/Voluta.Unit/Voluta.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Abstractions.Unit/Voluta.Abstractions.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.DependencyInjection.Unit/Voluta.DependencyInjection.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Testing.Unit/Voluta.Testing.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Generators.Unit/Voluta.Generators.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.OpenTelemetry.Unit/Voluta.OpenTelemetry.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Agents.AI.Unit/Voluta.Agents.AI.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Architecture.Unit/Voluta.Architecture.Unit.csproj" />
+    <Project Path="tests/unit/Voluta.Hosting.Unit/Voluta.Hosting.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/checkpoints/">
+    <Project Path="tests/unit/checkpoints/Voluta.Checkpoints.File.Unit/Voluta.Checkpoints.File.Unit.csproj" />
+    <Project Path="tests/unit/checkpoints/Voluta.Checkpoints.EntityFrameworkCore.Unit/Voluta.Checkpoints.EntityFrameworkCore.Unit.csproj" />
+    <Project Path="tests/unit/checkpoints/Voluta.Checkpoints.S3.Unit/Voluta.Checkpoints.S3.Unit.csproj" />
+    <Project Path="tests/unit/checkpoints/Voluta.Checkpoints.Redis.Unit/Voluta.Checkpoints.Redis.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/Voluta.Integration/Voluta.Integration.csproj" />
   </Folder>
 </Solution>

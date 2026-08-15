@@ -1,20 +1,21 @@
-using Voluta.Tools.Mcp;
-using Voluta.Tools.Tools;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Voluta.Samples.MarketingAgent;
 
 /// <summary>
-///     Sample-facing façade over <see cref="HttpMcpClient" /> (product package).
-///     Keeps the harness API as string results that throw on soft tool errors.
+///     Sample-local HTTP client for the MockAdMcp surface
+///     (<c>GET /mcp/tools</c>, <c>POST /mcp/tools/call</c>).
 /// </summary>
 public sealed class MockMcpClient : IDisposable
 {
-    private readonly HttpMcpClient inner;
+    private readonly HttpClient http;
     private bool disposed;
 
-    private MockMcpClient(HttpMcpClient inner)
+    private MockMcpClient(HttpClient http)
     {
-        this.inner = inner;
+        this.http = http;
     }
 
     /// <summary>
@@ -24,7 +25,12 @@ public sealed class MockMcpClient : IDisposable
     /// <returns>Disposable sample client.</returns>
     public static MockMcpClient Create(string baseUrl)
     {
-        return new MockMcpClient(HttpMcpClient.Create(baseUrl));
+        var httpClient = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = TimeSpan.FromSeconds(15),
+        };
+        return new MockMcpClient(httpClient);
     }
 
     /// <summary>
@@ -35,10 +41,16 @@ public sealed class MockMcpClient : IDisposable
     public async Task<IReadOnlyList<McpToolInfo>> ListToolsAsync(
         CancellationToken cancellationToken = default)
     {
-        var tools = await inner.ListToolsAsync(cancellationToken);
-        return tools
-            .Select(static tool => new McpToolInfo(tool.Name, tool.Description))
-            .ToArray();
+        using var response = await http.GetAsync("mcp/tools", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<ToolsListResponse>(
+            JsonSerializerOptions.Web,
+            cancellationToken);
+        return body?.Tools is not { Count: > 0 }
+            ? []
+            : body.Tools
+                .Select(static tool => new McpToolInfo(tool.Name, tool.Description))
+                .ToArray();
     }
 
     /// <summary>
@@ -53,11 +65,24 @@ public sealed class MockMcpClient : IDisposable
         IReadOnlyDictionary<string, object?> arguments,
         CancellationToken cancellationToken = default)
     {
-        var result = await inner.CallAsync(new ToolCall(name, arguments), cancellationToken);
-        return result.IsError
+        using var response = await http.PostAsJsonAsync(
+            "mcp/tools/call",
+            new ToolCallBody(name, arguments),
+            JsonSerializerOptions.Web,
+            cancellationToken);
+        var payload = await response.Content.ReadFromJsonAsync<ToolCallPayload>(
+            JsonSerializerOptions.Web,
+            cancellationToken)
+            ?? throw new InvalidOperationException("empty tools/call response");
+
+        var text = payload.Content is { Count: > 0 }
+            ? string.Join("\n", payload.Content.Select(static part => part.Text ?? ""))
+            : "";
+
+        return payload.IsError || !response.IsSuccessStatusCode
             ? throw new InvalidOperationException(
-                string.IsNullOrWhiteSpace(result.Text) ? $"tool {name} failed" : result.Text)
-            : result.Text;
+                string.IsNullOrWhiteSpace(text) ? $"tool {name} failed" : text)
+            : text;
     }
 
     /// <inheritdoc />
@@ -69,8 +94,27 @@ public sealed class MockMcpClient : IDisposable
         }
 
         disposed = true;
-        inner.Dispose();
+        http.Dispose();
     }
+
+    private sealed record ToolsListResponse(
+        [property: JsonPropertyName("tools")] List<ToolInfoDto>? Tools);
+
+    private sealed record ToolInfoDto(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("description")] string? Description);
+
+    private sealed record ToolCallBody(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("arguments")] IReadOnlyDictionary<string, object?> Arguments);
+
+    private sealed record ToolCallPayload(
+        [property: JsonPropertyName("content")] List<ToolContentPart>? Content,
+        [property: JsonPropertyName("isError")] bool IsError);
+
+    private sealed record ToolContentPart(
+        [property: JsonPropertyName("type")] string? Type,
+        [property: JsonPropertyName("text")] string? Text);
 }
 
 /// <summary>

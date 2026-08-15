@@ -17,8 +17,8 @@ can pause a thread for days, then resume in another process.
 → AOT-ready core not a kitchen sink
 ```
 
-> **v0.2.0** is on NuGet. Public API is frozen (`PublicAPI.Shipped.txt`).
-> `dotnet add package Voluta --version 0.2.0` — see [Quick Start](#quick-start).
+> **v0.3.0** is on NuGet. Public API is frozen (`PublicAPI.Shipped.txt`).
+> `dotnet add package Voluta --version 0.3.0` — see [Quick Start](#quick-start).
 ## See it in action
 
 A ReAct-style loop (agent ⇄ tools) with no LLM — pure simulation so you can run it offline.
@@ -368,7 +368,7 @@ dotnet run --project samples/InterruptResume
 Reference from your app:
 
 ```bash
-dotnet add package Voluta --version 0.2.0
+dotnet add package Voluta --version 0.3.0
 # or, from a clone:
 dotnet add reference path/to/voluta/src/Voluta/Voluta.csproj
 ```
@@ -481,10 +481,10 @@ await wakes.EnqueueAsync(ThreadWake.Resume(threadId, Command.Approve("ok")));
 
 ### Multi-instance (k8s scale-out)
 
-- Use a **shared durable checkpointer** (File / SQLite / EF / S3), not in-memory, across replicas.
+- Use a **shared durable checkpointer** (File / EF / S3 / Redis), not in-memory, across replicas.
 - Wakes are **hints**; the checkpoint decides invoke vs resume vs already-terminal.
 - **Partition or lease** by `threadId` so two pods do not run the same thread at once.
-- Use a **shared durable checkpointer** (File / EF / S3), not in-memory, across replicas.
+- Use a **shared durable checkpointer** (File / EF / S3 / Redis), not in-memory, across replicas.
   **Checkpointer is the source of truth**; wakes are only hints.
 - Replace `InMemoryThreadWakeBus` with a durable queue implementing `IThreadWakeBus`.
 - **Partition or lease** by `threadId` so two pods do not run the same thread at once
@@ -501,8 +501,7 @@ One composition root: checkpoints + graph (and later UI hooks). Prefer this over
 // Recommended: checkpoints + graph in one call
 services.AddVoluta(v =>
 {
-    v.Checkpoints.UseInMemory(); // or UseFile / UseSqlite / UseEntityFrameworkCore / UseS3
-    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3 / UsePostgres
+    v.Checkpoints.UseInMemory(); // or UseFile / UseEntityFrameworkCore / UseS3 / UseRedis
     v.Graph((sp, checkpointer) => new StateGraph()
         // …nodes, edges, channels…
         .Compile(checkpointer, new CompileOptions { Services = sp }));
@@ -523,7 +522,6 @@ Exactly one `Use*` per host:
 ```csharp
 v.Checkpoints.UseInMemory();
 v.Checkpoints.UseFile("./.voluta/checkpoints");
-v.Checkpoints.UseSqlite("./.voluta/checkpoints.db");
 
 // EF — register IDbContextFactory first (any provider: Npgsql, SqlServer, SQLite, …)
 services.AddDbContextFactory<AppDbContext>(o => o.UseNpgsql(connectionString));
@@ -537,50 +535,14 @@ v.Checkpoints.UseS3(o =>
     o.KeyPrefix = "runs";
 });
 
-// Postgres-native (Npgsql) — optional auto-CREATE TABLE IF NOT EXISTS
-v.Checkpoints.UsePostgres(o =>
+// Redis — register IConnectionMultiplexer first
+services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost:6379"));
+v.Checkpoints.UseRedis(o =>
 {
-    o.ConnectionString = "Host=localhost;Database=voluta;Username=voluta;Password=…";
-    // o.Schema = "public"; o.Table = "voluta_checkpoints";
-    // o.EnsureSchemaOnStartup = false; // when ops apply Schema/voluta_checkpoints.sql
+    o.KeyPrefix = "voluta:";
+    // o.Database = 0;
 });
 ```
-
-<details>
-<summary><strong>Postgres schema + docker-compose</strong></summary>
-
-Default table (idempotent SQL also embedded as
-`Voluta.Checkpoints.Postgres.Schema.voluta_checkpoints.sql`):
-
-```sql
-CREATE TABLE IF NOT EXISTS public.voluta_checkpoints (
-    thread_id   text        NOT NULL,
-    step        bigint      NOT NULL,
-    status      text        NOT NULL,
-    snapshot    jsonb       NOT NULL,
-    created_at  timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (thread_id, step)
-);
-CREATE INDEX IF NOT EXISTS ix_voluta_checkpoints_thread_step
-    ON public.voluta_checkpoints (thread_id, step DESC);
-```
-
-```yaml
-# docker-compose snippet
-services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: voluta
-      POSTGRES_PASSWORD: voluta
-      POSTGRES_DB: voluta
-    ports: ["5432:5432"]
-```
-
-Connection string example:
-`Host=localhost;Port=5432;Database=voluta;Username=voluta;Password=voluta`
-
-</details>
 
 <details>
 <summary><strong>Host DbContext shape (EF)</strong></summary>
@@ -612,7 +574,7 @@ EF value conversion — the checkpointer itself does not call `JsonSerializer`.
 - **Storage failures** → `CheckpointStoreException` with stable `Code`
   (`checkpoint.put_failed` / `get_failed` / `list_failed`). Graph logic still uses
   `GraphException` and friends.
-- **Channel values (wire format v1)** on File / SQLite / EF / S3: allow-list only — `null`, primitives,
+- **Channel values (wire format v1)** on File / EF / S3 / Redis: allow-list only — `null`, primitives,
   string, `Guid`, date/time, `JsonElement`, `byte[]`, lists and string-key dictionaries of those
   (depth ≤ 8). Unsupported types fail Put with `checkpoint.unsupported_value_type` (no silent
   loss). **InMemory** is process-local and does not enforce the allow-list.
@@ -726,26 +688,24 @@ browse source under [`src/`](src/) (each package is one folder; no per-package R
 
 | Package | Role | Source |
 |---------|------|--------|
-| `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | [`src/Voluta.Abstractions`](src/Voluta.Abstractions/) |
-| `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | [`src/Voluta`](src/Voluta/) |
-| `Voluta.DependencyInjection` | `AddVoluta(v => { v.Checkpoints…; v.Graph… })` | [`src/Voluta.DependencyInjection`](src/Voluta.DependencyInjection/) |
-| `Voluta.OpenTelemetry` | `AddVolutaInstrumentation()` for OTel Tracer/Meter providers | [`src/Voluta.OpenTelemetry`](src/Voluta.OpenTelemetry/) |
-| `Voluta.Generators` | `[GraphState]` source generator | [`src/Voluta.Generators`](src/Voluta.Generators/) |
-| `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/Voluta.Testing`](src/Voluta.Testing/) |
-| `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/Voluta.Checkpoints.File`](src/Voluta.Checkpoints.File/) |
-| `Voluta.Checkpoints.Sqlite` | SQLite file checkpointer (`UseSqlite`) | [`src/Voluta.Checkpoints.Sqlite`](src/Voluta.Checkpoints.Sqlite/) |
-| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/Voluta.Checkpoints.EntityFrameworkCore`](src/Voluta.Checkpoints.EntityFrameworkCore/) |
-| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/Voluta.Checkpoints.S3`](src/Voluta.Checkpoints.S3/) |
-| `Voluta.Checkpoints.Postgres` | Postgres-native Npgsql (`UsePostgres`) | [`src/Voluta.Checkpoints.Postgres`](src/Voluta.Checkpoints.Postgres/) |
-| `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/Voluta.Agents.AI`](src/Voluta.Agents.AI/) |
-| `Voluta.Tools` | Tool nodes + light MCP HTTP client (no LLM SDK) | [`src/Voluta.Tools`](src/Voluta.Tools/) |
-| `Voluta.Hosting` | Wake bus + `GraphWorkerService` presets | [`src/Voluta.Hosting`](src/Voluta.Hosting/) |
-| `Voluta.UI` | **Studio SPA** (React + Fluent) + legacy shell + `/api/v1` via `MapStudioApi` | [`src/Voluta.UI`](src/Voluta.UI/) |
+| `Voluta.Abstractions` | Contracts: channels, checkpoints, `NodeResult`, `Send`, streaming | [`src/core/Voluta.Abstractions`](src/core/Voluta.Abstractions/) |
+| `Voluta` | Pregel runtime + InMemory + `Subgraph.AsNode` + `Describe()` | [`src/core/Voluta`](src/core/Voluta/) |
+| `Voluta.DependencyInjection` | `AddVoluta(v => { v.Checkpoints…; v.Graph… })` | [`src/core/Voluta.DependencyInjection`](src/core/Voluta.DependencyInjection/) |
+| `Voluta.OpenTelemetry` | `AddVolutaInstrumentation()` for OTel Tracer/Meter providers | [`src/hosting/Voluta.OpenTelemetry`](src/hosting/Voluta.OpenTelemetry/) |
+| `Voluta.Generators` | `[GraphState]` source generator | [`src/devtools/Voluta.Generators`](src/devtools/Voluta.Generators/) |
+| `Voluta.Testing` | Test doubles + checkpointer conformance suite | [`src/devtools/Voluta.Testing`](src/devtools/Voluta.Testing/) |
+| `Voluta.Checkpoints.File` | JSON file-system checkpointer (`UseFile`) | [`src/checkpoints/Voluta.Checkpoints.File`](src/checkpoints/Voluta.Checkpoints.File/) |
+| `Voluta.Checkpoints.EntityFrameworkCore` | Provider-agnostic EF Core (`UseEntityFrameworkCore<T>`) | [`src/checkpoints/Voluta.Checkpoints.EntityFrameworkCore`](src/checkpoints/Voluta.Checkpoints.EntityFrameworkCore/) |
+| `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible (`UseS3`) | [`src/checkpoints/Voluta.Checkpoints.S3`](src/checkpoints/Voluta.Checkpoints.S3/) |
+| `Voluta.Checkpoints.Redis` | Redis sorted-set checkpointer (`UseRedis`) | [`src/checkpoints/Voluta.Checkpoints.Redis`](src/checkpoints/Voluta.Checkpoints.Redis/) |
+| `Voluta.Agents.AI` | MAF `AIAgent` + MEAI as `IGraphNode` | [`src/agents/Voluta.Agents.AI`](src/agents/Voluta.Agents.AI/) |
+| `Voluta.Hosting` | Wake bus + `GraphWorkerService` presets | [`src/hosting/Voluta.Hosting`](src/hosting/Voluta.Hosting/) |
+| `Voluta.UI` | **Studio SPA** (React + Fluent) + legacy shell + `/api/v1` via `MapStudioApi` | [`src/ops/Voluta.UI`](src/ops/Voluta.UI/) |
 
 **Native AOT** applies to the core tier only — `Voluta`, `Abstractions`, and
 `DependencyInjection` are `IsAotCompatible`, with a publish smoke test in `samples/AotSmoke`.
-Checkpoint providers (File / SQLite / EF / S3 / Postgres), UI, Agents.AI, Tools,
-Hosting, and OpenTelemetry are regular-CLR packages and do not claim AOT.
+Checkpoint providers (File / EF / S3 / Redis), UI, Agents.AI, Hosting, and OpenTelemetry
+are regular-CLR packages and do not claim AOT.
 
 ### OpenTelemetry
 
@@ -819,11 +779,11 @@ dotnet run --project samples/UiHost             # Studio: http://localhost:5188/
 Stated plainly so you can judge the fit:
 
 - **PublicAPI surface can still move** before a major bump (tracked with PublicApiAnalyzers);
-  shipped surface up to `v0.2.0` is frozen in `PublicAPI.Shipped.txt`.
+  shipped surface up to `v0.3.0` is frozen in `PublicAPI.Shipped.txt`.
 - **Studio SPA auth** is not built in; `/api/v1` supports an optional single API key
   (`StudioApiOptions.ApiKey`). Multi-tenant auth is out of scope for now.
 - **Checkpoint serde** is best-effort JSON for channel values; versioning/evolution is still open.
-- **MCP client is a light HTTP bridge** (`Voluta.Tools`), not a full protocol stack;
+- **MCP in samples** is a light HTTP bridge (inlined in MarketingAgent), not a product package;
   real MCP is `ModelContextProtocol` (+ AspNetCore) on top of Voluta.
 - **No built-in coding agent** (bash/edit/permissions) — Voluta is the graph runtime, not Claude Code.
 

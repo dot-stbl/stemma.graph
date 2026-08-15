@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Voluta\Voluta.csproj" />
+    <ProjectReference Include="..\..\src\core\Voluta\Voluta.csproj" />
   </ItemGroup>
 
 </Project>

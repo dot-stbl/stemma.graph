@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Microsoft Agent Framework (MAF) and Microsoft.Extensions.AI integration for Voluta:
+      IGraphNode adapters for AIAgent and IChatClient without extension-method glue.
+    </Description>
+    <PackageTags>$(PackageTags);ai;agents;microsoft-agents-ai;microsoft-extensions-ai</PackageTags>
+    <RootNamespace>Voluta.Agents.AI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\Voluta\Voluta.csproj" />
+    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.17.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
+  </ItemGroup>
+
+</Project>

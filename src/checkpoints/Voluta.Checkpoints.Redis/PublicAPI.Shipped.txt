@@ -1,0 +1,14 @@
+#nullable enable
+static Voluta.Checkpoints.Redis.VolutaCheckpointBuilderExtensions.UseRedis(this Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder! builder, System.Action<Voluta.Checkpoints.Redis.RedisCheckpointerOptions!>? configure = null) -> Voluta.DependencyInjection.Checkpoints.VolutaCheckpointBuilder!
+Voluta.Checkpoints.Redis.RedisCheckpointer
+Voluta.Checkpoints.Redis.RedisCheckpointer.GetAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Voluta.Abstractions.Checkpoint.CheckpointSnapshot?>!
+Voluta.Checkpoints.Redis.RedisCheckpointer.ListAsync(string! threadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Voluta.Abstractions.Checkpoint.CheckpointSnapshot!>!>!
+Voluta.Checkpoints.Redis.RedisCheckpointer.ListThreadIdsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string!>!>!
+Voluta.Checkpoints.Redis.RedisCheckpointer.PutAsync(Voluta.Abstractions.Checkpoint.CheckpointSnapshot! snapshot, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions.Database.get -> int
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions.Database.init -> void
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions.KeyPrefix.get -> string!
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions.KeyPrefix.init -> void
+Voluta.Checkpoints.Redis.RedisCheckpointerOptions.RedisCheckpointerOptions() -> void
+Voluta.Checkpoints.Redis.VolutaCheckpointBuilderExtensions
