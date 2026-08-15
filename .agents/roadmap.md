@@ -8,23 +8,26 @@
 
 | | |
 |---|---|
-| Architecture specs | ✅ archived → `openspec/specs/*` (12 capabilities) |
+| Architecture specs | ✅ archived → `openspec/specs/*` (15 capabilities) |
 | MVP runtime | ✅ Pregel + InMemory + HITL + stream + DI + Testing + Generators |
-| Samples | ✅ HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost |
+| Samples | ✅ HelloWorld · InterruptResume · AotSmoke · ReviewBot · DocQ · MarketingAgent · MockAdMcp · UiHost · StudioHost · WorkerHost |
 | Benchmarks | ✅ `benchmarks/Voluta.Benchmarks` (#10 closed) |
 | Send / subgraph | ✅ `Send`, `ContinueWithSends`, `Subgraph.AsNode`, `Describe()` |
-| File checkpointer | ✅ `Voluta.Checkpoints.File` |
-| SQLite checkpointer | ✅ `Voluta.Checkpoints.Sqlite` |
-| Agents.AI | ✅ `IGraphNode` adapters for MAF `AIAgent` + MEAI `IChatClient` (`Voluta.MicrosoftAi` removed) |
+| Checkpointers | ✅ File · Sqlite · EF Core · S3 · Postgres (#71) |
+| Agents.AI | ✅ `IGraphNode` adapters for MAF `AIAgent` + MEAI `IChatClient` |
 | Graph DI | ✅ `GraphContext.Services`, `IGraphNode`, `AddNode<T>` |
-| UI | ✅ `Voluta.UI` Razor RCL + SSE + `MapVolutaUI` (inspector / HITL / topology) · sample UiHost |
-| EF / S3 checkpointers | ✅ `Voluta.Checkpoints.EntityFrameworkCore` · `Voluta.Checkpoints.S3` |
+| Studio API v1 | ✅ `MapStudioApi` `/api/v1` (resume/continue/update/fork/SSE/hitl, опц. API-key) (#69, #80) |
+| Studio SPA | ✅ React 19 + Fluent v9 в `Voluta.UI` (`{prefix}/studio`, embedded wwwroot/studio) (#68, #86) |
+| UI legacy shell | ✅ `MapVolutaUI` (inspector / HITL / topology) — остаётся как thin shell |
+| Tools / MCP | ✅ `Voluta.Tools` — tool nodes + light MCP HTTP client (#72, #83) |
+| Wake bus / Hosting | ✅ `Voluta.Hosting` — `IThreadWakeBus` + `GraphWorkerService` presets (#73 partial → #84) |
+| Observability | ✅ `Voluta.OpenTelemetry` + Grafana dashboard pack (#74 → #77, #85) |
+| Cross-thread Store | ✅ `IVolutaStore` + `InMemoryVolutaStore` (#75 partial → #78) |
+| Templates | ✅ `templates/Voluta.Templates` — `dotnet new voluta-agent` (#70 → #81) |
 | PublicAPI ship gate | ✅ `PublicAPI.{Shipped,Unshipped}.txt` + PublicApiAnalyzers on ship packages |
-| PublicAPI owner review | ✅ OK + P0/P1 hygiene (markers removed, EF config internal) |
-| NuGet 0.1 tag | ✅ `v0.1.0` / `v0.1.1` |
-| NuGet 0.2 tag | 🔜 `v0.2.0` (version bumped; tag + publish after this release PR) |
+| NuGet | ✅ `v0.1.0` / `v0.1.1` / `v0.2.0` |
 | Arch tests (package isolation) | ✅ `tests/Voluta.Architecture.Unit` |
-| OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering) |
+| OpenSpec main specs | ✅ synced post-MVP (public-api-hosting · checkpoint · quality-engineering · studio-host) |
 
 ## Shipped package map
 
@@ -37,23 +40,28 @@
 | `Voluta.Generators` | `[GraphState]` | full (analyzer) |
 | `Voluta.Checkpoints.File` | JSON file store | full |
 | `Voluta.Checkpoints.Sqlite` | SQLite single-file store | full |
+| `Voluta.Checkpoints.Postgres` | Postgres-native Npgsql store | full |
 | `Voluta.Checkpoints.EntityFrameworkCore` | provider-agnostic EF Core store | full |
 | `Voluta.Checkpoints.S3` | AWS S3 / S3-compatible store | full |
 | `Voluta.Agents.AI` | MAF + MEAI as `IGraphNode` | full |
-| `Voluta.UI` | ops console | full (ASP.NET) |
+| `Voluta.UI` | ops console: Studio SPA + legacy shell + `/api/v1` | full (ASP.NET) |
 | `Voluta.Hosting` | wake bus + `GraphWorkerService` presets | full (worker host) |
+| `Voluta.Tools` | tool nodes + light MCP HTTP client | full |
+| `Voluta.OpenTelemetry` | `AddVolutaInstrumentation()` | full |
 
 ## Ближайшие шаги
 
-1. docs.stbl.space sync to 0.2.x (#43)
-2. SPA ops console (React+Vite) — replace/augment Razor UI
-3. Engine parity #75 remainder — subgraph stream namespaces · task journal A3 · durable Store · checkpoint migration
-4. LangGraph parity gaps (tooling, more providers, Studio-like UX)
+1. docs.stbl.space sync to 0.2.x (#43) — сайт вне репо, этот репо держит README актуальным
+2. Engine parity #75 remainder — subgraph stream namespaces · task journal A3 · durable Store · checkpoint migration
+3. v0.3 · Studio + DX milestone close-out (SPA #68 ✅, API #69 ✅, template #70 ✅, Postgres #71 ✅)
+4. v0.4 · Tools + scale remainder — Redis/NATS checkpointers (#76 Azure Blob part), task journal
 
 ## Shipped recently
 
 | Item | Notes |
 |------|--------|
+| Studio SPA (#68) | React 19 + Fluent v9, embedded в `Voluta.UI`, `{prefix}/studio`, Ctrl+K palette, graph overlay, SSE panel v2, history diff |
+| Studio API v1 (#69) | `MapStudioApi` `/api/v1` + GraphException→404/409/400 mapping |
 | Cross-thread Store | `IVolutaStore` + `InMemoryVolutaStore` + DI (D-032 / #75 partial) |
 
 ## Не в планах

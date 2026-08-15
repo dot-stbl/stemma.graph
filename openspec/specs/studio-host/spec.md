@@ -5,7 +5,9 @@
 Defines the stable **versioned HTTP + SSE** contract for ops Studio (and any FE)
 against a single compiled graph + checkpointer. The contract is not coupled to
 Razor UI internals (`MapVolutaUI`); hosts map it via `MapStudioApi` under
-`/api/v1` (or a configured prefix).
+`/api/v1` (or a configured prefix). The bundled **Studio SPA** (React + Fluent,
+embedded in `Voluta.UI` under `{prefix}/studio`) is the product surface
+consuming this contract.
 
 ## Requirements
 
@@ -114,3 +116,41 @@ The repository MUST ship a sample (`samples/StudioHost`) that registers
 #### Scenario: Sample builds
 - **WHEN** the solution is built
 - **THEN** `samples/StudioHost` compiles as a non-packable Web project
+
+### Requirement: Graph exception mapping
+Mutation endpoints MUST map runtime `GraphException` subtypes onto stable HTTP
+responses instead of unhandled 500s: `GraphThreadNotFoundException` /
+`GraphStepNotFoundException` → **404**; `GraphInvalidResumeException` /
+`GraphInvalidContinueException` / `GraphOutOfStepsException` → **409**;
+`GraphInvalidCommandException` → **400**. The body carries `{ error, code }`
+with the stable dot-case `GraphException.Code`.
+
+#### Scenario: Resume a done thread
+- **WHEN** a client posts resume to a thread whose status is Done
+- **THEN** the host responds with HTTP 409 and code `graph.invalid_resume`
+
+#### Scenario: Continue a done thread
+- **WHEN** a client posts continue to a thread whose status is Done
+- **THEN** the host responds with HTTP 409 and a `graph.*` code
+
+### Requirement: Bundled Studio SPA
+`Voluta.UI` MUST embed the Studio SPA build output (`wwwroot/studio`) and serve
+it under `{MapVolutaUI prefix}/studio` with a single catch-all route: empty
+asset path → index, extensionless paths → SPA fallback (client routing), known
+extensions → embedded asset bytes or 404. When the SPA is not built, the host
+MUST stay up and respond with a 503 HTML notice.
+
+#### Scenario: SPA index and deep links
+- **WHEN** the SPA is built and a client requests `{prefix}/studio` or a
+  client-side route like `{prefix}/studio/threads/{id}`
+- **THEN** the host responds with the SPA index HTML (base href injected)
+
+#### Scenario: SPA not built
+- **WHEN** `wwwroot/studio/index.html` is absent and a client requests
+  `{prefix}/studio`
+- **THEN** the host responds 503 with build instructions and stays healthy
+
+#### Scenario: No ambiguous route matches
+- **WHEN** routes for `{prefix}/studio`, `{prefix}/studio/`, and
+  `{prefix}/studio/{**assetPath}` are registered
+- **THEN** only the catch-all matches (no `AmbiguousMatchException`)
